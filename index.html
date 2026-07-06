@@ -1,0 +1,320 @@
+HTML
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>모바일 지원 클라우드 칸반 보드</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #f4f5f7;
+            --column-bg: #ebecf0;
+            --card-bg: #ffffff;
+            --text-color: #172b4d;
+            --primary-color: #0052cc;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 10px;
+            /* 모바일에서 불필요한 스크롤 및 꾹 누르기 선택 방지 */
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        header h1 {
+            margin: 10px 0;
+            font-size: 1.5rem;
+            color: var(--primary-color);
+        }
+
+        /* 📱 모바일/데스크톱 반응형 레이아웃 */
+        .board {
+            display: flex;
+            flex-direction: column; /* 모바일에서는 위아래로 배치 */
+            gap: 15px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* 데스크톱 화면(가로 768px 이상)일 때는 좌우로 배치 */
+        @media (min-width: 768px) {
+            .board {
+                flex-direction: row;
+                align-items: flex-start;
+            }
+            body {
+                padding: 20px;
+            }
+            header h1 {
+                font-size: 2rem;
+            }
+        }
+
+        /* 컬럼 스타일 */
+        .column {
+            background-color: var(--column-bg);
+            flex: 1;
+            border-radius: 8px;
+            padding: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+        }
+
+        .column h2 {
+            font-size: 1rem;
+            margin-top: 0;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-count {
+            background: rgba(0,0,0,0.1);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+        }
+
+        /* 카드 리스트 영역 (최소 높이를 주어 드롭이 잘 되도록 설정) */
+        .card-list {
+            min-height: 60px;
+        }
+
+        /* 개별 카드 스타일 */
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 6px;
+            padding: 14px; /* 터치하기 편하게 여백을 늘림 */
+            margin-bottom: 8px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            position: relative;
+            cursor: grab;
+            /* 모바일 드래그앤드롭 시 텍스트 블록 지정 방지 */
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .card p {
+            margin: 0 20px 0 0;
+            word-wrap: break-word;
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        /* 삭제 버튼 크기를 키워 터치 미스 방지 */
+        .card .delete-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 4px;
+        }
+
+        .card .delete-btn:hover {
+            color: #ff4d4f;
+        }
+
+        /* 카드 추가 양식 */
+        .add-card-form {
+            margin-top: 10px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .add-card-form textarea {
+            flex: 1;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 8px;
+            resize: none;
+            height: 38px;
+            font-family: inherit;
+            font-size: 0.9rem;
+        }
+
+        .add-card-form button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        /* 드래그 중인 카드 스타일 */
+        .sortable-ghost {
+            opacity: 0.4;
+            background-color: #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>📱 모바일 협업 칸반 보드</h1>
+    </header>
+
+    <div class="board">
+        <div class="column">
+            <h2>할 일 <span class="card-count" id="todo-count">0</span></h2>
+            <div class="card-list" id="todo"></div>
+            <div class="add-card-form">
+                <textarea id="todo-input" placeholder="새 작업 입력..."></textarea>
+                <button onclick="addCard('todo')">등록</button>
+            </div>
+        </div>
+
+        <div class="column">
+            <h2>진행 중 <span class="card-count" id="inprogress-count">0</span></h2>
+            <div class="card-list" id="inprogress"></div>
+            <div class="add-card-form">
+                <textarea id="inprogress-input" placeholder="새 작업 입력..."></textarea>
+                <button onclick="addCard('inprogress')">등록</button>
+            </div>
+        </div>
+
+        <div class="column">
+            <h2>완료 <span class="card-count" id="done-count">0</span></h2>
+            <div class="card-list" id="done"></div>
+            <div class="add-card-form">
+                <textarea id="done-input" placeholder="새 작업 입력..."></textarea>
+                <button onclick="addCard('done')">등록</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { 
+            getFirestore, collection, addDoc, deleteDoc, doc, updateDoc, onSnapshot, query, orderBy 
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // ⚠️ 본인의 Firebase 프로젝트 설정 정보로 반드시 대체해 주세요!
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const tasksCollection = collection(db, "tasks");
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initSortable();
+            
+            // 실시간 데이터 감시 및 UI 업데이트
+            const q = query(tasksCollection, orderBy("createdAt", "asc"));
+            onSnapshot(q, (snapshot) => {
+                document.getElementById('todo').innerHTML = '';
+                document.getElementById('inprogress').innerHTML = '';
+                document.getElementById('done').innerHTML = '';
+
+                snapshot.forEach((doc) => {
+                    const task = doc.data();
+                    createCardElement(task.status, task.text, doc.id);
+                });
+                updateCounts();
+            });
+        });
+
+        // SortableJS 초기화 (모바일 터치 드래그 가능하게 설정)
+        function initSortable() {
+            ['todo', 'inprogress', 'done'].forEach(id => {
+                Sortable.create(document.getElementById(id), {
+                    group: 'kanban', // 컬럼 간 이동 가능하도록 그룹 묶기
+                    animation: 150,
+                    ghostClass: 'sortable-ghost',
+                    // 카드가 다른 컬럼으로 완전히 이동했을 때 이벤트 발생
+                    onEnd: async function (evt) {
+                        const cardId = evt.item.id;
+                        const newStatus = evt.to.id; // 이동한 목적지 컬럼 ID
+                        
+                        try {
+                            await updateDoc(doc(db, "tasks", cardId), {
+                                status: newStatus
+                            });
+                        } catch (error) {
+                            console.error("서버 업데이트 실패:", error);
+                        }
+                    }
+                });
+            });
+        }
+
+        window.addCard = async function(columnId) {
+            const input = document.getElementById(`${columnId}-input`);
+            const text = input.value.trim();
+            
+            if (!text) return;
+
+            try {
+                await addDoc(tasksCollection, {
+                    text: text,
+                    status: columnId,
+                    createdAt: Date.now()
+                });
+                input.value = '';
+            } catch (error) {
+                console.error("카드 추가 실패:", error);
+            }
+        }
+
+        window.deleteCard = async function(cardId) {
+            if(confirm("이 작업을 삭제하시겠습니까?")) {
+                try {
+                    await deleteDoc(doc(db, "tasks", cardId));
+                } catch (error) {
+                    console.error("카드 삭제 실패:", error);
+                }
+            }
+        }
+
+        function createCardElement(columnId, text, cardId) {
+            const list = document.getElementById(columnId);
+            if(!list) return;
+
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.id = cardId;
+            
+            card.innerHTML = `
+                <p>${text}</p>
+                <button class="delete-btn" onclick="deleteCard('${cardId}')">✕</button>
+            `;
+            
+            list.appendChild(card);
+        }
+
+        function updateCounts() {
+            ['todo', 'inprogress', 'done'].forEach(id => {
+                const count = document.getElementById(id).children.length;
+                document.getElementById(`${id}-count`).innerText = count;
+            });
+        }
+    </script>
+</body>
+</html>
