@@ -1,319 +1,212 @@
-HTML
 <!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>모바일 지원 클라우드 칸반 보드</title>
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
-
+    <title>모바일 통합 칸반 보드</title>
     <style>
-        :root {
-            --bg-color: #f4f5f7;
-            --column-bg: #ebecf0;
-            --card-bg: #ffffff;
-            --text-color: #172b4d;
-            --primary-color: #0052cc;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 10px;
-            /* 모바일에서 불필요한 스크롤 및 꾹 누르기 선택 방지 */
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 15px;
-        }
-
-        header h1 {
-            margin: 10px 0;
-            font-size: 1.5rem;
-            color: var(--primary-color);
-        }
-
-        /* 📱 모바일/데스크톱 반응형 레이아웃 */
-        .board {
-            display: flex;
-            flex-direction: column; /* 모바일에서는 위아래로 배치 */
-            gap: 15px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        /* 데스크톱 화면(가로 768px 이상)일 때는 좌우로 배치 */
-        @media (min-width: 768px) {
-            .board {
-                flex-direction: row;
-                align-items: flex-start;
-            }
-            body {
-                padding: 20px;
-            }
-            header h1 {
-                font-size: 2rem;
-            }
-        }
-
-        /* 컬럼 스타일 */
-        .column {
-            background-color: var(--column-bg);
-            flex: 1;
-            border-radius: 8px;
-            padding: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
-        }
-
-        .column h2 {
-            font-size: 1rem;
-            margin-top: 0;
-            margin-bottom: 10px;
-            padding-bottom: 8px;
-            border-bottom: 2px solid rgba(0,0,0,0.05);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .card-count {
-            background: rgba(0,0,0,0.1);
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 0.8rem;
-        }
-
-        /* 카드 리스트 영역 (최소 높이를 주어 드롭이 잘 되도록 설정) */
-        .card-list {
-            min-height: 60px;
-        }
-
-        /* 개별 카드 스타일 */
-        .card {
-            background-color: var(--card-bg);
-            border-radius: 6px;
-            padding: 14px; /* 터치하기 편하게 여백을 늘림 */
-            margin-bottom: 8px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-            position: relative;
-            cursor: grab;
-            /* 모바일 드래그앤드롭 시 텍스트 블록 지정 방지 */
-            user-select: none;
-            -webkit-user-select: none;
-        }
-
-        .card p {
-            margin: 0 20px 0 0;
-            word-wrap: break-word;
-            font-size: 0.95rem;
-            line-height: 1.4;
-        }
-
-        /* 삭제 버튼 크기를 키워 터치 미스 방지 */
-        .card .delete-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: none;
-            border: none;
-            color: #999;
-            cursor: pointer;
-            font-size: 1.1rem;
-            padding: 4px;
-        }
-
-        .card .delete-btn:hover {
-            color: #ff4d4f;
-        }
-
-        /* 카드 추가 양식 */
-        .add-card-form {
-            margin-top: 10px;
-            display: flex;
-            gap: 8px;
-        }
-
-        .add-card-form textarea {
-            flex: 1;
-            box-sizing: border-box;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            padding: 8px;
-            resize: none;
-            height: 38px;
-            font-family: inherit;
-            font-size: 0.9rem;
-        }
-
-        .add-card-form button {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 0 15px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 0.9rem;
-        }
-
-        /* 드래그 중인 카드 스타일 */
-        .sortable-ghost {
-            opacity: 0.4;
-            background-color: #e0e0e0;
-        }
+        :root { --bg-color: #f4f5f7; --column-bg: #ebecf0; --card-bg: #ffffff; --text-color: #172b4d; --primary-color: #0052cc; --warning-color: #ff5630; --d1-color: #ff9f43; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 5px; }
+        header { text-align: center; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; padding: 0 10px; }
+        header h1 { margin: 5px 0; font-size: 1.2rem; color: var(--primary-color); }
+        .btn-team { background: #6b778c; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; }
+        .month-group-header { font-size: 0.75rem; background: #dfe1e6; padding: 6px; margin-top: 5px; cursor: pointer; border-radius: 3px; display: flex; justify-content: space-between; font-weight: bold; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #fff; margin: 15% auto; padding: 15px; width: 85%; border-radius: 8px; max-height: 70vh; overflow-y: auto; }
+        .clickable { cursor: pointer; color: var(--primary-color); text-decoration: underline; font-weight: bold; }
+        .badge-d1 { background: var(--d1-color); color: white; padding: 2px 5px; border-radius: 4px; font-size: 0.6rem; font-weight: bold; margin-right: 5px; }
+        .team-item { display: flex; gap: 5px; margin-bottom: 8px; align-items: center; }
+        .team-item input { flex: 1; padding: 5px; font-size: 0.8rem; }
+        .team-item button { padding: 5px 8px; font-size: 0.7rem; cursor: pointer; border: none; border-radius: 3px; }
+        .dashboard-container { display: flex; flex-direction: column; gap: 8px; max-width: 1200px; margin: 0 auto 10px auto; }
+        .panel { background: #fff; border-radius: 6px; padding: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.12); }
+        .summary-wrapper { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 5px; }
+        .summary-table { width: 100%; border-collapse: collapse; font-size: 0.65rem; text-align: center; }
+        .summary-table th, .summary-table td { border: 1px solid #eee; padding: 3px; }
+        .calendar-day-cell { border: 1px solid #eee; border-radius: 2px; height: 40px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 2px; font-size: 0.6rem; }
+        .task-badge { font-size: 0.55rem; background: var(--primary-color); color: white; border-radius: 10px; padding: 0 4px; margin-top: 2px; cursor: pointer; }
+        .board { display: flex; flex-direction: column; gap: 8px; max-width: 1200px; margin: 0 auto; }
+        .column { background-color: var(--column-bg); flex: 1; border-radius: 6px; padding: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.12); }
+        .column h2 { font-size: 0.9rem; margin: 0 0 5px 0; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .add-card-form { margin-bottom: 8px; display: flex; flex-direction: column; gap: 4px; }
+        .add-card-form textarea { width: 100%; box-sizing: border-box; border: 1px solid #ddd; border-radius: 4px; padding: 5px; height: 40px; font-size: 0.8rem; }
+        .form-row { display: flex; gap: 3px; }
+        .form-row input, .form-row select { flex: 1; border: 1px solid #ddd; border-radius: 4px; padding: 4px; font-size: 0.7rem; }
+        .form-row button { background: var(--primary-color); color: white; border: none; padding: 0 8px; border-radius: 4px; cursor: pointer; font-size: 0.7rem; }
+        .card { background-color: var(--card-bg); border-radius: 4px; padding: 8px; margin-bottom: 5px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
+        .card-actions { display: flex; justify-content: flex-end; gap: 4px; margin-top: 5px; }
+        .card-actions button { background: #e0e0e0; border: none; border-radius: 3px; padding: 3px 6px; cursor: pointer; font-size: 0.65rem; color: #333; }
+        @media (min-width: 768px) { .dashboard-container { flex-direction: row; } .board { flex-direction: row; align-items: flex-start; } }
     </style>
 </head>
 <body>
-
-    <header>
-        <h1>📱 모바일 협업 칸반 보드</h1>
-    </header>
+    <div id="team-modal" class="modal" onclick="this.style.display='none'"><div class="modal-content" onclick="event.stopPropagation()"><h3>👥 팀원 관리</h3><div id="team-list"></div><div class="form-row"><input type="text" id="new-member-name" placeholder="새 팀원 이름"><button onclick="addTeamMember()">추가</button></div></div></div>
+    <div id="task-modal" class="modal" onclick="this.style.display='none'"><div class="modal-content" onclick="event.stopPropagation()"><h3 id="modal-title">작업 상세</h3><div id="modal-list"></div><button onclick="document.getElementById('task-modal').style.display='none'" style="width:100%; margin-top:10px; padding:8px;">닫기</button></div></div>
+    
+    <header><h1>📱 칸반 보드</h1><button class="btn-team" onclick="document.getElementById('team-modal').style.display='block'">팀 관리</button></header>
+    
+    <div class="dashboard-container">
+        <div class="panel" style="flex:1;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <button onclick="changeMonth(-1)">◀</button><h4 id="calendar-title" style="margin:0; font-size:0.8rem;">년 월</h4><button onclick="changeMonth(1)">▶</button>
+            </div>
+            <div id="calendar-grid" style="display:grid; grid-template-columns:repeat(7,1fr); gap:1px; text-align:center; font-size:0.6rem; margin-top:5px;"></div>
+        </div>
+        <div class="panel" style="flex:2;">
+            <div class="summary-wrapper">
+                <div><h4 style="margin:0 0 3px 0; font-size:0.75rem;">👤 담당자</h4><table class="summary-table" id="assignee-table"><thead><tr><th>이름</th><th>할일</th><th>진행</th><th>완료</th></tr></thead><tbody></tbody></table></div>
+                <div><h4 style="margin:0 0 3px 0; font-size:0.75rem;">📅 마감일</h4><table class="summary-table" id="date-table"><thead><tr><th>날짜</th><th>대기</th><th>완료</th></tr></thead><tbody></tbody></table></div>
+                <div><h4 style="margin:0 0 3px 0; font-size:0.75rem; color:var(--warning-color);">⚠️ 마감</h4><table class="summary-table" id="overdue-table"><thead><tr><th>작업</th><th>일자</th></tr></thead><tbody></tbody></table></div>
+            </div>
+        </div>
+    </div>
 
     <div class="board">
-        <div class="column">
-            <h2>할 일 <span class="card-count" id="todo-count">0</span></h2>
-            <div class="card-list" id="todo"></div>
-            <div class="add-card-form">
-                <textarea id="todo-input" placeholder="새 작업 입력..."></textarea>
-                <button onclick="addCard('todo')">등록</button>
-            </div>
+        <div class="column" id="col-todo"><h2 onclick="toggleColumn('todo')">할 일 <span id="todo-count">0</span></h2>
+            <div class="add-card-form"><textarea id="todo-input" placeholder="새 작업..."></textarea><div class="form-row"><input type="date" id="todo-start"><input type="date" id="todo-due"></div><div class="form-row"><select id="todo-assignee"><option value="">담당자</option></select><select id="todo-repeat"><option value="none">반복X</option><option value="daily">매일</option><option value="weekly">매주</option><option value="monthly">매월</option></select><button onclick="addCard('todo')">등록</button></div></div>
+            <div id="todo-list"></div>
         </div>
-
-        <div class="column">
-            <h2>진행 중 <span class="card-count" id="inprogress-count">0</span></h2>
-            <div class="card-list" id="inprogress"></div>
-            <div class="add-card-form">
-                <textarea id="inprogress-input" placeholder="새 작업 입력..."></textarea>
-                <button onclick="addCard('inprogress')">등록</button>
-            </div>
+        <div class="column" id="col-inprogress"><h2 onclick="toggleColumn('inprogress')">진행 중 <span id="inprogress-count">0</span></h2>
+            <div class="add-card-form"><textarea id="inprogress-input" placeholder="새 작업..."></textarea><div class="form-row"><input type="date" id="inprogress-start"><input type="date" id="inprogress-due"></div><div class="form-row"><select id="inprogress-assignee"><option value="">담당자</option></select><select id="inprogress-repeat"><option value="none">반복X</option><option value="daily">매일</option><option value="weekly">매주</option><option value="monthly">매월</option></select><button onclick="addCard('inprogress')">등록</button></div></div>
+            <div id="inprogress-list"></div>
         </div>
-
-        <div class="column">
-            <h2>완료 <span class="card-count" id="done-count">0</span></h2>
-            <div class="card-list" id="done"></div>
-            <div class="add-card-form">
-                <textarea id="done-input" placeholder="새 작업 입력..."></textarea>
-                <button onclick="addCard('done')">등록</button>
-            </div>
+        <div class="column" id="col-done"><h2 onclick="toggleColumn('done')">완료 <span id="done-count">0</span></h2>
+            <div class="add-card-form"><textarea id="done-input" placeholder="새 작업..."></textarea><div class="form-row"><input type="date" id="done-start"><input type="date" id="done-due"></div><div class="form-row"><select id="done-assignee"><option value="">담당자</option></select><select id="done-repeat"><option value="none">반복X</option><option value="daily">매일</option><option value="weekly">매주</option><option value="monthly">매월</option></select><button onclick="addCard('done')">등록</button></div></div>
+            <div id="done-list"></div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { 
-            getFirestore, collection, addDoc, deleteDoc, doc, updateDoc, onSnapshot, query, orderBy 
-        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-        // ⚠️ 본인의 Firebase 프로젝트 설정 정보로 반드시 대체해 주세요!
+        import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        
         const firebaseConfig = {
-  apiKey: "AIzaSyAYW2r7CJB0L-aI3bc-JTvZyGO3LK_bJu0",
-  authDomain: "gkfkdkskak-6a37e.firebaseapp.com",
-  projectId: "gkfkdkskak-6a37e",
-  storageBucket: "gkfkdkskak-6a37e.firebasestorage.app",
-  messagingSenderId: "359859711734",
-  appId: "1:359859711734:web:7dc91c8153e2c05bce86d7"
-};
+            apiKey: "AIzaSyDSERFM9_UmjfPt5x3HTsL0flekVb-p6HA",
+            authDomain: "project-5a01b.firebaseapp.com",
+            projectId: "project-5a01b",
+            storageBucket: "project-5a01b.firebasestorage.app",
+            messagingSenderId: "16464029460",
+            appId: "1:16464029460:web:f8c68e90d1a1e4204c8401"
+        };
+        const db = getFirestore(initializeApp(firebaseConfig));
+        
+        let currentTasks = [], teamMembers = [], currentDate = new Date();
+        let hasShownAlert = false;
+        
+        window.toggleColumn = (id) => { const list = document.getElementById(`${id}-list`); list.style.display = list.style.display === 'none' ? 'block' : 'none'; };
+        window.toggleMonth = (id) => {
+            const el = document.getElementById(id);
+            const header = el.previousElementSibling;
+            if (el.style.display === 'none') { el.style.display = 'block'; header.querySelector('.arrow').innerText = '▲'; }
+            else { el.style.display = 'none'; header.querySelector('.arrow').innerText = '▼'; }
+        };
+        window.addTeamMember = async () => { const name = document.getElementById('new-member-name').value; if(!name) return; await addDoc(collection(db, "team"), { name }); document.getElementById('new-member-name').value = ''; };
+        window.deleteTeamMember = async (id) => { if(confirm("삭제하시겠습니까?")) await deleteDoc(doc(db, "team", id)); };
+        window.renameMember = async (id, newName) => { await updateDoc(doc(db, "team", id), { name: newName }); alert("변경 완료"); };
+        window.addCard = async (col) => { const input = document.getElementById(`${col}-input`); const text = input.value; if(!text) return; input.value = ''; await addDoc(collection(db, "tasks"), { text, status: col, startDate: document.getElementById(`${col}-start`).value, dueDate: document.getElementById(`${col}-due`).value, assignee: document.getElementById(`${col}-assignee`).value, repeat: document.getElementById(`${col}-repeat`).value, createdAt: Date.now() }); };
+        window.moveTask = async (id, newStatus) => { await updateDoc(doc(db, "tasks", id), { status: newStatus }); document.getElementById('task-modal').style.display = 'none'; };
+        window.changeMonth = (o) => { currentDate.setMonth(currentDate.getMonth() + o); renderCalendar(); };
+        window.showPopup = (type, value, status) => {
+            const modal = document.getElementById('task-modal');
+            const list = document.getElementById('modal-list');
+            const title = document.getElementById('modal-title');
+            let filtered = currentTasks.filter(t => (type==='assignee'?t.assignee===value&&(status?t.status===status:true):(type==='date'||type==='d1'||type==='overdue'?t.dueDate===value&&t.status!=='done':t.id===value)));
+            title.innerText = type === 'd1' ? '⚠️ 내일 마감 예정' : (type === 'assignee' ? `${value} 님의 작업` : '상세');
+            list.innerHTML = filtered.length > 0 ? filtered.map(t => `<div class="card"><strong>${t.text}</strong><br><small>${t.startDate||''}~${t.dueDate||''} | ${t.assignee||''}</small></div>`).join('') : '<p>작업 없음</p>';
+            modal.style.display = 'block';
+        };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const tasksCollection = collection(db, "tasks");
-
-        document.addEventListener('DOMContentLoaded', () => {
-            initSortable();
-            
-            // 실시간 데이터 감시 및 UI 업데이트
-            const q = query(tasksCollection, orderBy("createdAt", "asc"));
-            onSnapshot(q, (snapshot) => {
-                document.getElementById('todo').innerHTML = '';
-                document.getElementById('inprogress').innerHTML = '';
-                document.getElementById('done').innerHTML = '';
-
-                snapshot.forEach((doc) => {
-                    const task = doc.data();
-                    createCardElement(task.status, task.text, doc.id);
-                });
-                updateCounts();
-            });
+        onSnapshot(query(collection(db, "team")), (s) => { teamMembers = s.docs.map(d => ({ id: d.id, name: d.data().name })); renderTeamModal(); updateUI(); });
+        onSnapshot(query(collection(db, "tasks"), orderBy("createdAt", "desc")), (s) => { 
+            currentTasks = s.docs.map(d => ({ id: d.id, ...d.data() })); 
+            updateUI(); 
+            if (!hasShownAlert) {
+                const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+                if (currentTasks.some(t => t.dueDate === tomorrow && t.status !== 'done')) { window.showPopup('d1', tomorrow); hasShownAlert = true; }
+            }
         });
 
-        // SortableJS 초기화 (모바일 터치 드래그 가능하게 설정)
-        function initSortable() {
-            ['todo', 'inprogress', 'done'].forEach(id => {
-                Sortable.create(document.getElementById(id), {
-                    group: 'kanban', // 컬럼 간 이동 가능하도록 그룹 묶기
-                    animation: 150,
-                    ghostClass: 'sortable-ghost',
-                    // 카드가 다른 컬럼으로 완전히 이동했을 때 이벤트 발생
-                    onEnd: async function (evt) {
-                        const cardId = evt.item.id;
-                        const newStatus = evt.to.id; // 이동한 목적지 컬럼 ID
-                        
-                        try {
-                            await updateDoc(doc(db, "tasks", cardId), {
-                                status: newStatus
-                            });
-                        } catch (error) {
-                            console.error("서버 업데이트 실패:", error);
-                        }
-                    }
-                });
-            });
-        }
-
-        window.addCard = async function(columnId) {
-            const input = document.getElementById(`${columnId}-input`);
-            const text = input.value.trim();
-            
-            if (!text) return;
-
-            try {
-                await addDoc(tasksCollection, {
-                    text: text,
-                    status: columnId,
-                    createdAt: Date.now()
-                });
-                input.value = '';
-            } catch (error) {
-                console.error("카드 추가 실패:", error);
-            }
-        }
-
-        window.deleteCard = async function(cardId) {
-            if(confirm("이 작업을 삭제하시겠습니까?")) {
-                try {
-                    await deleteDoc(doc(db, "tasks", cardId));
-                } catch (error) {
-                    console.error("카드 삭제 실패:", error);
-                }
-            }
-        }
-
-        function createCardElement(columnId, text, cardId) {
-            const list = document.getElementById(columnId);
+        function renderTeamModal() {
+            const list = document.getElementById('team-list');
             if(!list) return;
-
-            const card = document.createElement('div');
-            card.className = 'card';
-            card.id = cardId;
-            
-            card.innerHTML = `
-                <p>${text}</p>
-                <button class="delete-btn" onclick="deleteCard('${cardId}')">✕</button>
-            `;
-            
-            list.appendChild(card);
+            list.innerHTML = teamMembers.map(m => `<div class="team-item"><input type="text" id="in-${m.id}" value="${m.name}"><button onclick="renameMember('${m.id}', document.getElementById('in-${m.id}').value)">변경</button><button style="background:var(--warning-color); color:white;" onclick="deleteTeamMember('${m.id}')">삭제</button></div>`).join('');
         }
 
-        function updateCounts() {
-            ['todo', 'inprogress', 'done'].forEach(id => {
-                const count = document.getElementById(id).children.length;
-                document.getElementById(`${id}-count`).innerText = count;
+        function updateUI() {
+            const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+            ['todo', 'inprogress', 'done'].forEach(col => {
+                const select = document.getElementById(`${col}-assignee`);
+                if(select) select.innerHTML = '<option value="">담당자</option>' + teamMembers.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
+                
+                const listContainer = document.getElementById(`${col}-list`);
+                if(!listContainer) return;
+                listContainer.innerHTML = '';
+                
+                const tasks = currentTasks.filter(t => t.status === col).sort((a,b) => (b.dueDate||'').localeCompare(a.dueDate||''));
+                const countEl = document.getElementById(`${col}-count`);
+                if(countEl) countEl.innerText = tasks.length;
+
+                const groups = {};
+                tasks.forEach(t => {
+                    const month = t.dueDate ? t.dueDate.substring(0, 7) : '미지정';
+                    if(!groups[month]) groups[month] = [];
+                    groups[month].push(t);
+                });
+
+                Object.keys(groups).sort((a, b) => b.localeCompare(a)).forEach(month => {
+                    const gid = `${col}-${month}`;
+                    const groupDiv = document.createElement('div');
+                    groupDiv.innerHTML = `<div class="month-group-header" onclick="toggleMonth('${gid}')">${month} (${groups[month].length}건) <span class="arrow">▲</span></div><div id="${gid}"></div>`;
+                    listContainer.appendChild(groupDiv);
+                    
+                    const cardList = groupDiv.querySelector(`#${gid}`);
+                    groups[month].forEach(t => {
+                        const div = document.createElement('div'); div.className = 'card';
+                        const dateStr = (t.startDate || t.dueDate) ? `<div style="font-size:0.6rem; color:#666;">${t.dueDate? '마감:'+t.dueDate.slice(5):''}</div>` : '';
+                        div.innerHTML = `<p style="margin:0;">${t.text}</p>${dateStr}<div class="card-actions">${col!=='todo'?`<button onclick="moveTask('${t.id}','todo')">할일</button>`:''}${col!=='inprogress'?`<button onclick="moveTask('${t.id}','inprogress')">진행</button>`:''}${col!=='done'?`<button onclick="moveTask('${t.id}','done')">완료</button>`:''}</div>`;
+                        cardList.appendChild(div);
+                    });
+                });
             });
+            renderStats(); renderCalendar();
+        }
+        
+        function renderStats() {
+             const aTbody = document.querySelector('#assignee-table tbody'); 
+             const dTbody = document.querySelector('#date-table tbody'); 
+             const oTbody = document.querySelector('#overdue-table tbody');
+             if(!aTbody || !dTbody || !oTbody) return;
+             aTbody.innerHTML = ''; dTbody.innerHTML = ''; oTbody.innerHTML = '';
+             const today = new Date().toISOString().split('T')[0];
+             const aMap = {}, dMap = {};
+             currentTasks.forEach(t => {
+                 const n = t.assignee || '미지정'; 
+                 if(!aMap[n]) aMap[n] = {todo:0, inprogress:0, done:0}; aMap[n][t.status]++;
+                 if(t.dueDate) { 
+                     if(!dMap[t.dueDate]) dMap[t.dueDate] = {pending:0, done:0}; 
+                     t.status === 'done' ? dMap[t.dueDate].done++ : dMap[t.dueDate].pending++; 
+                     if(t.dueDate < today && t.status !== 'done') oTbody.innerHTML += `<tr onclick="showPopup('overdue', '${t.dueDate}')"><td class="clickable">${t.text.substring(0,6)}..</td><td>${t.dueDate.slice(5)}</td></tr>`;
+                 }
+             });
+             for(let n in aMap) aTbody.innerHTML += `<tr><td>${n}</td><td class="clickable" onclick="showPopup('assignee','${n}','todo')">${aMap[n].todo}</td><td class="clickable" onclick="showPopup('assignee','${n}','inprogress')">${aMap[n].inprogress}</td><td class="clickable" onclick="showPopup('assignee','${n}','done')">${aMap[n].done}</td></tr>`;
+             for(let d in dMap) dTbody.innerHTML += `<tr><td>${d.slice(5)}</td><td class="clickable" onclick="showPopup('date','${d}')">${dMap[d].pending}</td><td class="clickable" onclick="showPopup('date','${d}')">${dMap[d].done}</td></tr>`;
+        }
+
+        function renderCalendar() {
+            const grid = document.getElementById('calendar-grid');
+            if(!grid) return;
+            grid.innerHTML = '일월화수목금토'.split('').map(d => `<div style="font-weight:bold;">${d}</div>`).join('');
+            const y = currentDate.getFullYear(), m = currentDate.getMonth();
+            document.getElementById('calendar-title').innerText = `${y}년 ${m + 1}월`;
+            const first = new Date(y, m, 1).getDay(), last = new Date(y, m + 1, 0).getDate();
+            for (let i = 0; i < first; i++) grid.appendChild(document.createElement('div'));
+            for (let i = 1; i <= last; i++) {
+                const dStr = `${y}-${(m + 1).toString().padStart(2, '0')}-${i.toString().padStart(2, '0')}`;
+                const count = currentTasks.filter(t => t.dueDate && t.dueDate === dStr).length;
+                const div = document.createElement('div'); div.className = 'calendar-day-cell';
+                div.innerHTML = `<div>${i}</div>` + (count > 0 ? `<div class="task-badge" onclick="showPopup('date', '${dStr}')">${count}</div>` : '');
+                grid.appendChild(div);
+            }
         }
     </script>
 </body>
