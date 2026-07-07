@@ -105,6 +105,14 @@
         window.renameMember = async (id, newName) => { await updateDoc(doc(db, "team", id), { name: newName }); alert("변경 완료"); };
         window.addCard = async (col) => { const input = document.getElementById(`${col}-input`); const text = input.value; if(!text) return; input.value = ''; await addDoc(collection(db, "tasks"), { text, status: col, startDate: document.getElementById(`${col}-start`).value, dueDate: document.getElementById(`${col}-due`).value, assignee: document.getElementById(`${col}-assignee`).value, repeat: document.getElementById(`${col}-repeat`).value, createdAt: Date.now() }); };
         window.moveTask = async (id, newStatus) => { await updateDoc(doc(db, "tasks", id), { status: newStatus }); document.getElementById('task-modal').style.display = 'none'; };
+        
+        // 작업 삭제 함수 추가
+        window.deleteTask = async (id) => { 
+            if(confirm("이 작업을 정말 삭제하시겠습니까?")) {
+                await deleteDoc(doc(db, "tasks", id)); 
+            }
+        };
+
         window.changeMonth = (o) => { currentDate.setMonth(currentDate.getMonth() + o); renderCalendar(); };
         window.showPopup = (type, value, status) => {
             const modal = document.getElementById('task-modal');
@@ -163,7 +171,10 @@
                     groups[month].forEach(t => {
                         const div = document.createElement('div'); div.className = 'card';
                         const dateStr = (t.startDate || t.dueDate) ? `<div style="font-size:0.6rem; color:#666;">${t.dueDate? '마감:'+t.dueDate.slice(5):''}</div>` : '';
-                        div.innerHTML = `<p style="margin:0;">${t.text}</p>${dateStr}<div class="card-actions">${col!=='todo'?`<button onclick="moveTask('${t.id}','todo')">할일</button>`:''}${col!=='inprogress'?`<button onclick="moveTask('${t.id}','inprogress')">진행</button>`:''}${col!=='done'?`<button onclick="moveTask('${t.id}','done')">완료</button>`:''}</div>`;
+                        
+                        // 삭제 버튼이 추가된 부분
+                        div.innerHTML = `<p style="margin:0;">${t.text}</p>${dateStr}<div class="card-actions">${col!=='todo'?`<button onclick="moveTask('${t.id}','todo')">할일</button>`:''}${col!=='inprogress'?`<button onclick="moveTask('${t.id}','inprogress')">진행</button>`:''}${col!=='done'?`<button onclick="moveTask('${t.id}','done')">완료</button>`:''}<button style="background:var(--warning-color); color:white;" onclick="deleteTask('${t.id}')">삭제</button></div>`;
+                        
                         cardList.appendChild(div);
                     });
                 });
