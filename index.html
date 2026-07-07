@@ -106,11 +106,15 @@
         window.addCard = async (col) => { const input = document.getElementById(`${col}-input`); const text = input.value; if(!text) return; input.value = ''; await addDoc(collection(db, "tasks"), { text, status: col, startDate: document.getElementById(`${col}-start`).value, dueDate: document.getElementById(`${col}-due`).value, assignee: document.getElementById(`${col}-assignee`).value, repeat: document.getElementById(`${col}-repeat`).value, createdAt: Date.now() }); };
         window.moveTask = async (id, newStatus) => { await updateDoc(doc(db, "tasks", id), { status: newStatus }); document.getElementById('task-modal').style.display = 'none'; };
         
-        // 작업 삭제 함수 추가
         window.deleteTask = async (id) => { 
             if(confirm("이 작업을 정말 삭제하시겠습니까?")) {
                 await deleteDoc(doc(db, "tasks", id)); 
             }
+        };
+
+        // 작업 담당자 변경 함수
+        window.changeAssignee = async (id, newAssignee) => {
+            await updateDoc(doc(db, "tasks", id), { assignee: newAssignee });
         };
 
         window.changeMonth = (o) => { currentDate.setMonth(currentDate.getMonth() + o); renderCalendar(); };
@@ -120,7 +124,7 @@
             const title = document.getElementById('modal-title');
             let filtered = currentTasks.filter(t => (type==='assignee'?t.assignee===value&&(status?t.status===status:true):(type==='date'||type==='d1'||type==='overdue'?t.dueDate===value&&t.status!=='done':t.id===value)));
             title.innerText = type === 'd1' ? '⚠️ 내일 마감 예정' : (type === 'assignee' ? `${value} 님의 작업` : '상세');
-            list.innerHTML = filtered.length > 0 ? filtered.map(t => `<div class="card"><strong>${t.text}</strong><br><small>${t.startDate||''}~${t.dueDate||''} | ${t.assignee||''}</small></div>`).join('') : '<p>작업 없음</p>';
+            list.innerHTML = filtered.length > 0 ? filtered.map(t => `<div class="card"><strong>${t.text||''}</strong><br><small>${t.startDate||''}~${t.dueDate||''} | ${t.assignee||''}</small></div>`).join('') : '<p>작업 없음</p>';
             modal.style.display = 'block';
         };
 
@@ -172,14 +176,24 @@
                         const div = document.createElement('div'); div.className = 'card';
                         const dateStr = (t.startDate || t.dueDate) ? `<div style="font-size:0.6rem; color:#666;">${t.dueDate? '마감:'+t.dueDate.slice(5):''}</div>` : '';
                         
-                        // 삭제 버튼이 추가된 부분
-                        div.innerHTML = `<p style="margin:0;">${t.text}</p>${dateStr}<div class="card-actions">${col!=='todo'?`<button onclick="moveTask('${t.id}','todo')">할일</button>`:''}${col!=='inprogress'?`<button onclick="moveTask('${t.id}','inprogress')">진행</button>`:''}${col!=='done'?`<button onclick="moveTask('${t.id}','done')">완료</button>`:''}<button style="background:var(--warning-color); color:white;" onclick="deleteTask('${t.id}')">삭제</button></div>`;
+                        // 🌟 호환성 극대화를 위해 백틱 중첩을 없애고 문자열 더하기 방식으로 안전하게 셀렉트 박스 생성
+                        let optionsHtml = '<option value="">담당자 미지정</option>';
+                        teamMembers.forEach(m => {
+                            const isSelected = t.assignee === m.name ? 'selected' : '';
+                            optionsHtml += '<option value="' + m.name + '" ' + isSelected + '>' + m.name + '</option>';
+                        });
+                        const assigneeSelect = '<select onchange="changeAssignee(\'' + t.id + '\', this.value)" style="font-size:0.65rem; margin-top:3px; padding:2px; border:1px solid #ccc; border-radius:3px; width:100%; max-width:120px;">' + optionsHtml + '</select>';
+
+                        div.innerHTML = `<p style="margin:0;">${t.text||''}</p>${dateStr}<div>${assigneeSelect}</div><div class="card-actions">${col!=='todo'?`<button onclick="moveTask('${t.id}','todo')">할일</button>`:''}${col!=='inprogress'?`<button onclick="moveTask('${t.id}','inprogress')">진행</button>`:''}${col!=='done'?`<button onclick="moveTask('${t.id}','done')">완료</button>`:''}<button style="background:var(--warning-color); color:white;" onclick="deleteTask('${t.id}')">삭제</button></div>`;
                         
                         cardList.appendChild(div);
                     });
                 });
             });
-            renderStats(); renderCalendar();
+            
+            // 🌟 예외 발생으로 달력/집계가 멈추는 것을 전면 차단하기 위한 Try-Catch 안전장치
+            try { renderStats(); } catch(e) { console.error("집계 렌더링 에러:", e); }
+            try { renderCalendar(); } catch(e) { console.error("달력 렌더링 에러:", e); }
         }
         
         function renderStats() {
@@ -192,11 +206,16 @@
              const aMap = {}, dMap = {};
              currentTasks.forEach(t => {
                  const n = t.assignee || '미지정'; 
-                 if(!aMap[n]) aMap[n] = {todo:0, inprogress:0, done:0}; aMap[n][t.status]++;
+                 if(!aMap[n]) aMap[n] = {todo:0, inprogress:0, done:0}; 
+                 if(t.status && aMap[n][t.status] !== undefined) aMap[n][t.status]++;
+                 
                  if(t.dueDate) { 
                      if(!dMap[t.dueDate]) dMap[t.dueDate] = {pending:0, done:0}; 
                      t.status === 'done' ? dMap[t.dueDate].done++ : dMap[t.dueDate].pending++; 
-                     if(t.dueDate < today && t.status !== 'done') oTbody.innerHTML += `<tr onclick="showPopup('overdue', '${t.dueDate}')"><td class="clickable">${t.text.substring(0,6)}..</td><td>${t.dueDate.slice(5)}</td></tr>`;
+                     if(t.dueDate < today && t.status !== 'done') {
+                         const safeText = t.text ? t.text.substring(0,6) : '내용없음';
+                         oTbody.innerHTML += `<tr onclick="showPopup('overdue', '${t.dueDate}')"><td class="clickable">${safeText}..</td><td>${t.dueDate.slice(5)}</td></tr>`;
+                     }
                  }
              });
              for(let n in aMap) aTbody.innerHTML += `<tr><td>${n}</td><td class="clickable" onclick="showPopup('assignee','${n}','todo')">${aMap[n].todo}</td><td class="clickable" onclick="showPopup('assignee','${n}','inprogress')">${aMap[n].inprogress}</td><td class="clickable" onclick="showPopup('assignee','${n}','done')">${aMap[n].done}</td></tr>`;
