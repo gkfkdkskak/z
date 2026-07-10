@@ -78,7 +78,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query, orderBy, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         
         const firebaseConfig = {
             apiKey: "AIzaSyDSERFM9_UmjfPt5x3HTsL0flekVb-p6HA",
@@ -93,28 +93,27 @@
         let currentTasks = [], teamMembers = [], currentDate = new Date();
         let hasShownAlert = false;
 
-        // 🟢 LINE Messaging API 알림 전송 함수
-        window.sendLineMessageApi = function(text, assignee, dueDate) {
-            // 💡 아래 두 줄의 따옴표 안쪽에 발급받으신 토큰과 아이디를 각각 넣어주세요!
-            const token = "mA2dBDBcjmkpWvvWvQ7cJCXstCrZUGhuf+HTQ51J3YS1q0ps1AvVQlAr5jfXDM+lG8PdB1+QA1bcV0zCewwX5XMgn+EOag+1lYDfMbw7Sw+k+cmpk43UyZc7h3IuNDt5mwdV/iOxM0Ng4DillMOhqQdB04t89/1O/w1cDnyilFU="; 
-            const userId = "Ua7308160acfdc24747dba3fca45eadfa";
-            
-            const message = `🔔 [새로운 일정 등록]\n내용: ${text}\n담당자: ${assignee || '미지정'}\n마감일: ${dueDate || '미지정'}`;
-            const url = "https://corsproxy.io/?https://api.line.me/v2/bot/message/push";
+        // 🟢 [보안 개선 및 기능 확장] GAS 프록시를 거쳐 알림을 전송하는 통합 함수
+        window.sendLineNotificationProxy = function(messageText) {
+            // 💡 여기에 아까 복사해 두신 본인의 GAS 웹 앱 URL을 입력해 주세요!
+            const gasUrl = "https://script.google.com/macros/s/AKfycbyDdBm_EvkoAJBwJYnub6gBIbcoZbk5G9_uU5W0ZIm2l0s7t_dj-6H2v651SGHMpfIY/exec"; 
 
-            fetch(url, {
+            if (gasUrl === "https://script.google.com/macros/s/AKfycbyDdBm_EvkoAJBwJYnub6gBIbcoZbk5G9_uU5W0ZIm2l0s7t_dj-6H2v651SGHMpfIY/exec") {
+                console.warn("GAS 웹 앱 URL이 설정되지 않아 알림을 전송하지 않습니다.");
+                return;
+            }
+
+            fetch(gasUrl, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
+                    'Content-Type': 'text/plain'
                 },
                 body: JSON.stringify({
-                    to: userId,
-                    messages: [{ type: "text", text: message }]
+                    messages: [{ type: "text", text: messageText }]
                 })
             })
-            .then(response => console.log('라인 API 알림 전송 성공!'))
-            .catch(error => console.error('라인 API 알림 전송 실패:', error));
+            .then(response => console.log('GAS 프록시 알림 전달 성공'))
+            .catch(error => console.error('GAS 프록시 알림 에러:', error));
         };
         
         window.toggleColumn = (id) => { const list = document.getElementById(`${id}-list`); list.style.display = list.style.display === 'none' ? 'block' : 'none'; };
@@ -128,7 +127,7 @@
         window.deleteTeamMember = async (id) => { if(confirm("삭제하시겠습니까?")) await deleteDoc(doc(db, "team", id)); };
         window.renameMember = async (id, newName) => { await updateDoc(doc(db, "team", id), { name: newName }); alert("변경 완료"); };
         
-        // 🌟 수정된 addCard 함수: 파이어베이스 저장 후 라인 알림 쏘기
+        // 🌟 할 일 등록 시 알림 연동
         window.addCard = async (col) => { 
             const input = document.getElementById(`${col}-input`); 
             const text = input.value; 
@@ -140,7 +139,6 @@
             const assignee = document.getElementById(`${col}-assignee`).value;
             const repeat = document.getElementById(`${col}-repeat`).value;
 
-            // 1. Firebase 데이터베이스에 할 일 저장
             await addDoc(collection(db, "tasks"), { 
                 text, 
                 status: col, 
@@ -151,20 +149,56 @@
                 createdAt: Date.now() 
             }); 
 
-            // 2. 🔥 라인(LINE)으로 푸시 알림 전송 실행!
-            window.sendLineMessageApi(text, assignee, dueDate);
+            // 안전한 GAS 프록시 알림 호출
+            const msg = `🟢 [새로운 일정 등록]\n• 내용: ${text}\n• 담당자: ${assignee || '미지정'}\n• 마감일: ${dueDate || '미지정'}`;
+            window.sendLineNotificationProxy(msg);
         };
         
-        window.moveTask = async (id, newStatus) => { await updateDoc(doc(db, "tasks", id), { status: newStatus }); document.getElementById('task-modal').style.display = 'none'; };
+        // 🌟 상태 수정(이동) 시 알림 연동
+        window.moveTask = async (id, newStatus) => { 
+            try {
+                // 변경 전 데이터 가져오기 (메시지에 내용 표시용)
+                const taskSnap = await getDoc(doc(db, "tasks", id));
+                if (taskSnap.exists()) {
+                    const taskData = taskSnap.data();
+                    const statusNames = { 'todo': '할 일', 'inprogress': '진행 중', 'done': '완료' };
+                    
+                    await updateDoc(doc(db, "tasks", id), { status: newStatus }); 
+                    document.getElementById('task-modal').style.display = 'none'; 
+
+                    // 상태 변경 알림 호출
+                    const msg = `📝 [일정 상태 변경]\n• 작업: ${taskData.text}\n• 담당: ${taskData.assignee || '미지정'}\n• 변경: [${statusNames[taskData.status] || taskData.status}] ➔ [${statusNames[newStatus]}]`;
+                    window.sendLineNotificationProxy(msg);
+                }
+            } catch (e) {
+                console.error("이동 알림 전송 에러:", e);
+            }
+        };
         
+        // 🌟 일정 삭제 시 알림 연동
         window.deleteTask = async (id) => { 
             if(confirm("이 작업을 정말 삭제하시겠습니까?")) {
-                await deleteDoc(doc(db, "tasks", id)); 
+                try {
+                    // 삭제 전 데이터 백업
+                    const taskSnap = await getDoc(doc(db, "tasks", id));
+                    if (taskSnap.exists()) {
+                        const taskData = taskSnap.data();
+                        
+                        await deleteDoc(doc(db, "tasks", id)); 
+
+                        // 삭제 완료 알림 호출
+                        const msg = `🗑️ [일정 삭제 알림]\n• 삭제된 작업: ${taskData.text}\n• 담당이었던 분: ${taskData.assignee || '미지정'}`;
+                        window.sendLineNotificationProxy(msg);
+                    }
+                } catch(e) {
+                    console.error("삭제 알림 전송 에러:", e);
+                }
             }
         };
 
         window.changeAssignee = async (id, newAssignee) => {
             await updateDoc(doc(db, "tasks", id), { assignee: newAssignee });
+            // 담당자 직접 변경 시에도 원하시면 여기에 알림을 추가할 수 있습니다.
         };
 
         window.changeMonth = (o) => { currentDate.setMonth(currentDate.getMonth() + o); renderCalendar(); };
