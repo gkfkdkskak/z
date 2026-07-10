@@ -43,7 +43,7 @@
     <div id="team-modal" class="modal" onclick="this.style.display='none'"><div class="modal-content" onclick="event.stopPropagation()"><h3>👥 팀원 관리</h3><div id="team-list"></div><div class="form-row"><input type="text" id="new-member-name" placeholder="새 팀원 이름"><button onclick="addTeamMember()">추가</button></div></div></div>
     <div id="task-modal" class="modal" onclick="this.style.display='none'"><div class="modal-content" onclick="event.stopPropagation()"><h3 id="modal-title">작업 상세</h3><div id="modal-list"></div><button onclick="document.getElementById('task-modal').style.display='none'" style="width:100%; margin-top:10px; padding:8px;">닫기</button></div></div>
     
-    <header><h1>📱 일정관리</h1><button class="btn-team" onclick="document.getElementById('team-modal').style.display='block'">팀 관리</button></header>
+    <header><h1>📱 일정관리 </h1><button class="btn-team" onclick="document.getElementById('team-modal').style.display='block'">팀 관리</button></header>
     
     <div class="dashboard-container">
         <div class="panel" style="flex:1;">
@@ -92,6 +92,30 @@
         
         let currentTasks = [], teamMembers = [], currentDate = new Date();
         let hasShownAlert = false;
+
+        // 🟢 LINE Messaging API 알림 전송 함수
+        window.sendLineMessageApi = function(text, assignee, dueDate) {
+            // 💡 아래 두 줄의 따옴표 안쪽에 발급받으신 토큰과 아이디를 각각 넣어주세요!
+            const token = "mA2dBDBcjmkpWvvWvQ7cJCXstCrZUGhuf+HTQ51J3YS1q0ps1AvVQlAr5jfXDM+lG8PdB1+QA1bcV0zCewwX5XMgn+EOag+1lYDfMbw7Sw+k+cmpk43UyZc7h3IuNDt5mwdV/iOxM0Ng4DillMOhqQdB04t89/1O/w1cDnyilFU="; 
+            const userId = "Ua7308160acfdc24747dba3fca45eadfa";
+            
+            const message = `🔔 [새로운 일정 등록]\n내용: ${text}\n담당자: ${assignee || '미지정'}\n마감일: ${dueDate || '미지정'}`;
+            const url = "https://corsproxy.io/?https://api.line.me/v2/bot/message/push";
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    to: userId,
+                    messages: [{ type: "text", text: message }]
+                })
+            })
+            .then(response => console.log('라인 API 알림 전송 성공!'))
+            .catch(error => console.error('라인 API 알림 전송 실패:', error));
+        };
         
         window.toggleColumn = (id) => { const list = document.getElementById(`${id}-list`); list.style.display = list.style.display === 'none' ? 'block' : 'none'; };
         window.toggleMonth = (id) => {
@@ -103,7 +127,34 @@
         window.addTeamMember = async () => { const name = document.getElementById('new-member-name').value; if(!name) return; await addDoc(collection(db, "team"), { name }); document.getElementById('new-member-name').value = ''; };
         window.deleteTeamMember = async (id) => { if(confirm("삭제하시겠습니까?")) await deleteDoc(doc(db, "team", id)); };
         window.renameMember = async (id, newName) => { await updateDoc(doc(db, "team", id), { name: newName }); alert("변경 완료"); };
-        window.addCard = async (col) => { const input = document.getElementById(`${col}-input`); const text = input.value; if(!text) return; input.value = ''; await addDoc(collection(db, "tasks"), { text, status: col, startDate: document.getElementById(`${col}-start`).value, dueDate: document.getElementById(`${col}-due`).value, assignee: document.getElementById(`${col}-assignee`).value, repeat: document.getElementById(`${col}-repeat`).value, createdAt: Date.now() }); };
+        
+        // 🌟 수정된 addCard 함수: 파이어베이스 저장 후 라인 알림 쏘기
+        window.addCard = async (col) => { 
+            const input = document.getElementById(`${col}-input`); 
+            const text = input.value; 
+            if(!text) return; 
+            input.value = ''; 
+            
+            const startDate = document.getElementById(`${col}-start`).value;
+            const dueDate = document.getElementById(`${col}-due`).value;
+            const assignee = document.getElementById(`${col}-assignee`).value;
+            const repeat = document.getElementById(`${col}-repeat`).value;
+
+            // 1. Firebase 데이터베이스에 할 일 저장
+            await addDoc(collection(db, "tasks"), { 
+                text, 
+                status: col, 
+                startDate: startDate, 
+                dueDate: dueDate, 
+                assignee: assignee, 
+                repeat: repeat, 
+                createdAt: Date.now() 
+            }); 
+
+            // 2. 🔥 라인(LINE)으로 푸시 알림 전송 실행!
+            window.sendLineMessageApi(text, assignee, dueDate);
+        };
+        
         window.moveTask = async (id, newStatus) => { await updateDoc(doc(db, "tasks", id), { status: newStatus }); document.getElementById('task-modal').style.display = 'none'; };
         
         window.deleteTask = async (id) => { 
@@ -112,7 +163,6 @@
             }
         };
 
-        // 작업 담당자 변경 함수
         window.changeAssignee = async (id, newAssignee) => {
             await updateDoc(doc(db, "tasks", id), { assignee: newAssignee });
         };
@@ -176,7 +226,6 @@
                         const div = document.createElement('div'); div.className = 'card';
                         const dateStr = (t.startDate || t.dueDate) ? `<div style="font-size:0.6rem; color:#666;">${t.dueDate? '마감:'+t.dueDate.slice(5):''}</div>` : '';
                         
-                        // 🌟 호환성 극대화를 위해 백틱 중첩을 없애고 문자열 더하기 방식으로 안전하게 셀렉트 박스 생성
                         let optionsHtml = '<option value="">담당자 미지정</option>';
                         teamMembers.forEach(m => {
                             const isSelected = t.assignee === m.name ? 'selected' : '';
@@ -191,7 +240,6 @@
                 });
             });
             
-            // 🌟 예외 발생으로 달력/집계가 멈추는 것을 전면 차단하기 위한 Try-Catch 안전장치
             try { renderStats(); } catch(e) { console.error("집계 렌더링 에러:", e); }
             try { renderCalendar(); } catch(e) { console.error("달력 렌더링 에러:", e); }
         }
