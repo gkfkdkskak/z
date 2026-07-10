@@ -41,7 +41,36 @@
 </head>
 <body>
     <div id="team-modal" class="modal" onclick="this.style.display='none'"><div class="modal-content" onclick="event.stopPropagation()"><h3>👥 팀원 관리</h3><div id="team-list"></div><div class="form-row"><input type="text" id="new-member-name" placeholder="새 팀원 이름"><button onclick="addTeamMember()">추가</button></div></div></div>
+    
     <div id="task-modal" class="modal" onclick="this.style.display='none'"><div class="modal-content" onclick="event.stopPropagation()"><h3 id="modal-title">작업 상세</h3><div id="modal-list"></div><button onclick="document.getElementById('task-modal').style.display='none'" style="width:100%; margin-top:10px; padding:8px;">닫기</button></div></div>
+    
+    <div id="edit-modal" class="modal" onclick="this.style.display='none'">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h3 style="margin-top:0;">✏️ 일정 수정</h3>
+            <div class="add-card-form">
+                <label style="font-size:0.7rem; font-weight:bold; color:#666;">작업 내용</label>
+                <textarea id="edit-text" style="height:60px; margin-bottom:8px;"></textarea>
+                
+                <div class="form-row" style="margin-bottom:8px;">
+                    <div style="flex:1;">
+                        <label style="font-size:0.7rem; font-weight:bold; color:#666;">시작일</label>
+                        <input type="date" id="edit-start" style="width:100%; box-sizing:border-box;">
+                    </div>
+                    <div style="flex:1;">
+                        <label style="font-size:0.7rem; font-weight:bold; color:#666;">마감일</label>
+                        <input type="date" id="edit-due" style="width:100%; box-sizing:border-box;">
+                    </div>
+                </div>
+                
+                <input type="hidden" id="edit-id">
+                
+                <div style="display:flex; gap:5px; margin-top:10px;">
+                    <button onclick="saveEdit()" style="flex:2; padding:8px; background:var(--primary-color); color:white; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">저장하기</button>
+                    <button onclick="document.getElementById('edit-modal').style.display='none'" style="flex:1; padding:8px; background:#ddd; border:none; border-radius:4px; cursor:pointer;">취소</button>
+                </div>
+            </div>
+        </div>
+    </div>
     
     <header><h1>📱 일정관리 </h1><button class="btn-team" onclick="document.getElementById('team-modal').style.display='block'">팀 관리</button></header>
     
@@ -93,7 +122,6 @@
         let currentTasks = [], teamMembers = [], currentDate = new Date();
         let hasShownAlert = false;
 
-        // 🟢 [수정완료] CORS 우회 모드가 적용된 통신 함수
         window.sendLineNotificationProxy = function(messageText) {
             const gasUrl = "https://script.google.com/macros/s/AKfycbyXn99LNYF-MgSEylL3PmcIgt0UaapVhiHXeexHfJCLHIGl5jj4nNRwwoSw0v5u-OgnJA/exec"; 
 
@@ -106,7 +134,7 @@
 
             fetch(gasUrl, {
                 method: 'POST',
-                mode: 'no-cors', // 💡 브라우저 CORS 차단 방지 핵심 설정
+                mode: 'no-cors',
                 headers: {
                     'Content-Type': 'text/plain'
                 },
@@ -114,7 +142,7 @@
                     messages: [{ type: "text", text: messageText }]
                 })
             })
-            .then(response => console.log('✅ GAS 프록시 알림 호출 완료 (no-cors 모드라 응답 코드는 읽을 수 없지만 전송됨)'))
+            .then(response => console.log('✅ GAS 프록시 알림 호출 완료'))
             .catch(error => console.error('❌ GAS 프록시 통신 에러:', error));
         };
         
@@ -152,6 +180,50 @@
 
             const msg = `🟢 [새로운 일정 등록]\n• 내용: ${text}\n• 담당자: ${assignee || '미지정'}\n• 시작일: ${startDate || '미지정'}\n• 마감일: ${dueDate || '미지정'}`;
             window.sendLineNotificationProxy(msg);
+        };
+
+        // 🌟 [신규] 일정 수정을 위한 모달 열기
+        window.openEditModal = (id) => {
+            const task = currentTasks.find(t => t.id === id);
+            if(!task) return;
+            
+            document.getElementById('edit-id').value = id;
+            document.getElementById('edit-text').value = task.text || '';
+            document.getElementById('edit-start').value = task.startDate || '';
+            document.getElementById('edit-due').value = task.dueDate || '';
+            
+            document.getElementById('edit-modal').style.display = 'block';
+        };
+
+        // 🌟 [신규] 수정된 일정 파이어베이스에 저장
+        window.saveEdit = async () => {
+            const id = document.getElementById('edit-id').value;
+            const text = document.getElementById('edit-text').value;
+            const startDate = document.getElementById('edit-start').value;
+            const dueDate = document.getElementById('edit-due').value;
+
+            if(!text.trim()) {
+                alert("작업 내용을 입력해주세요.");
+                return;
+            }
+
+            try {
+                await updateDoc(doc(db, "tasks", id), { 
+                    text: text, 
+                    startDate: startDate, 
+                    dueDate: dueDate 
+                });
+                
+                document.getElementById('edit-modal').style.display = 'none';
+                
+                // 선택사항: 수정 시에도 알림을 보내고 싶다면 아래 주석을 해제하세요.
+                // const msg = `✏️ [일정 수정됨]\n• 내용: ${text}\n• 변경된 시작일: ${startDate || '미지정'}\n• 변경된 마감일: ${dueDate || '미지정'}`;
+                // window.sendLineNotificationProxy(msg);
+                
+            } catch(error) {
+                console.error("수정 저장 에러:", error);
+                alert("저장 중 오류가 발생했습니다.");
+            }
         };
         
         window.moveTask = async (id, newStatus) => { 
@@ -292,7 +364,7 @@
                     const cardList = groupDiv.querySelector(`#${gid}`);
                     groups[month].forEach(t => {
                         const div = document.createElement('div'); div.className = 'card';
-                        const dateStr = (t.startDate || t.dueDate) ? `<div style="font-size:0.6rem; color:#666;">${t.dueDate? '마감:'+t.dueDate.slice(5):''}</div>` : '';
+                        const dateStr = (t.startDate || t.dueDate) ? `<div style="font-size:0.6rem; color:#666;">${t.startDate ? '시작:'+t.startDate.slice(5) : ''} ${t.dueDate ? '마감:'+t.dueDate.slice(5) : ''}</div>` : '';
                         
                         let optionsHtml = '<option value="">담당자 미지정</option>';
                         teamMembers.forEach(m => {
@@ -301,7 +373,19 @@
                         });
                         const assigneeSelect = '<select onchange="changeAssignee(\'' + t.id + '\', this.value)" style="font-size:0.65rem; margin-top:3px; padding:2px; border:1px solid #ccc; border-radius:3px; width:100%; max-width:120px;">' + optionsHtml + '</select>';
 
-                        div.innerHTML = `<p style="margin:0;">${t.text||''}</p>${dateStr}<div>${assigneeSelect}</div><div class="card-actions">${col!=='todo'?`<button onclick="moveTask('${t.id}','todo')">할일</button>`:''}${col!=='inprogress'?`<button onclick="moveTask('${t.id}','inprogress')">진행</button>`:''}${col!=='done'?`<button onclick="moveTask('${t.id}','done')">완료</button>`:''}<button style="background:var(--warning-color); color:white;" onclick="deleteTask('${t.id}')">삭제</button></div>`;
+                        // 🌟 [수정] 카드 액션 버튼 맨 앞에 '수정' 버튼 추가
+                        div.innerHTML = `
+                            <p style="margin:0;">${t.text||''}</p>
+                            ${dateStr}
+                            <div>${assigneeSelect}</div>
+                            <div class="card-actions">
+                                <button onclick="openEditModal('${t.id}')">수정</button>
+                                ${col!=='todo'?`<button onclick="moveTask('${t.id}','todo')">할일</button>`:''}
+                                ${col!=='inprogress'?`<button onclick="moveTask('${t.id}','inprogress')">진행</button>`:''}
+                                ${col!=='done'?`<button onclick="moveTask('${t.id}','done')">완료</button>`:''}
+                                <button style="background:var(--warning-color); color:white;" onclick="deleteTask('${t.id}')">삭제</button>
+                            </div>
+                        `;
                         
                         cardList.appendChild(div);
                     });
