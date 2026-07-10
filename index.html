@@ -93,12 +93,10 @@
         let currentTasks = [], teamMembers = [], currentDate = new Date();
         let hasShownAlert = false;
 
-        // 🟢 [수정완료] GAS 프록시를 거쳐 알림을 전송하는 통합 함수
+        // 🟢 GAS 프록시를 거쳐 알림을 전송하는 통합 함수
         window.sendLineNotificationProxy = function(messageText) {
-            // 본인의 진짜 주소가 들어가 있습니다.
             const gasUrl = "https://script.google.com/macros/s/AKfycbyXn99LNYF-MgSEylL3PmcIgt0UaapVhiHXeexHfJCLHIGl5jj4nNRwwoSw0v5u-OgnJA/exec"; 
 
-            // 조건문 오류 수정: 주소가 비어있거나 수정이 안 되었을 때만 차단하도록 처리
             if (!gasUrl || gasUrl.includes("YOUR_GAS_WEB_APP_URL")) {
                 console.warn("GAS 웹 앱 URL이 설정되지 않아 알림을 전송하지 않습니다.");
                 return;
@@ -128,7 +126,7 @@
         window.deleteTeamMember = async (id) => { if(confirm("삭제하시겠습니까?")) await deleteDoc(doc(db, "team", id)); };
         window.renameMember = async (id, newName) => { await updateDoc(doc(db, "team", id), { name: newName }); alert("변경 완료"); };
         
-        // 🌟 할 일 등록 시 알림 연동
+        // 🌟 할 일 등록 시 알림 연동 (시작일 포함)
         window.addCard = async (col) => { 
             const input = document.getElementById(`${col}-input`); 
             const text = input.value; 
@@ -150,15 +148,13 @@
                 createdAt: Date.now() 
             }); 
 
-            // 안전한 GAS 프록시 알림 호출
-            const msg = `🟢 [새로운 일정 등록]\n• 내용: ${text}\n• 담당자: ${assignee || '미지정'}\n• 마감일: ${dueDate || '미지정'}`;
+            const msg = `🟢 [새로운 일정 등록]\n• 내용: ${text}\n• 담당자: ${assignee || '미지정'}\n• 시작일: ${startDate || '미지정'}\n• 마감일: ${dueDate || '미지정'}`;
             window.sendLineNotificationProxy(msg);
         };
         
         // 🌟 상태 수정(이동) 시 알림 연동
         window.moveTask = async (id, newStatus) => { 
             try {
-                // 변경 전 데이터 가져오기 (메시지에 내용 표시용)
                 const taskSnap = await getDoc(doc(db, "tasks", id));
                 if (taskSnap.exists()) {
                     const taskData = taskSnap.data();
@@ -167,7 +163,6 @@
                     await updateDoc(doc(db, "tasks", id), { status: newStatus }); 
                     document.getElementById('task-modal').style.display = 'none'; 
 
-                    // 상태 변경 알림 호출
                     const msg = `📝 [일정 상태 변경]\n• 작업: ${taskData.text}\n• 담당: ${taskData.assignee || '미지정'}\n• 변경: [${statusNames[taskData.status] || taskData.status}] ➔ [${statusNames[newStatus]}]`;
                     window.sendLineNotificationProxy(msg);
                 }
@@ -180,14 +175,12 @@
         window.deleteTask = async (id) => { 
             if(confirm("이 작업을 정말 삭제하시겠습니까?")) {
                 try {
-                    // 삭제 전 데이터 백업
                     const taskSnap = await getDoc(doc(db, "tasks", id));
                     if (taskSnap.exists()) {
                         const taskData = taskSnap.data();
                         
                         await deleteDoc(doc(db, "tasks", id)); 
 
-                        // 삭제 완료 알림 호출
                         const msg = `🗑️ [일정 삭제 알림]\n• 삭제된 작업: ${taskData.text}\n• 담당이었던 분: ${taskData.assignee || '미지정'}`;
                         window.sendLineNotificationProxy(msg);
                     }
@@ -212,14 +205,39 @@
             modal.style.display = 'block';
         };
 
+        // 🌟 DB 실시간 수신 및 알림 트리거 검사
         onSnapshot(query(collection(db, "team")), (s) => { teamMembers = s.docs.map(d => ({ id: d.id, name: d.data().name })); renderTeamModal(); updateUI(); });
         onSnapshot(query(collection(db, "tasks"), orderBy("createdAt", "desc")), (s) => { 
             currentTasks = s.docs.map(d => ({ id: d.id, ...d.data() })); 
             updateUI(); 
+            
+            // 내일 날짜 계산 (YYYY-MM-DD)
+            const tomorrowStr = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+
+            // 1. 마감일 전날 UI 팝업 알림 (브라우저 열 때 1회)
             if (!hasShownAlert) {
-                const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
-                if (currentTasks.some(t => t.dueDate === tomorrow && t.status !== 'done')) { window.showPopup('d1', tomorrow); hasShownAlert = true; }
+                if (currentTasks.some(t => t.dueDate === tomorrowStr && t.status !== 'done')) { 
+                    window.showPopup('d1', tomorrowStr); 
+                    hasShownAlert = true; 
+                }
             }
+
+            // 2. 시작일 전날 LINE 알림 발송 로직
+            currentTasks.forEach(async (t) => {
+                // 시작일이 내일이고, 작업이 완료되지 않았으며, 알림을 아직 안 보낸 경우
+                if (t.startDate === tomorrowStr && t.status !== 'done' && !t.startNotified) {
+                    
+                    const msg = `⏰ [시작일 사전 알림]\n내일 시작 예정인 일정이 있습니다!\n• 작업: ${t.text}\n• 담당자: ${t.assignee || '미지정'}\n• 마감일: ${t.dueDate || '미지정'}`;
+                    window.sendLineNotificationProxy(msg);
+
+                    // 알림 중복 발송을 막기 위해 Firestore에 플래그 업데이트
+                    try {
+                        await updateDoc(doc(db, "tasks", t.id), { startNotified: true });
+                    } catch(e) {
+                        console.error("알림 상태 업데이트 에러:", e);
+                    }
+                }
+            });
         });
 
         function renderTeamModal() {
