@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>일정관리</title>
+    <title>일정 및 자재관리</title>
     <style>
         :root { --bg-color: #f4f5f7; --column-bg: #ebecf0; --card-bg: #ffffff; --text-color: #172b4d; --primary-color: #0052cc; --warning-color: #ff5630; --d1-color: #ff9f43; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 5px; }
@@ -20,7 +20,7 @@
         .team-item button { padding: 5px 8px; font-size: 0.7rem; cursor: pointer; border: none; border-radius: 3px; }
         .dashboard-container { display: flex; flex-direction: column; gap: 8px; max-width: 1200px; margin: 0 auto 10px auto; }
         .panel { background: #fff; border-radius: 6px; padding: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.12); }
-        .summary-wrapper { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 5px; }
+        .summary-wrapper { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 5px; }
         .summary-table { width: 100%; border-collapse: collapse; font-size: 0.65rem; text-align: center; }
         .summary-table th, .summary-table td { border: 1px solid #eee; padding: 3px; }
         .calendar-day-cell { border: 1px solid #eee; border-radius: 2px; height: 40px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 2px; font-size: 0.6rem; }
@@ -46,18 +46,18 @@
     
     <div id="edit-modal" class="modal" onclick="this.style.display='none'">
         <div class="modal-content" onclick="event.stopPropagation()">
-            <h3 style="margin-top:0;">✏️ 일정 수정</h3>
+            <h3 style="margin-top:0;">✏️ 일정/자재 수정</h3>
             <div class="add-card-form">
-                <label style="font-size:0.7rem; font-weight:bold; color:#666;">작업 내용</label>
+                <label style="font-size:0.7rem; font-weight:bold; color:#666;">내용</label>
                 <textarea id="edit-text" style="height:60px; margin-bottom:8px;"></textarea>
                 
                 <div class="form-row" style="margin-bottom:8px;">
                     <div style="flex:1;">
-                        <label style="font-size:0.7rem; font-weight:bold; color:#666;">시작일</label>
+                        <label style="font-size:0.7rem; font-weight:bold; color:#666;">일정시작 / 발주요청일</label>
                         <input type="date" id="edit-start" style="width:100%; box-sizing:border-box;">
                     </div>
                     <div style="flex:1;">
-                        <label style="font-size:0.7rem; font-weight:bold; color:#666;">마감일</label>
+                        <label style="font-size:0.7rem; font-weight:bold; color:#666;">일정마감 / 반입요청일</label>
                         <input type="date" id="edit-due" style="width:100%; box-sizing:border-box;">
                     </div>
                 </div>
@@ -72,7 +72,7 @@
         </div>
     </div>
     
-    <header><h1>📱 일정관리 </h1><button class="btn-team" onclick="document.getElementById('team-modal').style.display='block'">팀 관리</button></header>
+    <header><h1>📱 현장 관리 보드 </h1><button class="btn-team" onclick="document.getElementById('team-modal').style.display='block'">팀 관리</button></header>
     
     <div class="dashboard-container">
         <div class="panel" style="flex:1;">
@@ -83,25 +83,106 @@
         </div>
         <div class="panel" style="flex:2;">
             <div class="summary-wrapper">
-                <div><h4 style="margin:0 0 3px 0; font-size:0.75rem;">👤 담당자</h4><table class="summary-table" id="assignee-table"><thead><tr><th>이름</th><th>할일</th><th>진행</th><th>완료</th></tr></thead><tbody></tbody></table></div>
-                <div><h4 style="margin:0 0 3px 0; font-size:0.75rem;">📅 마감일</h4><table class="summary-table" id="date-table"><thead><tr><th>날짜</th><th>대기</th><th>완료</th></tr></thead><tbody></tbody></table></div>
-                <div><h4 style="margin:0 0 3px 0; font-size:0.75rem; color:var(--warning-color);">⚠️ 마감</h4><table class="summary-table" id="overdue-table"><thead><tr><th>작업</th><th>일자</th></tr></thead><tbody></tbody></table></div>
+                <!-- 일정 통계 파트 -->
+                <div><h4 style="margin:0 0 3px 0; font-size:0.75rem;">👤 일정 담당자</h4><table class="summary-table" id="assignee-table"><thead><tr><th>이름</th><th>할일</th><th>진행</th><th>완료</th></tr></thead><tbody></tbody></table></div>
+                <div><h4 style="margin:0 0 3px 0; font-size:0.75rem;">📅 마감 예정(일정)</h4><table class="summary-table" id="task-date-table"><thead><tr><th>날짜</th><th>대기</th><th>완료</th></tr></thead><tbody></tbody></table></div>
+                <div><h4 style="margin:0 0 3px 0; font-size:0.75rem; color:var(--warning-color);">⚠️ 기한 지연(일정)</h4><table class="summary-table" id="overdue-table"><thead><tr><th>항목</th><th>일자</th></tr></thead><tbody></tbody></table></div>
+                
+                <!-- 자재 통계 파트 -->
+                <div><h4 style="margin:0 0 3px 0; font-size:0.75rem; color:#0052cc;">📦 자재 발주현황</h4><table class="summary-table" id="material-table"><thead><tr><th>이름</th><th>요청</th><th>발주</th><th>반입</th></tr></thead><tbody></tbody></table></div>
+                <div><h4 style="margin:0 0 3px 0; font-size:0.75rem; color:#0052cc;">🚚 반입 예정(자재)</h4><table class="summary-table" id="mat-date-table"><thead><tr><th>날짜</th><th>대기</th><th>완료</th></tr></thead><tbody></tbody></table></div>
+                <div><h4 style="margin:0 0 3px 0; font-size:0.75rem; color:var(--warning-color);">⚠️ 발주 지연(미발주)</h4><table class="summary-table" id="un-ordered-table"><thead><tr><th>항목</th><th>요청일</th></tr></thead><tbody></tbody></table></div>
             </div>
         </div>
     </div>
 
+    <!-- 일정 관리 보드 -->
+    <h3 style="max-width: 1200px; margin: 5px auto 5px; color: var(--text-color); font-size: 1rem;">📝 일정 관리</h3>
     <div class="board">
         <div class="column" id="col-todo"><h2 onclick="toggleColumn('todo')">할 일 <span id="todo-count">0</span></h2>
-            <div class="add-card-form"><textarea id="todo-input" placeholder="새 작업..."></textarea><div class="form-row"><input type="date" id="todo-start"><input type="date" id="todo-due"></div><div class="form-row"><select id="todo-assignee"><option value="">담당자</option></select><select id="todo-repeat"><option value="none">반복X</option><option value="daily">매일</option><option value="weekly">매주</option><option value="monthly">매월</option></select><button onclick="addCard('todo')">등록</button></div></div>
+            <div class="add-card-form">
+                <textarea id="todo-input" placeholder="새 작업..."></textarea>
+                <div class="form-row" style="font-size:0.6rem; color:#666; text-align:center;"><span style="flex:1;">시작일</span><span style="flex:1;">마감일</span></div>
+                <div class="form-row"><input type="date" id="todo-start"><input type="date" id="todo-due"></div>
+                <div class="form-row"><select id="todo-assignee"><option value="">담당자</option></select><select id="todo-repeat"><option value="none">반복X</option><option value="daily">매일</option><option value="weekly">매주</option><option value="monthly">매월</option></select><button onclick="addCard('todo')">등록</button></div>
+            </div>
             <div id="todo-list"></div>
         </div>
         <div class="column" id="col-inprogress"><h2 onclick="toggleColumn('inprogress')">진행 중 <span id="inprogress-count">0</span></h2>
-            <div class="add-card-form"><textarea id="inprogress-input" placeholder="새 작업..."></textarea><div class="form-row"><input type="date" id="inprogress-start"><input type="date" id="inprogress-due"></div><div class="form-row"><select id="inprogress-assignee"><option value="">담당자</option></select><select id="inprogress-repeat"><option value="none">반복X</option><option value="daily">매일</option><option value="weekly">매주</option><option value="monthly">매월</option></select><button onclick="addCard('inprogress')">등록</button></div></div>
+            <div class="add-card-form">
+                <textarea id="inprogress-input" placeholder="새 작업..."></textarea>
+                <div class="form-row" style="font-size:0.6rem; color:#666; text-align:center;"><span style="flex:1;">시작일</span><span style="flex:1;">마감일</span></div>
+                <div class="form-row"><input type="date" id="inprogress-start"><input type="date" id="inprogress-due"></div>
+                <div class="form-row"><select id="inprogress-assignee"><option value="">담당자</option></select><select id="inprogress-repeat"><option value="none">반복X</option><option value="daily">매일</option><option value="weekly">매주</option><option value="monthly">매월</option></select><button onclick="addCard('inprogress')">등록</button></div>
+            </div>
             <div id="inprogress-list"></div>
         </div>
         <div class="column" id="col-done"><h2 onclick="toggleColumn('done')">완료 <span id="done-count">0</span></h2>
-            <div class="add-card-form"><textarea id="done-input" placeholder="새 작업..."></textarea><div class="form-row"><input type="date" id="done-start"><input type="date" id="done-due"></div><div class="form-row"><select id="done-assignee"><option value="">담당자</option></select><select id="done-repeat"><option value="none">반복X</option><option value="daily">매일</option><option value="weekly">매주</option><option value="monthly">매월</option></select><button onclick="addCard('done')">등록</button></div></div>
+            <div class="add-card-form">
+                <textarea id="done-input" placeholder="새 작업..."></textarea>
+                <div class="form-row" style="font-size:0.6rem; color:#666; text-align:center;"><span style="flex:1;">시작일</span><span style="flex:1;">마감일</span></div>
+                <div class="form-row"><input type="date" id="done-start"><input type="date" id="done-due"></div>
+                <div class="form-row"><select id="done-assignee"><option value="">담당자</option></select><select id="done-repeat"><option value="none">반복X</option><option value="daily">매일</option><option value="weekly">매주</option><option value="monthly">매월</option></select><button onclick="addCard('done')">등록</button></div>
+            </div>
             <div id="done-list"></div>
+        </div>
+    </div>
+
+    <!-- 자재 관리 보드 -->
+    <h3 style="max-width: 1200px; margin: 15px auto 5px; color: #0052cc; font-size: 1rem;">📦 자재 관리</h3>
+    <div class="board">
+        <div class="column" id="col-mat-request"><h2 onclick="toggleColumn('mat-request')">발주요청 <span id="mat-request-count">0</span></h2>
+            <div class="add-card-form">
+                <div class="form-row" style="margin-bottom:4px;">
+                    <input type="text" id="mat-request-item" placeholder="품명" style="flex:2;">
+                    <input type="text" id="mat-request-spec" placeholder="규격" style="flex:1.5;">
+                    <input type="text" id="mat-request-qty" placeholder="수량" style="flex:1;">
+                </div>
+                <div class="form-row" style="font-size:0.6rem; color:#666; text-align:center;"><span style="flex:1;">발주 요청일</span><span style="flex:1;">반입 요청일</span></div>
+                <div class="form-row"><input type="date" id="mat-request-start"><input type="date" id="mat-request-due"></div>
+                <div class="form-row">
+                    <select id="mat-request-requester"><option value="">요청자</option></select>
+                    <select id="mat-request-orderer"><option value="">발주자</option></select>
+                    <button onclick="addCard('mat-request')">등록</button>
+                </div>
+            </div>
+            <div id="mat-request-list"></div>
+        </div>
+        
+        <div class="column" id="col-mat-ordered"><h2 onclick="toggleColumn('mat-ordered')">발주 완료 <span id="mat-ordered-count">0</span></h2>
+            <div class="add-card-form">
+                <div class="form-row" style="margin-bottom:4px;">
+                    <input type="text" id="mat-ordered-item" placeholder="품명" style="flex:2;">
+                    <input type="text" id="mat-ordered-spec" placeholder="규격" style="flex:1.5;">
+                    <input type="text" id="mat-ordered-qty" placeholder="수량" style="flex:1;">
+                </div>
+                <div class="form-row" style="font-size:0.6rem; color:#666; text-align:center;"><span style="flex:1;">발주 요청일</span><span style="flex:1;">반입 요청일</span></div>
+                <div class="form-row"><input type="date" id="mat-ordered-start"><input type="date" id="mat-ordered-due"></div>
+                <div class="form-row">
+                    <select id="mat-ordered-requester"><option value="">요청자</option></select>
+                    <select id="mat-ordered-orderer"><option value="">발주자</option></select>
+                    <button onclick="addCard('mat-ordered')">등록</button>
+                </div>
+            </div>
+            <div id="mat-ordered-list"></div>
+        </div>
+        
+        <div class="column" id="col-mat-delivered"><h2 onclick="toggleColumn('mat-delivered')">반입완료 <span id="mat-delivered-count">0</span></h2>
+            <div class="add-card-form">
+                <div class="form-row" style="margin-bottom:4px;">
+                    <input type="text" id="mat-delivered-item" placeholder="품명" style="flex:2;">
+                    <input type="text" id="mat-delivered-spec" placeholder="규격" style="flex:1.5;">
+                    <input type="text" id="mat-delivered-qty" placeholder="수량" style="flex:1;">
+                </div>
+                <div class="form-row" style="font-size:0.6rem; color:#666; text-align:center;"><span style="flex:1;">발주 요청일</span><span style="flex:1;">반입 요청일</span></div>
+                <div class="form-row"><input type="date" id="mat-delivered-start"><input type="date" id="mat-delivered-due"></div>
+                <div class="form-row">
+                    <select id="mat-delivered-requester"><option value="">요청자</option></select>
+                    <select id="mat-delivered-orderer"><option value="">발주자</option></select>
+                    <button onclick="addCard('mat-delivered')">등록</button>
+                </div>
+            </div>
+            <div id="mat-delivered-list"></div>
         </div>
     </div>
 
@@ -124,26 +205,8 @@
 
         window.sendLineNotificationProxy = function(messageText) {
             const gasUrl = "https://script.google.com/macros/s/AKfycbyXn99LNYF-MgSEylL3PmcIgt0UaapVhiHXeexHfJCLHIGl5jj4nNRwwoSw0v5u-OgnJA/exec"; 
-
-            if (!gasUrl || gasUrl.includes("YOUR_GAS_WEB_APP_URL")) {
-                console.warn("GAS 웹 앱 URL이 설정되지 않아 알림을 전송하지 않습니다.");
-                return;
-            }
-
-            console.log("📨 LINE 알림 전송 시도 중:\n", messageText);
-
-            fetch(gasUrl, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: {
-                    'Content-Type': 'text/plain'
-                },
-                body: JSON.stringify({
-                    messages: [{ type: "text", text: messageText }]
-                })
-            })
-            .then(response => console.log('✅ GAS 프록시 알림 호출 완료'))
-            .catch(error => console.error('❌ GAS 프록시 통신 에러:', error));
+            if (!gasUrl || gasUrl.includes("YOUR_GAS_WEB_APP_URL")) return;
+            fetch(gasUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ messages: [{ type: "text", text: messageText }] }) });
         };
         
         window.toggleColumn = (id) => { const list = document.getElementById(`${id}-list`); list.style.display = list.style.display === 'none' ? 'block' : 'none'; };
@@ -158,72 +221,89 @@
         window.renameMember = async (id, newName) => { await updateDoc(doc(db, "team", id), { name: newName }); alert("변경 완료"); };
         
         window.addCard = async (col) => { 
-            const input = document.getElementById(`${col}-input`); 
-            const text = input.value; 
-            if(!text) return; 
-            input.value = ''; 
-            
+            let text = '';
+            let repeat = 'none';
+            let assignee = '';
+            let requester = '';
+            let orderer = '';
+
             const startDate = document.getElementById(`${col}-start`).value;
             const dueDate = document.getElementById(`${col}-due`).value;
-            const assignee = document.getElementById(`${col}-assignee`).value;
-            const repeat = document.getElementById(`${col}-repeat`).value;
+
+            // 자재 관리인 경우 (품명, 규격, 수량 조합 및 요청자/발주자 지정)
+            if (col.startsWith('mat-')) {
+                const item = document.getElementById(`${col}-item`).value;
+                const spec = document.getElementById(`${col}-spec`).value;
+                const qty = document.getElementById(`${col}-qty`).value;
+                requester = document.getElementById(`${col}-requester`).value;
+                orderer = document.getElementById(`${col}-orderer`).value;
+                
+                if (!item) { alert("품명을 입력해주세요."); return; }
+                
+                let textArr = [];
+                textArr.push(`[${item}]`);
+                if (spec) textArr.push(spec);
+                if (qty) textArr.push(`(${qty})`);
+                text = textArr.join(' ');
+                
+                // 입력창 초기화
+                document.getElementById(`${col}-item`).value = '';
+                document.getElementById(`${col}-spec`).value = '';
+                document.getElementById(`${col}-qty`).value = '';
+            } 
+            // 일정 관리인 경우 (기존 방식)
+            else {
+                const input = document.getElementById(`${col}-input`); 
+                text = input.value; 
+                if(!text) return; 
+                input.value = ''; 
+                repeat = document.getElementById(`${col}-repeat`) ? document.getElementById(`${col}-repeat`).value : 'none';
+                assignee = document.getElementById(`${col}-assignee`).value;
+            }
 
             await addDoc(collection(db, "tasks"), { 
-                text, 
+                text: text, 
                 status: col, 
                 startDate: startDate, 
                 dueDate: dueDate, 
                 assignee: assignee, 
+                requester: requester,
+                orderer: orderer,
                 repeat: repeat, 
                 createdAt: Date.now() 
             }); 
 
-            const msg = `🟢 [새로운 일정 등록]\n• 내용: ${text}\n• 담당자: ${assignee || '미지정'}\n• 시작일: ${startDate || '미지정'}\n• 마감일: ${dueDate || '미지정'}`;
+            const isMaterial = col.startsWith('mat-');
+            let msg = '';
+            if (isMaterial) {
+                msg = `🟢 [자재 등록]\n• 내용: ${text}\n• 요청자: ${requester || '미지정'}\n• 발주자: ${orderer || '미지정'}\n• 발주요청: ${startDate || '미지정'}\n• 반입요청: ${dueDate || '미지정'}`;
+            } else {
+                msg = `🟢 [일정 등록]\n• 내용: ${text}\n• 담당자: ${assignee || '미지정'}\n• 시작일: ${startDate || '미지정'}\n• 마감일: ${dueDate || '미지정'}`;
+            }
             window.sendLineNotificationProxy(msg);
         };
 
-        // 🌟 [신규] 일정 수정을 위한 모달 열기
         window.openEditModal = (id) => {
             const task = currentTasks.find(t => t.id === id);
             if(!task) return;
-            
             document.getElementById('edit-id').value = id;
             document.getElementById('edit-text').value = task.text || '';
             document.getElementById('edit-start').value = task.startDate || '';
             document.getElementById('edit-due').value = task.dueDate || '';
-            
             document.getElementById('edit-modal').style.display = 'block';
         };
 
-        // 🌟 [신규] 수정된 일정 파이어베이스에 저장
         window.saveEdit = async () => {
             const id = document.getElementById('edit-id').value;
             const text = document.getElementById('edit-text').value;
             const startDate = document.getElementById('edit-start').value;
             const dueDate = document.getElementById('edit-due').value;
 
-            if(!text.trim()) {
-                alert("작업 내용을 입력해주세요.");
-                return;
-            }
-
+            if(!text.trim()) { alert("내용을 입력해주세요."); return; }
             try {
-                await updateDoc(doc(db, "tasks", id), { 
-                    text: text, 
-                    startDate: startDate, 
-                    dueDate: dueDate 
-                });
-                
+                await updateDoc(doc(db, "tasks", id), { text: text, startDate: startDate, dueDate: dueDate });
                 document.getElementById('edit-modal').style.display = 'none';
-                
-                // 선택사항: 수정 시에도 알림을 보내고 싶다면 아래 주석을 해제하세요.
-                // const msg = `✏️ [일정 수정됨]\n• 내용: ${text}\n• 변경된 시작일: ${startDate || '미지정'}\n• 변경된 마감일: ${dueDate || '미지정'}`;
-                // window.sendLineNotificationProxy(msg);
-                
-            } catch(error) {
-                console.error("수정 저장 에러:", error);
-                alert("저장 중 오류가 발생했습니다.");
-            }
+            } catch(error) { alert("저장 중 오류가 발생했습니다."); }
         };
         
         window.moveTask = async (id, newStatus) => { 
@@ -231,43 +311,88 @@
                 const taskSnap = await getDoc(doc(db, "tasks", id));
                 if (taskSnap.exists()) {
                     const taskData = taskSnap.data();
-                    const statusNames = { 'todo': '할 일', 'inprogress': '진행 중', 'done': '완료' };
-                    
+                    const statusNames = { 
+                        'todo': '할 일', 'inprogress': '진행 중', 'done': '완료',
+                        'mat-request': '발주요청', 'mat-ordered': '발주 완료', 'mat-delivered': '반입완료'
+                    };
                     await updateDoc(doc(db, "tasks", id), { status: newStatus }); 
                     document.getElementById('task-modal').style.display = 'none'; 
-
-                    const msg = `📝 [일정 상태 변경]\n• 작업: ${taskData.text}\n• 담당: ${taskData.assignee || '미지정'}\n• 변경: [${statusNames[taskData.status] || taskData.status}] ➔ [${statusNames[newStatus]}]`;
+                    
+                    const pName = taskData.status.startsWith('mat-') ? `요청:${taskData.requester||'-'}/발주:${taskData.orderer||'-'}` : `담당:${taskData.assignee||'-'}`;
+                    const msg = `📝 [상태 변경]\n• 항목: ${taskData.text}\n• ${pName}\n• 변경: [${statusNames[taskData.status] || taskData.status}] ➔ [${statusNames[newStatus]}]`;
                     window.sendLineNotificationProxy(msg);
                 }
-            } catch (e) {
-                console.error("이동 알림 전송 에러:", e);
-            }
+            } catch (e) {}
         };
         
         window.deleteTask = async (id) => { 
-            if(confirm("이 작업을 정말 삭제하시겠습니까?")) {
-                try {
-                    const taskSnap = await getDoc(doc(db, "tasks", id));
-                    if (taskSnap.exists()) {
-                        const taskData = taskSnap.data();
-                        
-                        await deleteDoc(doc(db, "tasks", id)); 
-
-                        const msg = `🗑️ [일정 삭제 알림]\n• 삭제된 작업: ${taskData.text}\n• 담당이었던 분: ${taskData.assignee || '미지정'}`;
-                        window.sendLineNotificationProxy(msg);
-                    }
-                } catch(e) {
-                    console.error("삭제 알림 전송 에러:", e);
+            if(confirm("이 항목을 정말 삭제하시겠습니까?")) {
+                const taskSnap = await getDoc(doc(db, "tasks", id));
+                if (taskSnap.exists()) {
+                    const taskData = taskSnap.data();
+                    await deleteDoc(doc(db, "tasks", id)); 
+                    const msg = `🗑️ [삭제 알림]\n• 삭제된 항목: ${taskData.text}`;
+                    window.sendLineNotificationProxy(msg);
                 }
             }
         };
 
-        window.changeAssignee = async (id, newAssignee) => {
-            await updateDoc(doc(db, "tasks", id), { assignee: newAssignee });
+        window.changeField = async (id, fieldName, newValue) => { 
+            await updateDoc(doc(db, "tasks", id), { [fieldName]: newValue }); 
         };
-
         window.changeMonth = (o) => { currentDate.setMonth(currentDate.getMonth() + o); renderCalendar(); };
         
+        // --- 🌟 접속 시 나타나는 종합 일일 브리핑 팝업 함수 ---
+        window.showDailyBriefing = (tomorrowStr) => {
+            const modal = document.getElementById('task-modal');
+            const list = document.getElementById('modal-list');
+            const title = document.getElementById('modal-title');
+            
+            title.innerText = '🔔 일일 현황 브리핑';
+            let html = '';
+            
+            // 1. 내일 예정 항목 (시작/마감되는 일정 및 자재)
+            const tomorrowItems = currentTasks.filter(t => (t.dueDate === tomorrowStr || t.startDate === tomorrowStr) && t.status !== 'done' && t.status !== 'mat-delivered');
+            html += `<h4 style="margin:5px 0; color:var(--primary-color);">📅 내일 예정(시작/마감) 항목</h4>`;
+            if(tomorrowItems.length > 0) {
+                html += tomorrowItems.map(t => {
+                    let prefix = '';
+                    if (t.startDate === tomorrowStr && t.dueDate === tomorrowStr) prefix = '<span style="color:#0052cc; font-weight:bold;">[시작&마감]</span> ';
+                    else if (t.startDate === tomorrowStr) prefix = '<span style="color:#36B37E; font-weight:bold;">[시작/요청]</span> ';
+                    else if (t.dueDate === tomorrowStr) prefix = '<span style="color:#ff5630; font-weight:bold;">[마감/반입]</span> ';
+                    const nameStr = t.status.startsWith('mat-') ? `요청: ${t.requester||'-'}` : `담당: ${t.assignee||'-'}`;
+                    return `<div class="card" style="margin-bottom:5px; font-size:0.8rem;"><strong>${prefix}${t.text||''}</strong><br><small>${t.startDate||''} ~ ${t.dueDate||''} | ${nameStr}</small></div>`;
+                }).join('');
+            } else {
+                html += `<p style="font-size:0.75rem; color:#666;">내일 예정된 항목이 없습니다.</p>`;
+            }
+            
+            // 2. 자재 발주 대기 현황 (미발주)
+            const matRequests = currentTasks.filter(t => t.status === 'mat-request');
+            html += `<h4 style="margin:15px 0 5px 0; color:#ff9f43;">📦 발주 대기 중인 자재 (미발주)</h4>`;
+            if(matRequests.length > 0) {
+                html += matRequests.map(t => {
+                    return `<div class="card" style="margin-bottom:5px; font-size:0.8rem; border-left: 3px solid #ff9f43;"><strong>${t.text||''}</strong><br><small>요청일: ${t.startDate||'-'} | 요청자: ${t.requester||'-'}</small></div>`;
+                }).join('');
+            } else {
+                html += `<p style="font-size:0.75rem; color:#666;">발주 대기 중인 자재가 없습니다.</p>`;
+            }
+
+            // 3. 자재 반입 대기 현황 (발주완료)
+            const matOrdered = currentTasks.filter(t => t.status === 'mat-ordered');
+            html += `<h4 style="margin:15px 0 5px 0; color:#36B37E;">🚚 반입 대기 중인 자재 (발주완료)</h4>`;
+            if(matOrdered.length > 0) {
+                html += matOrdered.map(t => {
+                    return `<div class="card" style="margin-bottom:5px; font-size:0.8rem; border-left: 3px solid #36B37E;"><strong>${t.text||''}</strong><br><small>반입예정: ${t.dueDate||'-'} | 발주자: ${t.orderer||'-'}</small></div>`;
+                }).join('');
+            } else {
+                html += `<p style="font-size:0.75rem; color:#666;">반입 대기 중인 자재가 없습니다.</p>`;
+            }
+            
+            list.innerHTML = html;
+            modal.style.display = 'block';
+        };
+
         window.showPopup = (type, value, status) => {
             const modal = document.getElementById('task-modal');
             const list = document.getElementById('modal-list');
@@ -275,26 +400,31 @@
             
             let filtered = [];
             if (type === 'assignee') {
-                filtered = currentTasks.filter(t => t.assignee === value && (status ? t.status === status : true));
-            } else if (type === 'd1') {
-                filtered = currentTasks.filter(t => (t.dueDate === value || t.startDate === value) && t.status !== 'done');
-            } else if (type === 'date' || type === 'overdue') {
-                filtered = currentTasks.filter(t => t.dueDate === value && t.status !== 'done');
+                filtered = currentTasks.filter(t => (t.assignee === value || t.requester === value || t.orderer === value) && (status ? t.status === status : true));
+            } else if (type === 'date-task') {
+                filtered = currentTasks.filter(t => t.dueDate === value && ['todo', 'inprogress'].includes(t.status));
+            } else if (type === 'date-mat') {
+                filtered = currentTasks.filter(t => t.dueDate === value && ['mat-request', 'mat-ordered'].includes(t.status));
+            } else if (type === 'overdue') {
+                filtered = currentTasks.filter(t => (t.dueDate === value || t.startDate === value) && t.status !== 'done' && t.status !== 'mat-delivered');
             } else {
                 filtered = currentTasks.filter(t => t.id === value);
             }
 
-            title.innerText = type === 'd1' ? '⚠️ 내일 시작/마감 일정' : (type === 'assignee' ? `${value} 님의 작업` : '상세');
+            title.innerText = (type === 'assignee' ? `${value} 님의 관련 항목` 
+                          : (type.startsWith('date') ? `${value} 예정 내역`
+                          : (type === 'overdue' ? `${value} 지연 항목` : '상세')));
             
             list.innerHTML = filtered.length > 0 ? filtered.map(t => {
                 let prefix = '';
-                if (type === 'd1') {
+                if (type === 'overdue') {
                     if (t.startDate === value && t.dueDate === value) prefix = '<span style="color:#0052cc; font-weight:bold;">[시작&마감]</span> ';
                     else if (t.startDate === value) prefix = '<span style="color:#36B37E; font-weight:bold;">[시작]</span> ';
                     else if (t.dueDate === value) prefix = '<span style="color:#ff5630; font-weight:bold;">[마감]</span> ';
                 }
-                return `<div class="card"><strong>${prefix}${t.text||''}</strong><br><small>${t.startDate||''} ~ ${t.dueDate||''} | ${t.assignee||''}</small></div>`;
-            }).join('') : '<p>작업 없음</p>';
+                const nameStr = t.status.startsWith('mat-') ? `요청: ${t.requester||'-'} / 발주: ${t.orderer||'-'}` : `담당: ${t.assignee||'-'}`;
+                return `<div class="card"><strong>${prefix}${t.text||''}</strong><br><small>${t.startDate||''} ~ ${t.dueDate||''} | ${nameStr}</small></div>`;
+            }).join('') : '<p>해당하는 항목이 없습니다.</p>';
             
             modal.style.display = 'block';
         };
@@ -306,26 +436,18 @@
             updateUI(); 
             
             const tomorrowStr = new Date(Date.now() + 86400000).toISOString().split('T')[0];
-
+            
+            // 🌟 접속 시 브리핑 팝업 호출 (한 번만 실행됨)
             if (!hasShownAlert) {
-                if (currentTasks.some(t => (t.dueDate === tomorrowStr || t.startDate === tomorrowStr) && t.status !== 'done')) { 
-                    window.showPopup('d1', tomorrowStr); 
-                    hasShownAlert = true; 
+                // 내일 일정이 있거나, 발주대기/반입대기 자재가 하나라도 있으면 팝업을 띄웁니다.
+                const hasTomorrow = currentTasks.some(t => (t.dueDate === tomorrowStr || t.startDate === tomorrowStr) && t.status !== 'done' && t.status !== 'mat-delivered');
+                const hasMatPending = currentTasks.some(t => t.status === 'mat-request' || t.status === 'mat-ordered');
+                
+                if (hasTomorrow || hasMatPending) {
+                    window.showDailyBriefing(tomorrowStr); 
                 }
+                hasShownAlert = true; 
             }
-
-            currentTasks.forEach(async (t) => {
-                if (t.startDate === tomorrowStr && t.status !== 'done' && !t.startNotified) {
-                    const msg = `⏰ [시작일 사전 알림]\n내일 시작 예정인 일정이 있습니다!\n• 작업: ${t.text}\n• 담당자: ${t.assignee || '미지정'}\n• 마감일: ${t.dueDate || '미지정'}`;
-                    window.sendLineNotificationProxy(msg);
-
-                    try {
-                        await updateDoc(doc(db, "tasks", t.id), { startNotified: true });
-                    } catch(e) {
-                        console.error("알림 상태 업데이트 에러:", e);
-                    }
-                }
-            });
         });
 
         function renderTeamModal() {
@@ -335,11 +457,20 @@
         }
 
         function updateUI() {
-            const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
-            ['todo', 'inprogress', 'done'].forEach(col => {
-                const select = document.getElementById(`${col}-assignee`);
-                if(select) select.innerHTML = '<option value="">담당자</option>' + teamMembers.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
+            const columns = ['todo', 'inprogress', 'done', 'mat-request', 'mat-ordered', 'mat-delivered'];
+            
+            columns.forEach(col => {
+                const assigneeSelect = document.getElementById(`${col}-assignee`);
+                const reqSelect = document.getElementById(`${col}-requester`);
+                const ordSelect = document.getElementById(`${col}-orderer`);
+                const optionsHtml = teamMembers.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
                 
+                if (assigneeSelect) assigneeSelect.innerHTML = '<option value="">담당자</option>' + optionsHtml;
+                if (reqSelect) reqSelect.innerHTML = '<option value="">요청자</option>' + optionsHtml;
+                if (ordSelect) ordSelect.innerHTML = '<option value="">발주자</option>' + optionsHtml;
+            });
+
+            columns.forEach(col => {
                 const listContainer = document.getElementById(`${col}-list`);
                 if(!listContainer) return;
                 listContainer.innerHTML = '';
@@ -364,29 +495,45 @@
                     const cardList = groupDiv.querySelector(`#${gid}`);
                     groups[month].forEach(t => {
                         const div = document.createElement('div'); div.className = 'card';
-                        const dateStr = (t.startDate || t.dueDate) ? `<div style="font-size:0.6rem; color:#666;">${t.startDate ? '시작:'+t.startDate.slice(5) : ''} ${t.dueDate ? '마감:'+t.dueDate.slice(5) : ''}</div>` : '';
+                        const isTask = ['todo', 'inprogress', 'done'].includes(col);
+                        const dateStr = (t.startDate || t.dueDate) ? `<div style="font-size:0.6rem; color:#666; margin-bottom:2px;">${t.startDate ? (isTask?'시작:' :'요청:')+t.startDate.slice(5) : ''} ${t.dueDate ? (isTask?'마감:':'반입:')+t.dueDate.slice(5) : ''}</div>` : '';
                         
-                        let optionsHtml = '<option value="">담당자 미지정</option>';
-                        teamMembers.forEach(m => {
-                            const isSelected = t.assignee === m.name ? 'selected' : '';
-                            optionsHtml += '<option value="' + m.name + '" ' + isSelected + '>' + m.name + '</option>';
-                        });
-                        const assigneeSelect = '<select onchange="changeAssignee(\'' + t.id + '\', this.value)" style="font-size:0.65rem; margin-top:3px; padding:2px; border:1px solid #ccc; border-radius:3px; width:100%; max-width:120px;">' + optionsHtml + '</select>';
+                        let selectsHtml = '';
+                        if (isTask) {
+                            const assigneeOptions = `<option value="">담당자 미지정</option>` + teamMembers.map(m => `<option value="${m.name}" ${t.assignee===m.name?'selected':''}>${m.name}</option>`).join('');
+                            selectsHtml = `<select onchange="changeField('${t.id}', 'assignee', this.value)" style="font-size:0.65rem; padding:2px; border:1px solid #ccc; border-radius:3px; width:100%; max-width:120px;">${assigneeOptions}</select>`;
+                        } else {
+                            const reqOptions = `<option value="">요청자 미지정</option>` + teamMembers.map(m => `<option value="${m.name}" ${t.requester===m.name?'selected':''}>${m.name}</option>`).join('');
+                            const ordOptions = `<option value="">발주자 미지정</option>` + teamMembers.map(m => `<option value="${m.name}" ${t.orderer===m.name?'selected':''}>${m.name}</option>`).join('');
+                            selectsHtml = `
+                                <div style="display:flex; gap:3px;">
+                                    <select onchange="changeField('${t.id}', 'requester', this.value)" style="flex:1; font-size:0.65rem; padding:2px; border:1px solid #ccc; border-radius:3px;">${reqOptions}</select>
+                                    <select onchange="changeField('${t.id}', 'orderer', this.value)" style="flex:1; font-size:0.65rem; padding:2px; border:1px solid #ccc; border-radius:3px;">${ordOptions}</select>
+                                </div>
+                            `;
+                        }
 
-                        // 🌟 [수정] 카드 액션 버튼 맨 앞에 '수정' 버튼 추가
+                        let moveButtons = '';
+                        if (isTask) {
+                            moveButtons += col!=='todo'?`<button onclick="moveTask('${t.id}','todo')">할일</button>`:'';
+                            moveButtons += col!=='inprogress'?`<button onclick="moveTask('${t.id}','inprogress')">진행</button>`:'';
+                            moveButtons += col!=='done'?`<button onclick="moveTask('${t.id}','done')">완료</button>`:'';
+                        } else {
+                            moveButtons += col!=='mat-request'?`<button onclick="moveTask('${t.id}','mat-request')">요청</button>`:'';
+                            moveButtons += col!=='mat-ordered'?`<button onclick="moveTask('${t.id}','mat-ordered')">발주</button>`:'';
+                            moveButtons += col!=='mat-delivered'?`<button onclick="moveTask('${t.id}','mat-delivered')">반입</button>`:'';
+                        }
+
                         div.innerHTML = `
-                            <p style="margin:0;">${t.text||''}</p>
+                            <p style="margin:0; margin-bottom:3px; font-weight:bold;">${t.text||''}</p>
                             ${dateStr}
-                            <div>${assigneeSelect}</div>
+                            <div>${selectsHtml}</div>
                             <div class="card-actions">
                                 <button onclick="openEditModal('${t.id}')">수정</button>
-                                ${col!=='todo'?`<button onclick="moveTask('${t.id}','todo')">할일</button>`:''}
-                                ${col!=='inprogress'?`<button onclick="moveTask('${t.id}','inprogress')">진행</button>`:''}
-                                ${col!=='done'?`<button onclick="moveTask('${t.id}','done')">완료</button>`:''}
+                                ${moveButtons}
                                 <button style="background:var(--warning-color); color:white;" onclick="deleteTask('${t.id}')">삭제</button>
                             </div>
                         `;
-                        
                         cardList.appendChild(div);
                     });
                 });
@@ -398,28 +545,64 @@
         
         function renderStats() {
              const aTbody = document.querySelector('#assignee-table tbody'); 
-             const dTbody = document.querySelector('#date-table tbody'); 
+             const mTbody = document.querySelector('#material-table tbody'); 
+             const tdTbody = document.querySelector('#task-date-table tbody'); 
+             const mdTbody = document.querySelector('#mat-date-table tbody'); 
              const oTbody = document.querySelector('#overdue-table tbody');
-             if(!aTbody || !dTbody || !oTbody) return;
-             aTbody.innerHTML = ''; dTbody.innerHTML = ''; oTbody.innerHTML = '';
+             const uoTbody = document.querySelector('#un-ordered-table tbody');
+
+             if(!aTbody || !mTbody || !tdTbody || !mdTbody || !oTbody || !uoTbody) return;
+             
+             aTbody.innerHTML = ''; mTbody.innerHTML = ''; tdTbody.innerHTML = ''; mdTbody.innerHTML = ''; oTbody.innerHTML = ''; uoTbody.innerHTML = '';
              const today = new Date().toISOString().split('T')[0];
-             const aMap = {}, dMap = {};
+             const aMap = {}, tdMap = {}, mdMap = {};
+             
              currentTasks.forEach(t => {
-                 const n = t.assignee || '미지정'; 
-                 if(!aMap[n]) aMap[n] = {todo:0, inprogress:0, done:0}; 
-                 if(t.status && aMap[n][t.status] !== undefined) aMap[n][t.status]++;
+                 const isMaterial = t.status.startsWith('mat-');
+                 const isCompleted = (t.status === 'done' || t.status === 'mat-delivered');
                  
-                 if(t.dueDate) { 
-                     if(!dMap[t.dueDate]) dMap[t.dueDate] = {pending:0, done:0}; 
-                     t.status === 'done' ? dMap[t.dueDate].done++ : dMap[t.dueDate].pending++; 
-                     if(t.dueDate < today && t.status !== 'done') {
-                         const safeText = t.text ? t.text.substring(0,6) : '내용없음';
-                         oTbody.innerHTML += `<tr onclick="showPopup('overdue', '${t.dueDate}')"><td class="clickable">${safeText}..</td><td>${t.dueDate.slice(5)}</td></tr>`;
+                 const persons = [...new Set([t.assignee, t.requester, t.orderer].filter(Boolean))];
+                 persons.forEach(n => {
+                     if(!aMap[n]) aMap[n] = { todo:0, inprogress:0, done:0, 'mat-request':0, 'mat-ordered':0, 'mat-delivered':0 }; 
+                     if(t.status && aMap[n][t.status] !== undefined) aMap[n][t.status]++;
+                 });
+                 
+                 if (t.dueDate) {
+                     if (!isMaterial) {
+                         if (!tdMap[t.dueDate]) tdMap[t.dueDate] = {pending:0, done:0};
+                         isCompleted ? tdMap[t.dueDate].done++ : tdMap[t.dueDate].pending++;
+                     } else {
+                         if (!mdMap[t.dueDate]) mdMap[t.dueDate] = {pending:0, done:0};
+                         isCompleted ? mdMap[t.dueDate].done++ : mdMap[t.dueDate].pending++;
                      }
                  }
+
+                 if (!isMaterial && t.dueDate && t.dueDate < today && !isCompleted) {
+                     const safeText = t.text ? t.text.substring(0,8) : '내용없음';
+                     oTbody.innerHTML += `<tr onclick="showPopup('overdue', '${t.dueDate}')"><td class="clickable">${safeText}..</td><td>${t.dueDate.slice(5)}</td></tr>`;
+                 }
+
+                 if (t.status === 'mat-request' && t.startDate && t.startDate < today) {
+                     const safeText = t.text ? t.text.substring(0,8) : '내용없음';
+                     uoTbody.innerHTML += `<tr onclick="showPopup('overdue', '${t.startDate}')"><td class="clickable">${safeText}..</td><td>${t.startDate.slice(5)}</td></tr>`;
+                 }
              });
-             for(let n in aMap) aTbody.innerHTML += `<tr><td>${n}</td><td class="clickable" onclick="showPopup('assignee','${n}','todo')">${aMap[n].todo}</td><td class="clickable" onclick="showPopup('assignee','${n}','inprogress')">${aMap[n].inprogress}</td><td class="clickable" onclick="showPopup('assignee','${n}','done')">${aMap[n].done}</td></tr>`;
-             for(let d in dMap) dTbody.innerHTML += `<tr><td>${d.slice(5)}</td><td class="clickable" onclick="showPopup('date','${d}')">${dMap[d].pending}</td><td class="clickable" onclick="showPopup('date','${d}')">${dMap[d].done}</td></tr>`;
+
+             for(let n in aMap) {
+                 if(aMap[n].todo > 0 || aMap[n].inprogress > 0 || aMap[n].done > 0) {
+                     aTbody.innerHTML += `<tr><td>${n}</td><td class="clickable" onclick="showPopup('assignee','${n}','todo')">${aMap[n].todo}</td><td class="clickable" onclick="showPopup('assignee','${n}','inprogress')">${aMap[n].inprogress}</td><td class="clickable" onclick="showPopup('assignee','${n}','done')">${aMap[n].done}</td></tr>`;
+                 }
+                 if(aMap[n]['mat-request'] > 0 || aMap[n]['mat-ordered'] > 0 || aMap[n]['mat-delivered'] > 0) {
+                     mTbody.innerHTML += `<tr><td>${n}</td><td class="clickable" onclick="showPopup('assignee','${n}','mat-request')">${aMap[n]['mat-request']}</td><td class="clickable" onclick="showPopup('assignee','${n}','mat-ordered')">${aMap[n]['mat-ordered']}</td><td class="clickable" onclick="showPopup('assignee','${n}','mat-delivered')">${aMap[n]['mat-delivered']}</td></tr>`;
+                 }
+             }
+
+             for(let d in tdMap) {
+                 tdTbody.innerHTML += `<tr><td>${d.slice(5)}</td><td class="clickable" onclick="showPopup('date-task','${d}')">${tdMap[d].pending}</td><td class="clickable" onclick="showPopup('date-task','${d}')">${tdMap[d].done}</td></tr>`;
+             }
+             for(let d in mdMap) {
+                 mdTbody.innerHTML += `<tr><td>${d.slice(5)}</td><td class="clickable" onclick="showPopup('date-mat','${d}')">${mdMap[d].pending}</td><td class="clickable" onclick="showPopup('date-mat','${d}')">${mdMap[d].done}</td></tr>`;
+             }
         }
 
         function renderCalendar() {
@@ -434,7 +617,7 @@
                 const dStr = `${y}-${(m + 1).toString().padStart(2, '0')}-${i.toString().padStart(2, '0')}`;
                 const count = currentTasks.filter(t => t.dueDate && t.dueDate === dStr).length;
                 const div = document.createElement('div'); div.className = 'calendar-day-cell';
-                div.innerHTML = `<div>${i}</div>` + (count > 0 ? `<div class="task-badge" onclick="showPopup('date', '${dStr}')">${count}</div>` : '');
+                div.innerHTML = `<div>${i}</div>` + (count > 0 ? `<div class="task-badge" onclick="showPopup('date-task', '${dStr}')">${count}</div>` : '');
                 grid.appendChild(div);
             }
         }
