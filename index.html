@@ -230,7 +230,7 @@
             const startDate = document.getElementById(`${col}-start`).value;
             const dueDate = document.getElementById(`${col}-due`).value;
 
-            // 자재 관리인 경우 (품명, 규격, 수량 조합 및 요청자/발주자 지정)
+            // 자재 관리인 경우
             if (col.startsWith('mat-')) {
                 const item = document.getElementById(`${col}-item`).value;
                 const spec = document.getElementById(`${col}-spec`).value;
@@ -251,7 +251,7 @@
                 document.getElementById(`${col}-spec`).value = '';
                 document.getElementById(`${col}-qty`).value = '';
             } 
-            // 일정 관리인 경우 (기존 방식)
+            // 일정 관리인 경우
             else {
                 const input = document.getElementById(`${col}-input`); 
                 text = input.value; 
@@ -351,7 +351,7 @@
             title.innerText = '🔔 일일 현황 브리핑';
             let html = '';
             
-            // 1. 내일 예정 항목 (시작/마감되는 일정 및 자재)
+            // 1. 내일 예정 항목 
             const tomorrowItems = currentTasks.filter(t => (t.dueDate === tomorrowStr || t.startDate === tomorrowStr) && t.status !== 'done' && t.status !== 'mat-delivered');
             html += `<h4 style="margin:5px 0; color:var(--primary-color);">📅 내일 예정(시작/마감) 항목</h4>`;
             if(tomorrowItems.length > 0) {
@@ -391,6 +391,33 @@
             
             list.innerHTML = html;
             modal.style.display = 'block';
+
+            // 👇👇👇 라인 알림 전송 로직 추가됨 👇👇👇
+            let lineMsg = `🔔 [일일 현황 브리핑]\n\n`;
+            
+            lineMsg += `[📅 내일 예정 항목]\n`;
+            if(tomorrowItems.length > 0) {
+                tomorrowItems.forEach(t => { lineMsg += `• ${t.text || ''} (${t.startDate || ''} ~ ${t.dueDate || ''})\n`; });
+            } else {
+                lineMsg += `없음\n`;
+            }
+            
+            lineMsg += `\n[📦 발주 대기 중인 자재]\n`;
+            if(matRequests.length > 0) {
+                matRequests.forEach(t => { lineMsg += `• ${t.text || ''} (요청자: ${t.requester || '-'}) \n`; });
+            } else {
+                lineMsg += `없음\n`;
+            }
+            
+            lineMsg += `\n[🚚 반입 대기 중인 자재]\n`;
+            if(matOrdered.length > 0) {
+                matOrdered.forEach(t => { lineMsg += `• ${t.text || ''} (발주자: ${t.orderer || '-'}) \n`; });
+            } else {
+                lineMsg += `없음\n`;
+            }
+            
+            window.sendLineNotificationProxy(lineMsg);
+            // 👆👆👆 라인 알림 전송 로직 끝 👆👆👆
         };
 
         window.showPopup = (type, value, status) => {
@@ -437,9 +464,7 @@
             
             const tomorrowStr = new Date(Date.now() + 86400000).toISOString().split('T')[0];
             
-            // 🌟 접속 시 브리핑 팝업 호출 (한 번만 실행됨)
             if (!hasShownAlert) {
-                // 내일 일정이 있거나, 발주대기/반입대기 자재가 하나라도 있으면 팝업을 띄웁니다.
                 const hasTomorrow = currentTasks.some(t => (t.dueDate === tomorrowStr || t.startDate === tomorrowStr) && t.status !== 'done' && t.status !== 'mat-delivered');
                 const hasMatPending = currentTasks.some(t => t.status === 'mat-request' || t.status === 'mat-ordered');
                 
