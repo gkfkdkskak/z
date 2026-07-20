@@ -9,41 +9,80 @@
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 5px; }
         header { text-align: center; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; padding: 0 10px; }
         header h1 { margin: 5px 0; font-size: 1.2rem; color: var(--primary-color); }
-        .btn-team { background: #6b778c; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; }
+        .btn-team { background: #6b778c; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; font-weight: bold; }
         .month-group-header { font-size: 0.75rem; background: #dfe1e6; padding: 6px; margin-top: 5px; cursor: pointer; border-radius: 3px; display: flex; justify-content: space-between; font-weight: bold; }
+        
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
-        .modal-content { background-color: #fff; margin: 15% auto; padding: 15px; width: 85%; border-radius: 8px; max-height: 70vh; overflow-y: auto; }
+        .modal-sub { z-index: 1100; } 
+        .modal-content { background-color: #fff; margin: 15% auto; padding: 15px; width: 90%; max-width: 600px; border-radius: 8px; max-height: 75vh; overflow-y: auto; box-sizing: border-box; }
+        
+        #login-overlay { display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f4f5f7; z-index: 9999; flex-direction: column; align-items: center; justify-content: center; }
+        .login-box { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); text-align: center; width: 80%; max-width: 320px; }
+        
         .clickable { cursor: pointer; color: var(--primary-color); text-decoration: underline; font-weight: bold; }
         .badge-d1 { background: var(--d1-color); color: white; padding: 2px 5px; border-radius: 4px; font-size: 0.6rem; font-weight: bold; margin-right: 5px; }
         .team-item { display: flex; gap: 5px; margin-bottom: 8px; align-items: center; }
-        .team-item input { flex: 1; padding: 5px; font-size: 0.8rem; }
-        .team-item button { padding: 5px 8px; font-size: 0.7rem; cursor: pointer; border: none; border-radius: 3px; }
+        .team-item input { flex: 1; min-width: 0; padding: 5px; font-size: 0.8rem; box-sizing: border-box; border: 1px solid #ddd; border-radius: 3px; }
+        .team-item button { padding: 5px 8px; font-size: 0.7rem; cursor: pointer; border: none; border-radius: 3px; white-space: nowrap; background: #e0e0e0;}
         .dashboard-container { display: flex; flex-direction: column; gap: 8px; max-width: 1200px; margin: 0 auto 10px auto; }
-        .panel { background: #fff; border-radius: 6px; padding: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.12); }
+        .panel { background: #fff; border-radius: 6px; padding: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.12); overflow-x: auto; }
         .summary-wrapper { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 5px; }
         .summary-table { width: 100%; border-collapse: collapse; font-size: 0.65rem; text-align: center; }
-        .summary-table th, .summary-table td { border: 1px solid #eee; padding: 3px; }
+        .summary-table th, .summary-table td { border: 1px solid #eee; padding: 3px; word-break: keep-all; }
         .calendar-day-cell { border: 1px solid #eee; border-radius: 2px; height: 40px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 2px; font-size: 0.6rem; }
         .task-badge { font-size: 0.55rem; background: var(--primary-color); color: white; border-radius: 10px; padding: 0 4px; margin-top: 2px; cursor: pointer; }
+        
         .board { display: flex; flex-direction: column; gap: 8px; max-width: 1200px; margin: 0 auto; }
         .column { background-color: var(--column-bg); flex: 1; border-radius: 6px; padding: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.12); }
         .column h2 { font-size: 0.9rem; margin: 0 0 5px 0; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
-        .add-card-form { margin-bottom: 8px; display: flex; flex-direction: column; gap: 4px; }
-        .add-card-form textarea { width: 100%; box-sizing: border-box; border: 1px solid #ddd; border-radius: 4px; padding: 5px; height: 40px; font-size: 0.8rem; }
-        .form-row { display: flex; gap: 3px; }
-        .form-row input, .form-row select { flex: 1; border: 1px solid #ddd; border-radius: 4px; padding: 4px; font-size: 0.7rem; }
-        .form-row button { background: var(--primary-color); color: white; border: none; padding: 0 8px; border-radius: 4px; cursor: pointer; font-size: 0.7rem; }
-        .card { background-color: var(--card-bg); border-radius: 4px; padding: 8px; margin-bottom: 5px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
-        .card-actions { display: flex; justify-content: flex-end; gap: 4px; margin-top: 5px; }
-        .card-actions button { background: #e0e0e0; border: none; border-radius: 3px; padding: 3px 6px; cursor: pointer; font-size: 0.65rem; color: #333; }
+        
+        .add-card-form { margin-bottom: 8px; display: flex; flex-direction: column; gap: 4px; width: 100%; box-sizing: border-box; }
+        .add-card-form textarea { width: 100%; box-sizing: border-box; border: 1px solid #ddd; border-radius: 4px; padding: 5px; height: 40px; font-size: 0.8rem; resize: vertical; }
+        .form-row { display: flex; gap: 3px; width: 100%; box-sizing: border-box; align-items: center; }
+        .form-row input, .form-row select { flex: 1; min-width: 0; box-sizing: border-box; border: 1px solid #ddd; border-radius: 4px; padding: 4px; font-size: 0.7rem; }
+        .form-row button { background: var(--primary-color); color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.7rem; white-space: nowrap; }
+        
+        .card { background-color: var(--card-bg); border-radius: 4px; padding: 8px; margin-bottom: 5px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); width: 100%; box-sizing: border-box; }
+        .card-actions { display: flex; justify-content: flex-end; gap: 4px; margin-top: 5px; flex-wrap: wrap; } 
+        .card-actions button { background: #e0e0e0; border: none; border-radius: 3px; padding: 3px 6px; cursor: pointer; font-size: 0.65rem; color: #333; white-space: nowrap; }
+        
+        .section-header { max-width: 1200px; margin: 15px auto 5px; font-size: 1rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; padding: 5px; border-radius: 4px; transition: background 0.2s; }
+        .section-header:hover { background-color: #e5e5e5; }
+        .section-icon { font-size: 0.8rem; color: #666; }
+        
         @media (min-width: 768px) { .dashboard-container { flex-direction: row; } .board { flex-direction: row; align-items: flex-start; } }
     </style>
 </head>
 <body>
-    <div id="team-modal" class="modal" onclick="this.style.display='none'"><div class="modal-content" onclick="event.stopPropagation()"><h3>👥 팀원 관리</h3><div id="team-list"></div><div class="form-row"><input type="text" id="new-member-name" placeholder="새 팀원 이름"><button onclick="addTeamMember()">추가</button></div></div></div>
     
+    <!-- 0. 로그인 접속 화면 -->
+    <div id="login-overlay">
+        <div class="login-box">
+            <h2 style="color:var(--primary-color); margin-top:0;">📱 현장 관리 보드</h2>
+            <p style="font-size:0.85rem; color:#666; margin-bottom:20px; word-break:keep-all;">본인의 이름을 선택하고 접속해주세요.</p>
+            <select id="login-user-select" style="width:100%; padding:12px; margin-bottom:15px; border:2px solid var(--primary-color); border-radius:6px; font-size:1rem; font-weight:bold;">
+                <option value="">이름을 선택하세요 (로딩중...)</option>
+            </select>
+            <button onclick="loginUser()" style="width:100%; background:var(--primary-color); color:white; border:none; padding:12px; border-radius:6px; font-weight:bold; font-size:1rem; cursor:pointer;">접속하기</button>
+        </div>
+    </div>
+
+    <!-- 1. 팀 관리 모달 -->
+    <div id="team-modal" class="modal" onclick="this.style.display='none'">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <h3 style="margin:0;">👥 팀원 관리</h3>
+                <button onclick="document.getElementById('team-modal').style.display='none'" style="background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button>
+            </div>
+            <div id="team-list"></div>
+            <div class="form-row"><input type="text" id="new-member-name" placeholder="새 팀원 이름"><button onclick="addTeamMember()" style="background:var(--primary-color); color:white;">추가</button></div>
+        </div>
+    </div>
+    
+    <!-- 2. 작업 상세 모달 -->
     <div id="task-modal" class="modal" onclick="this.style.display='none'"><div class="modal-content" onclick="event.stopPropagation()"><h3 id="modal-title">작업 상세</h3><div id="modal-list"></div><button onclick="document.getElementById('task-modal').style.display='none'" style="width:100%; margin-top:10px; padding:8px;">닫기</button></div></div>
     
+    <!-- 3. 일정/자재 수정 모달 -->
     <div id="edit-modal" class="modal" onclick="this.style.display='none'">
         <div class="modal-content" onclick="event.stopPropagation()">
             <h3 style="margin-top:0;">✏️ 일정/자재 수정</h3>
@@ -52,12 +91,12 @@
                 <textarea id="edit-text" style="height:60px; margin-bottom:8px;"></textarea>
                 
                 <div class="form-row" style="margin-bottom:8px;">
-                    <div style="flex:1;">
-                        <label style="font-size:0.7rem; font-weight:bold; color:#666;">일정시작 / 발주요청일</label>
+                    <div style="flex:1; min-width:0;">
+                        <label style="font-size:0.7rem; font-weight:bold; color:#666;">일정시작 / 발주요청</label>
                         <input type="date" id="edit-start" style="width:100%; box-sizing:border-box;">
                     </div>
-                    <div style="flex:1;">
-                        <label style="font-size:0.7rem; font-weight:bold; color:#666;">일정마감 / 반입요청일</label>
+                    <div style="flex:1; min-width:0;">
+                        <label style="font-size:0.7rem; font-weight:bold; color:#666;">일정마감 / 반입요청</label>
                         <input type="date" id="edit-due" style="width:100%; box-sizing:border-box;">
                     </div>
                 </div>
@@ -71,8 +110,180 @@
             </div>
         </div>
     </div>
+
+    <!-- 확인(결재) 기능 모달 -->
+    <div id="ack-modal" class="modal modal-sub" onclick="this.style.display='none'">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <h3 style="margin:0; color:#00875a;">👀 확인 완료 처리</h3>
+                <button onclick="document.getElementById('ack-modal').style.display='none'" style="background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button>
+            </div>
+            
+            <p style="font-size:0.8rem; color:#666; margin-bottom: 10px;">내용을 확인하신 팀원을 선택해주세요.</p>
+            <div class="form-row" style="margin-bottom: 20px;">
+                <input type="hidden" id="ack-task-id">
+                <select id="ack-user-select" style="flex:2; padding:8px; border:1px solid #ddd; border-radius:4px;"></select>
+                <button onclick="saveAck()" style="flex:1; background:#00875a; color:white; padding:8px; font-weight:bold;">새로 확인</button>
+            </div>
+
+            <h4 style="margin:0 0 8px 0; font-size:0.85rem; color:#333; border-top:1px solid #eee; padding-top:15px;">✅ 현재 확인한 인원 (취소 가능)</h4>
+            <div id="ack-current-list" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+        </div>
+    </div>
+
+    <!-- 4. 연락처 통합 관리 모달 -->
+    <div id="contact-modal" class="modal" onclick="this.style.display='none'">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h3 style="margin:0; color:#2664eb;">👥 연락처 통합 관리</h3>
+                <div>
+                    <button onclick="document.getElementById('contact-group-modal').style.display='block'" style="background:#e0e0e0; border:none; padding:5px 10px; border-radius:4px; font-size:0.75rem; font-weight:bold; cursor:pointer;">⚙️ 그룹설정</button>
+                    <button onclick="document.getElementById('contact-modal').style.display='none'" style="background:none; border:none; font-size:1.2rem; cursor:pointer; margin-left:10px;">×</button>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 5px;">
+                <input type="text" id="contact-name" placeholder="성함/직함" style="flex: 1; min-width: 100px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                <input type="text" id="contact-phone" placeholder="전화번호" style="flex: 1; min-width: 120px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                <select id="contact-group" style="flex: 1; min-width: 100px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"></select>
+            </div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <input type="email" id="contact-email" placeholder="이메일 (선택)" style="flex: 2; min-width: 180px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                <button onclick="addContact()" style="flex: 1; min-width: 80px; padding: 8px; background-color: #2664eb; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">신규 등록</button>
+            </div>
+            
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+            
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+                <input type="text" id="contact-search" placeholder="🔍 이름/번호/초성 검색..." onkeyup="renderContacts()" style="flex: 2; min-width: 180px; padding: 8px; border: 1px solid #ddd; border-radius: 20px; background: #f9f9fa;">
+                <select id="contact-filter" onchange="renderContacts()" style="flex: 1; min-width: 100px; padding: 8px; border: 1px solid #ddd; border-radius: 20px; background: #f9f9fa;">
+                    <option value="">전체 그룹보기</option>
+                </select>
+            </div>
+            <div id="contact-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;"></div>
+        </div>
+    </div>
+
+    <!-- 4-1. 연락처 그룹 관리 모달 -->
+    <div id="contact-group-modal" class="modal modal-sub" onclick="this.style.display='none'">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h3 style="margin:0; color:#2664eb;">📁 연락처 그룹 관리</h3>
+                <button onclick="document.getElementById('contact-group-modal').style.display='none'" style="background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button>
+            </div>
+            <div id="contact-group-list" style="margin-bottom:10px;"></div>
+            <div class="form-row">
+                <input type="text" id="new-contact-group-name" placeholder="새 그룹 이름">
+                <button onclick="addContactGroup()" style="background:#2664eb;">추가</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4-2. 연락처 수정 모달 -->
+    <div id="edit-contact-modal" class="modal modal-sub" onclick="this.style.display='none'">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h3 style="margin-top:0; color:#2664eb;">✏️ 연락처 수정</h3>
+            <div class="add-card-form">
+                <input type="hidden" id="edit-contact-id">
+                <label style="font-size:0.7rem; font-weight:bold; color:#666;">성함/직함</label>
+                <input type="text" id="edit-contact-name" style="width:100%; box-sizing:border-box; padding:8px; margin-bottom:5px; border:1px solid #ddd; border-radius:4px;">
+                
+                <label style="font-size:0.7rem; font-weight:bold; color:#666;">전화번호</label>
+                <input type="text" id="edit-contact-phone" style="width:100%; box-sizing:border-box; padding:8px; margin-bottom:5px; border:1px solid #ddd; border-radius:4px;">
+                
+                <label style="font-size:0.7rem; font-weight:bold; color:#666;">그룹</label>
+                <select id="edit-contact-group" style="width:100%; box-sizing:border-box; padding:8px; margin-bottom:5px; border:1px solid #ddd; border-radius:4px;"></select>
+
+                <label style="font-size:0.7rem; font-weight:bold; color:#666;">이메일</label>
+                <input type="email" id="edit-contact-email" style="width:100%; box-sizing:border-box; padding:8px; margin-bottom:10px; border:1px solid #ddd; border-radius:4px;">
+                
+                <div style="display:flex; gap:5px;">
+                    <button onclick="saveContactEdit()" style="flex:2; padding:8px; background:#2664eb; color:white; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">저장</button>
+                    <button onclick="document.getElementById('edit-contact-modal').style.display='none'" style="flex:1; padding:8px; background:#ddd; border:none; border-radius:4px; cursor:pointer;">취소</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. 주요 사이트 모달 -->
+    <div id="site-modal" class="modal" onclick="this.style.display='none'">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h3 style="margin:0; color:#326ce5; border:1px solid #e1e4e8; padding:8px 15px; border-radius:20px;">🌐 주요 사이트</h3>
+                <div style="display: flex; gap: 5px; align-items: center;">
+                    <button onclick="document.getElementById('site-group-modal').style.display='block'" style="background:#e0e0e0; color:#333; border:none; padding:8px 10px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:0.75rem;">⚙️ 그룹설정</button>
+                    <button onclick="toggleSiteForm()" style="background:#326ce5; color:white; border:none; padding:8px 15px; border-radius:4px; font-weight:bold; cursor:pointer;">추가</button>
+                    <button onclick="document.getElementById('site-modal').style.display='none'" style="background:none; border:none; font-size:1.5rem; color:#999; cursor:pointer; margin-left:5px;">×</button>
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <input type="text" id="google-search-input" placeholder="🌐 구글 검색... (입력 후 Enter)" onkeydown="if(event.key==='Enter') searchGoogle()" style="width:100%; box-sizing:border-box; padding:10px; border:1px solid #ddd; border-radius:8px; background:#f9f9fa;">
+            </div>
+
+            <!-- 사이트 등록 폼 -->
+            <div id="site-add-form" style="display:none; border: 2px solid #b3d4ff; border-radius: 10px; padding: 15px; margin-bottom: 15px; background:#fff;">
+                <input type="text" id="site-name" placeholder="사이트명" style="width:100%; box-sizing:border-box; padding:10px; margin-bottom:10px; border:1px solid #ddd; border-radius:6px;">
+                <input type="text" id="site-url" placeholder="URL 주소 (http://...)" style="width:100%; box-sizing:border-box; padding:10px; margin-bottom:10px; border:1px solid #ddd; border-radius:6px;">
+                <select id="site-group" style="width:100%; box-sizing:border-box; padding:10px; margin-bottom:10px; border:1px solid #ddd; border-radius:6px;"></select>
+                <button onclick="addSite()" style="width:100%; background:#326ce5; color:white; border:none; padding:12px; border-radius:6px; font-weight:bold; cursor:pointer;">저장</button>
+            </div>
+            <div id="site-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px;"></div>
+        </div>
+    </div>
+
+    <!-- 5-1. 주요 사이트 그룹 관리 모달 -->
+    <div id="site-group-modal" class="modal modal-sub" onclick="this.style.display='none'">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h3 style="margin:0; color:#326ce5;">📁 사이트 그룹 관리</h3>
+                <button onclick="document.getElementById('site-group-modal').style.display='none'" style="background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button>
+            </div>
+            <div id="site-group-list" style="margin-bottom:10px;"></div>
+            <div class="form-row">
+                <input type="text" id="new-site-group-name" placeholder="새 그룹 이름">
+                <button onclick="addSiteGroup()" style="background:#326ce5;">추가</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5-2. 주요 사이트 수정 모달 -->
+    <div id="edit-site-modal" class="modal modal-sub" onclick="this.style.display='none'">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h3 style="margin-top:0; color:#326ce5;">✏️ 사이트 수정</h3>
+            <div class="add-card-form">
+                <input type="hidden" id="edit-site-id">
+                
+                <label style="font-size:0.7rem; font-weight:bold; color:#666;">사이트명</label>
+                <input type="text" id="edit-site-name" style="width:100%; box-sizing:border-box; padding:8px; margin-bottom:5px; border:1px solid #ddd; border-radius:4px;">
+                
+                <label style="font-size:0.7rem; font-weight:bold; color:#666;">URL 주소</label>
+                <input type="text" id="edit-site-url" style="width:100%; box-sizing:border-box; padding:8px; margin-bottom:5px; border:1px solid #ddd; border-radius:4px;">
+                
+                <label style="font-size:0.7rem; font-weight:bold; color:#666;">그룹</label>
+                <select id="edit-site-group" style="width:100%; box-sizing:border-box; padding:8px; margin-bottom:10px; border:1px solid #ddd; border-radius:4px;"></select>
+                
+                <div style="display:flex; gap:5px;">
+                    <button onclick="saveSiteEdit()" style="flex:2; padding:8px; background:#326ce5; color:white; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">저장</button>
+                    <button onclick="document.getElementById('edit-site-modal').style.display='none'" style="flex:1; padding:8px; background:#ddd; border:none; border-radius:4px; cursor:pointer;">취소</button>
+                </div>
+            </div>
+        </div>
+    </div>
     
-    <header><h1>📱 현장 관리 보드 </h1><button class="btn-team" onclick="document.getElementById('team-modal').style.display='block'">팀 관리</button></header>
+    <!-- 메인 헤더 및 네비게이션 버튼 -->
+    <header>
+        <h1>📱 현장 관리 보드 </h1>
+        <div style="display:flex; gap: 5px; align-items:center;">
+            <span id="header-user-name" style="font-size:0.8rem; font-weight:bold; color:var(--primary-color); margin-right:3px;"></span>
+            <button class="btn-team" style="background:#888;" onclick="logoutUser()">로그아웃</button>
+            <div style="width:1px; height:15px; background:#ccc; margin:0 3px;"></div>
+            
+            <button class="btn-team" style="background:#2664eb;" onclick="document.getElementById('contact-modal').style.display='block'">연락처</button>
+            <button class="btn-team" style="background:#00b894;" onclick="document.getElementById('site-modal').style.display='block'">사이트</button>
+            <button class="btn-team" onclick="document.getElementById('team-modal').style.display='block'">팀관리</button>
+        </div>
+    </header>
     
     <div class="dashboard-container">
         <div class="panel" style="flex:1;">
@@ -83,12 +294,10 @@
         </div>
         <div class="panel" style="flex:2;">
             <div class="summary-wrapper">
-                <!-- 일정 통계 파트 -->
                 <div><h4 style="margin:0 0 3px 0; font-size:0.75rem;">👤 일정 담당자</h4><table class="summary-table" id="assignee-table"><thead><tr><th>이름</th><th>할일</th><th>진행</th><th>완료</th></tr></thead><tbody></tbody></table></div>
                 <div><h4 style="margin:0 0 3px 0; font-size:0.75rem;">📅 마감 예정(일정)</h4><table class="summary-table" id="task-date-table"><thead><tr><th>날짜</th><th>대기</th><th>완료</th></tr></thead><tbody></tbody></table></div>
                 <div><h4 style="margin:0 0 3px 0; font-size:0.75rem; color:var(--warning-color);">⚠️ 기한 지연(일정)</h4><table class="summary-table" id="overdue-table"><thead><tr><th>항목</th><th>일자</th></tr></thead><tbody></tbody></table></div>
                 
-                <!-- 자재 통계 파트 -->
                 <div><h4 style="margin:0 0 3px 0; font-size:0.75rem; color:#0052cc;">📦 자재 발주현황</h4><table class="summary-table" id="material-table"><thead><tr><th>이름</th><th>요청</th><th>발주</th><th>반입</th></tr></thead><tbody></tbody></table></div>
                 <div><h4 style="margin:0 0 3px 0; font-size:0.75rem; color:#0052cc;">🚚 반입 예정(자재)</h4><table class="summary-table" id="mat-date-table"><thead><tr><th>날짜</th><th>대기</th><th>완료</th></tr></thead><tbody></tbody></table></div>
                 <div><h4 style="margin:0 0 3px 0; font-size:0.75rem; color:var(--warning-color);">⚠️ 발주 지연(미발주)</h4><table class="summary-table" id="un-ordered-table"><thead><tr><th>항목</th><th>요청일</th></tr></thead><tbody></tbody></table></div>
@@ -97,98 +306,106 @@
     </div>
 
     <!-- 일정 관리 보드 -->
-    <h3 style="max-width: 1200px; margin: 5px auto 5px; color: var(--text-color); font-size: 1rem;">📝 일정 관리</h3>
-    <div class="board">
-        <div class="column" id="col-todo"><h2 onclick="toggleColumn('todo')">할 일 <span id="todo-count">0</span></h2>
-            <div class="add-card-form">
-                <textarea id="todo-input" placeholder="새 작업..."></textarea>
-                <div class="form-row" style="font-size:0.6rem; color:#666; text-align:center;"><span style="flex:1;">시작일</span><span style="flex:1;">마감일</span></div>
-                <div class="form-row"><input type="date" id="todo-start"><input type="date" id="todo-due"></div>
-                <div class="form-row"><select id="todo-assignee"><option value="">담당자</option></select><select id="todo-repeat"><option value="none">반복X</option><option value="daily">매일</option><option value="weekly">매주</option><option value="monthly">매월</option></select><button onclick="addCard('todo')">등록</button></div>
+    <h3 class="section-header" style="color: var(--text-color);" onclick="toggleMainSection('schedule-wrap', this)">
+        <span>📝 일정 관리</span> <span class="section-icon">▼</span>
+    </h3>
+    <div id="schedule-wrap" style="display: block;">
+        <div class="board">
+            <div class="column" id="col-todo"><h2 onclick="toggleColumn('todo')">할 일 <span id="todo-count">0</span></h2>
+                <div class="add-card-form">
+                    <textarea id="todo-input" placeholder="새 작업..."></textarea>
+                    <div class="form-row" style="font-size:0.6rem; color:#666; text-align:center;"><span style="flex:1;">시작일</span><span style="flex:1;">마감일</span></div>
+                    <div class="form-row"><input type="date" id="todo-start"><input type="date" id="todo-due"></div>
+                    <div class="form-row"><select id="todo-assignee"><option value="">담당자</option></select><select id="todo-repeat"><option value="none">반복X</option><option value="daily">매일</option><option value="weekly">매주</option><option value="monthly">매월</option></select><button onclick="addCard('todo')">등록</button></div>
+                </div>
+                <div id="todo-list"></div>
             </div>
-            <div id="todo-list"></div>
-        </div>
-        <div class="column" id="col-inprogress"><h2 onclick="toggleColumn('inprogress')">진행 중 <span id="inprogress-count">0</span></h2>
-            <div class="add-card-form">
-                <textarea id="inprogress-input" placeholder="새 작업..."></textarea>
-                <div class="form-row" style="font-size:0.6rem; color:#666; text-align:center;"><span style="flex:1;">시작일</span><span style="flex:1;">마감일</span></div>
-                <div class="form-row"><input type="date" id="inprogress-start"><input type="date" id="inprogress-due"></div>
-                <div class="form-row"><select id="inprogress-assignee"><option value="">담당자</option></select><select id="inprogress-repeat"><option value="none">반복X</option><option value="daily">매일</option><option value="weekly">매주</option><option value="monthly">매월</option></select><button onclick="addCard('inprogress')">등록</button></div>
+            <div class="column" id="col-inprogress"><h2 onclick="toggleColumn('inprogress')">진행 중 <span id="inprogress-count">0</span></h2>
+                <div class="add-card-form">
+                    <textarea id="inprogress-input" placeholder="새 작업..."></textarea>
+                    <div class="form-row" style="font-size:0.6rem; color:#666; text-align:center;"><span style="flex:1;">시작일</span><span style="flex:1;">마감일</span></div>
+                    <div class="form-row"><input type="date" id="inprogress-start"><input type="date" id="inprogress-due"></div>
+                    <div class="form-row"><select id="inprogress-assignee"><option value="">담당자</option></select><select id="inprogress-repeat"><option value="none">반복X</option><option value="daily">매일</option><option value="weekly">매주</option><option value="monthly">매월</option></select><button onclick="addCard('inprogress')">등록</button></div>
+                </div>
+                <div id="inprogress-list"></div>
             </div>
-            <div id="inprogress-list"></div>
-        </div>
-        <div class="column" id="col-done"><h2 onclick="toggleColumn('done')">완료 <span id="done-count">0</span></h2>
-            <div class="add-card-form">
-                <textarea id="done-input" placeholder="새 작업..."></textarea>
-                <div class="form-row" style="font-size:0.6rem; color:#666; text-align:center;"><span style="flex:1;">시작일</span><span style="flex:1;">마감일</span></div>
-                <div class="form-row"><input type="date" id="done-start"><input type="date" id="done-due"></div>
-                <div class="form-row"><select id="done-assignee"><option value="">담당자</option></select><select id="done-repeat"><option value="none">반복X</option><option value="daily">매일</option><option value="weekly">매주</option><option value="monthly">매월</option></select><button onclick="addCard('done')">등록</button></div>
+            <div class="column" id="col-done"><h2 onclick="toggleColumn('done')">완료 <span id="done-count">0</span></h2>
+                <div class="add-card-form">
+                    <textarea id="done-input" placeholder="새 작업..."></textarea>
+                    <div class="form-row" style="font-size:0.6rem; color:#666; text-align:center;"><span style="flex:1;">시작일</span><span style="flex:1;">마감일</span></div>
+                    <div class="form-row"><input type="date" id="done-start"><input type="date" id="done-due"></div>
+                    <div class="form-row"><select id="done-assignee"><option value="">담당자</option></select><select id="done-repeat"><option value="none">반복X</option><option value="daily">매일</option><option value="weekly">매주</option><option value="monthly">매월</option></select><button onclick="addCard('done')">등록</button></div>
+                </div>
+                <div id="done-list"></div>
             </div>
-            <div id="done-list"></div>
         </div>
     </div>
 
     <!-- 자재 관리 보드 -->
-    <h3 style="max-width: 1200px; margin: 15px auto 5px; color: #0052cc; font-size: 1rem;">📦 자재 관리</h3>
-    <div class="board">
-        <div class="column" id="col-mat-request"><h2 onclick="toggleColumn('mat-request')">발주요청 <span id="mat-request-count">0</span></h2>
-            <div class="add-card-form">
-                <div class="form-row" style="margin-bottom:4px;">
-                    <input type="text" id="mat-request-item" placeholder="품명" style="flex:2;">
-                    <input type="text" id="mat-request-spec" placeholder="규격" style="flex:1.5;">
-                    <input type="text" id="mat-request-qty" placeholder="수량" style="flex:1;">
+    <h3 class="section-header" style="color: #0052cc;" onclick="toggleMainSection('material-wrap', this)">
+        <span>📦 자재 관리</span> <span class="section-icon">▼</span>
+    </h3>
+    <div id="material-wrap" style="display: block;">
+        <div class="board">
+            <div class="column" id="col-mat-request"><h2 onclick="toggleColumn('mat-request')">발주요청 <span id="mat-request-count">0</span></h2>
+                <div class="add-card-form">
+                    <div class="form-row" style="margin-bottom:4px;">
+                        <input type="text" id="mat-request-item" placeholder="품명" style="flex:2;">
+                        <input type="text" id="mat-request-spec" placeholder="규격" style="flex:1.5;">
+                        <input type="text" id="mat-request-qty" placeholder="수량" style="flex:1;">
+                    </div>
+                    <div class="form-row" style="font-size:0.6rem; color:#666; text-align:center;"><span style="flex:1;">발주 요청일</span><span style="flex:1;">반입 요청일</span></div>
+                    <div class="form-row"><input type="date" id="mat-request-start"><input type="date" id="mat-request-due"></div>
+                    <div class="form-row">
+                        <select id="mat-request-requester"><option value="">요청자</option></select>
+                        <select id="mat-request-orderer"><option value="">발주자</option></select>
+                        <button onclick="addCard('mat-request')">등록</button>
+                    </div>
                 </div>
-                <div class="form-row" style="font-size:0.6rem; color:#666; text-align:center;"><span style="flex:1;">발주 요청일</span><span style="flex:1;">반입 요청일</span></div>
-                <div class="form-row"><input type="date" id="mat-request-start"><input type="date" id="mat-request-due"></div>
-                <div class="form-row">
-                    <select id="mat-request-requester"><option value="">요청자</option></select>
-                    <select id="mat-request-orderer"><option value="">발주자</option></select>
-                    <button onclick="addCard('mat-request')">등록</button>
-                </div>
+                <div id="mat-request-list"></div>
             </div>
-            <div id="mat-request-list"></div>
-        </div>
-        
-        <div class="column" id="col-mat-ordered"><h2 onclick="toggleColumn('mat-ordered')">발주 완료 <span id="mat-ordered-count">0</span></h2>
-            <div class="add-card-form">
-                <div class="form-row" style="margin-bottom:4px;">
-                    <input type="text" id="mat-ordered-item" placeholder="품명" style="flex:2;">
-                    <input type="text" id="mat-ordered-spec" placeholder="규격" style="flex:1.5;">
-                    <input type="text" id="mat-ordered-qty" placeholder="수량" style="flex:1;">
+            
+            <div class="column" id="col-mat-ordered"><h2 onclick="toggleColumn('mat-ordered')">발주 완료 <span id="mat-ordered-count">0</span></h2>
+                <div class="add-card-form">
+                    <div class="form-row" style="margin-bottom:4px;">
+                        <input type="text" id="mat-ordered-item" placeholder="품명" style="flex:2;">
+                        <input type="text" id="mat-ordered-spec" placeholder="규격" style="flex:1.5;">
+                        <input type="text" id="mat-ordered-qty" placeholder="수량" style="flex:1;">
+                    </div>
+                    <div class="form-row" style="font-size:0.6rem; color:#666; text-align:center;"><span style="flex:1;">발주 요청일</span><span style="flex:1;">반입 요청일</span></div>
+                    <div class="form-row"><input type="date" id="mat-ordered-start"><input type="date" id="mat-ordered-due"></div>
+                    <div class="form-row">
+                        <select id="mat-ordered-requester"><option value="">요청자</option></select>
+                        <select id="mat-ordered-orderer"><option value="">발주자</option></select>
+                        <button onclick="addCard('mat-ordered')">등록</button>
+                    </div>
                 </div>
-                <div class="form-row" style="font-size:0.6rem; color:#666; text-align:center;"><span style="flex:1;">발주 요청일</span><span style="flex:1;">반입 요청일</span></div>
-                <div class="form-row"><input type="date" id="mat-ordered-start"><input type="date" id="mat-ordered-due"></div>
-                <div class="form-row">
-                    <select id="mat-ordered-requester"><option value="">요청자</option></select>
-                    <select id="mat-ordered-orderer"><option value="">발주자</option></select>
-                    <button onclick="addCard('mat-ordered')">등록</button>
-                </div>
+                <div id="mat-ordered-list"></div>
             </div>
-            <div id="mat-ordered-list"></div>
-        </div>
-        
-        <div class="column" id="col-mat-delivered"><h2 onclick="toggleColumn('mat-delivered')">반입완료 <span id="mat-delivered-count">0</span></h2>
-            <div class="add-card-form">
-                <div class="form-row" style="margin-bottom:4px;">
-                    <input type="text" id="mat-delivered-item" placeholder="품명" style="flex:2;">
-                    <input type="text" id="mat-delivered-spec" placeholder="규격" style="flex:1.5;">
-                    <input type="text" id="mat-delivered-qty" placeholder="수량" style="flex:1;">
+            
+            <div class="column" id="col-mat-delivered"><h2 onclick="toggleColumn('mat-delivered')">반입완료 <span id="mat-delivered-count">0</span></h2>
+                <div class="add-card-form">
+                    <div class="form-row" style="margin-bottom:4px;">
+                        <input type="text" id="mat-delivered-item" placeholder="품명" style="flex:2;">
+                        <input type="text" id="mat-delivered-spec" placeholder="규격" style="flex:1.5;">
+                        <input type="text" id="mat-delivered-qty" placeholder="수량" style="flex:1;">
+                    </div>
+                    <div class="form-row" style="font-size:0.6rem; color:#666; text-align:center;"><span style="flex:1;">발주 요청일</span><span style="flex:1;">반입 요청일</span></div>
+                    <div class="form-row"><input type="date" id="mat-delivered-start"><input type="date" id="mat-delivered-due"></div>
+                    <div class="form-row">
+                        <select id="mat-delivered-requester"><option value="">요청자</option></select>
+                        <select id="mat-delivered-orderer"><option value="">발주자</option></select>
+                        <button onclick="addCard('mat-delivered')">등록</button>
+                    </div>
                 </div>
-                <div class="form-row" style="font-size:0.6rem; color:#666; text-align:center;"><span style="flex:1;">발주 요청일</span><span style="flex:1;">반입 요청일</span></div>
-                <div class="form-row"><input type="date" id="mat-delivered-start"><input type="date" id="mat-delivered-due"></div>
-                <div class="form-row">
-                    <select id="mat-delivered-requester"><option value="">요청자</option></select>
-                    <select id="mat-delivered-orderer"><option value="">발주자</option></select>
-                    <button onclick="addCard('mat-delivered')">등록</button>
-                </div>
+                <div id="mat-delivered-list"></div>
             </div>
-            <div id="mat-delivered-list"></div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query, orderBy, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query, orderBy, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         
         const firebaseConfig = {
             apiKey: "AIzaSyDSERFM9_UmjfPt5x3HTsL0flekVb-p6HA",
@@ -200,109 +417,216 @@
         };
         const db = getFirestore(initializeApp(firebaseConfig));
         
-        let currentTasks = [], teamMembers = [], currentDate = new Date();
-        let hasShownAlert = false;
+        let currentTasks = [], teamMembers = [], currentContacts = [], currentSites = [];
+        let contactGroupList = [], siteGroupList = [];
+        let currentDate = new Date(), hasShownAlert = false;
+
+        window.loggedInUser = localStorage.getItem('site_user') || '';
 
         window.sendLineNotificationProxy = function(messageText) {
             const gasUrl = "https://script.google.com/macros/s/AKfycbyXn99LNYF-MgSEylL3PmcIgt0UaapVhiHXeexHfJCLHIGl5jj4nNRwwoSw0v5u-OgnJA/exec"; 
             if (!gasUrl || gasUrl.includes("YOUR_GAS_WEB_APP_URL")) return;
             fetch(gasUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ messages: [{ type: "text", text: messageText }] }) });
         };
+
+        window.loginUser = () => {
+            const userSelect = document.getElementById('login-user-select').value;
+            if(!userSelect) { alert('본인의 이름을 선택해주세요.'); return; }
+            window.loggedInUser = userSelect;
+            localStorage.setItem('site_user', userSelect);
+            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('header-user-name').innerText = window.loggedInUser + ' 님';
+            updateUI(); 
+            
+            // 로그인 완료 후, 브리핑 체크 (이미 DB에서 오늘 보냈으면 안 보냄)
+            const tomorrowStr = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+            if (!hasShownAlert) {
+                window.showDailyBriefing(tomorrowStr);
+                hasShownAlert = true;
+            }
+        };
+
+        window.logoutUser = () => {
+            if(confirm("로그아웃 하시겠습니까?")) {
+                localStorage.removeItem('site_user'); window.loggedInUser = '';
+                document.getElementById('header-user-name').innerText = ''; document.getElementById('login-overlay').style.display = 'flex';
+            }
+        };
         
+        window.toggleMainSection = (id, headerEl) => {
+            const el = document.getElementById(id); const icon = headerEl.querySelector('.section-icon');
+            if (el.style.display === 'none') { el.style.display = 'block'; icon.innerText = '▼'; } else { el.style.display = 'none'; icon.innerText = '▶'; }
+        };
         window.toggleColumn = (id) => { const list = document.getElementById(`${id}-list`); list.style.display = list.style.display === 'none' ? 'block' : 'none'; };
         window.toggleMonth = (id) => {
-            const el = document.getElementById(id);
-            const header = el.previousElementSibling;
-            if (el.style.display === 'none') { el.style.display = 'block'; header.querySelector('.arrow').innerText = '▲'; }
-            else { el.style.display = 'none'; header.querySelector('.arrow').innerText = '▼'; }
+            const el = document.getElementById(id); const header = el.previousElementSibling;
+            if (el.style.display === 'none') { el.style.display = 'block'; header.querySelector('.arrow').innerText = '▲'; } else { el.style.display = 'none'; header.querySelector('.arrow').innerText = '▼'; }
         };
+
+        // --- 👥 팀 관리 ---
         window.addTeamMember = async () => { const name = document.getElementById('new-member-name').value; if(!name) return; await addDoc(collection(db, "team"), { name }); document.getElementById('new-member-name').value = ''; };
         window.deleteTeamMember = async (id) => { if(confirm("삭제하시겠습니까?")) await deleteDoc(doc(db, "team", id)); };
         window.renameMember = async (id, newName) => { await updateDoc(doc(db, "team", id), { name: newName }); alert("변경 완료"); };
         
+        // --- 📁 연락처/사이트 그룹 관리 ---
+        window.addContactGroup = async () => { const name = document.getElementById('new-contact-group-name').value; if(!name) return; await addDoc(collection(db, "contactGroups"), { name }); document.getElementById('new-contact-group-name').value = ''; };
+        window.deleteContactGroup = async (id) => { if(confirm("삭제하시겠습니까?")) await deleteDoc(doc(db, "contactGroups", id)); };
+        window.renameContactGroup = async (id, newName) => { await updateDoc(doc(db, "contactGroups", id), { name: newName }); alert("변경 완료"); };
+        window.addSiteGroup = async () => { const name = document.getElementById('new-site-group-name').value; if(!name) return; await addDoc(collection(db, "siteGroups"), { name }); document.getElementById('new-site-group-name').value = ''; };
+        window.deleteSiteGroup = async (id) => { if(confirm("삭제하시겠습니까?")) await deleteDoc(doc(db, "siteGroups", id)); };
+        window.renameSiteGroup = async (id, newName) => { await updateDoc(doc(db, "siteGroups", id), { name: newName }); alert("변경 완료"); };
+
+        // --- 🌐 주요 사이트 관리 ---
+        window.toggleSiteForm = () => { const form = document.getElementById('site-add-form'); form.style.display = form.style.display === 'none' ? 'block' : 'none'; };
+        window.searchGoogle = () => { const q = document.getElementById('google-search-input').value; if(q) { window.open(`https://www.google.com/search?q=${encodeURIComponent(q)}`, '_blank'); document.getElementById('google-search-input').value = ''; } };
+        window.addSite = async () => {
+            const name = document.getElementById('site-name').value; let url = document.getElementById('site-url').value; const group = document.getElementById('site-group').value;
+            if(!name || !url) { alert("사이트명과 URL을 모두 입력해주세요."); return; }
+            if(!url.startsWith('http://') && !url.startsWith('https://')) url = 'https://' + url;
+            await addDoc(collection(db, "sites"), { name, url, group, createdAt: Date.now() });
+            document.getElementById('site-name').value = ''; document.getElementById('site-url').value = ''; document.getElementById('site-add-form').style.display = 'none';
+        };
+        window.deleteSite = async (id) => { if(confirm("이 사이트를 삭제하시겠습니까?")) await deleteDoc(doc(db, "sites", id)); };
+        window.openEditSite = (id) => {
+            const s = currentSites.find(x => x.id === id); if(!s) return;
+            document.getElementById('edit-site-id').value = s.id; document.getElementById('edit-site-name').value = s.name || '';
+            document.getElementById('edit-site-url').value = s.url || ''; document.getElementById('edit-site-group').value = s.group || ''; document.getElementById('edit-site-modal').style.display = 'block';
+        };
+        window.saveSiteEdit = async () => {
+            const id = document.getElementById('edit-site-id').value; const name = document.getElementById('edit-site-name').value;
+            let url = document.getElementById('edit-site-url').value; const group = document.getElementById('edit-site-group').value;
+            if(!name || !url) { alert("항목을 모두 입력해주세요."); return; }
+            if(!url.startsWith('http://') && !url.startsWith('https://')) url = 'https://' + url;
+            await updateDoc(doc(db, "sites", id), { name, url, group }); document.getElementById('edit-site-modal').style.display = 'none';
+        };
+        window.renderSites = () => {
+            const list = document.getElementById('site-list'); if(!list) return;
+            const groupedSites = {};
+            currentSites.forEach(s => { const g = s.group || '미분류'; if(!groupedSites[g]) groupedSites[g] = []; groupedSites[g].push(s); });
+            list.innerHTML = Object.keys(groupedSites).sort().map(g => `
+                <div style="grid-column: 1 / -1; margin-top: 10px; font-weight: bold; color: #326ce5; border-bottom: 2px solid #f0f2f5; padding-bottom: 5px;">📂 ${g}</div>
+                ${groupedSites[g].map(s => `
+                    <div style="position:relative; border:1px solid #e1e4e8; border-radius:8px; padding:15px 10px; background:#fff; text-align:center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                        <a href="${s.url}" target="_blank" style="text-decoration:none; color:var(--text-color); font-weight:bold; font-size: 0.85rem; display:block; word-break:break-all; margin-top:10px;">${s.name}</a>
+                        <div style="position: absolute; right: 5px; top: 5px; display:flex; gap:3px;">
+                            <button onclick="openEditSite('${s.id}')" style="background: none; color: #666; border: none; font-size: 0.8rem; cursor: pointer; padding:0;">✏️</button>
+                            <button onclick="deleteSite('${s.id}')" style="background: none; color: #bbb; border: none; font-size: 1rem; cursor: pointer; padding:0;">×</button>
+                        </div>
+                    </div>
+                `).join('')}
+            `).join('');
+        };
+
+        // --- 👥 연락처 통합 관리 ---
+        window.addContact = async () => {
+            const name = document.getElementById('contact-name').value; const phone = document.getElementById('contact-phone').value;
+            const group = document.getElementById('contact-group').value; const email = document.getElementById('contact-email').value;
+            if(!name || !phone) { alert("성함(직함)과 전화번호를 입력해주세요."); return; }
+            await addDoc(collection(db, "contacts"), { name, phone, group, email, createdAt: Date.now() });
+            document.getElementById('contact-name').value = ''; document.getElementById('contact-phone').value = ''; document.getElementById('contact-email').value = '';
+        };
+        window.deleteContact = async (id) => { if(confirm("이 연락처를 삭제하시겠습니까?")) await deleteDoc(doc(db, "contacts", id)); };
+        window.openEditContact = (id) => {
+            const c = currentContacts.find(x => x.id === id); if(!c) return;
+            document.getElementById('edit-contact-id').value = c.id; document.getElementById('edit-contact-name').value = c.name || '';
+            document.getElementById('edit-contact-phone').value = c.phone || ''; document.getElementById('edit-contact-group').value = c.group || '';
+            document.getElementById('edit-contact-email').value = c.email || ''; document.getElementById('edit-contact-modal').style.display = 'block';
+        };
+        window.saveContactEdit = async () => {
+            const id = document.getElementById('edit-contact-id').value; const name = document.getElementById('edit-contact-name').value;
+            const phone = document.getElementById('edit-contact-phone').value; const group = document.getElementById('edit-contact-group').value;
+            const email = document.getElementById('edit-contact-email').value;
+            if(!name || !phone) { alert("성함(직함)과 전화번호를 입력해주세요."); return; }
+            await updateDoc(doc(db, "contacts", id), { name, phone, group, email }); document.getElementById('edit-contact-modal').style.display = 'none';
+        };
+        window.renderContacts = () => {
+            const list = document.getElementById('contact-list'); if(!list) return;
+            const search = document.getElementById('contact-search').value.toLowerCase(); const filter = document.getElementById('contact-filter').value;
+            const filtered = currentContacts.filter(c => {
+                const matchSearch = (c.name && c.name.toLowerCase().includes(search)) || (c.phone && c.phone.includes(search));
+                const matchFilter = filter === '' || c.group === filter; return matchSearch && matchFilter;
+            });
+            const groupedContacts = {};
+            filtered.forEach(c => { const g = c.group || '미분류'; if(!groupedContacts[g]) groupedContacts[g] = []; groupedContacts[g].push(c); });
+            list.innerHTML = Object.keys(groupedContacts).sort().map(g => `
+                <div style="grid-column: 1 / -1; margin-top: 10px; font-weight: bold; color: #2664eb; border-bottom: 2px solid #f0f2f5; padding-bottom: 5px;">📂 ${g}</div>
+                ${groupedContacts[g].map(c => `
+                    <div style="display: flex; flex-direction: column; justify-content: center; padding: 12px; border: 1px solid #e1e4e8; border-radius: 8px; background: #fff; position: relative;">
+                        <div style="font-weight: bold; font-size: 1rem; color: #333;">${c.name}</div>
+                        <div style="font-size: 0.85rem; color: var(--primary-color); margin-top: 5px; font-weight: 500;">📞 <a href="tel:${c.phone}" style="color:inherit; text-decoration:none;">${c.phone}</a></div>
+                        ${c.email ? `<div style="font-size: 0.75rem; color: #666; margin-top: 3px;">✉️ ${c.email}</div>` : ''}
+                        <div style="position: absolute; right: 10px; top: 10px; display:flex; gap:5px;">
+                            <button onclick="openEditContact('${c.id}')" style="background: none; color: #666; border: none; font-size: 0.9rem; cursor: pointer;">✏️</button>
+                            <button onclick="deleteContact('${c.id}')" style="background: none; color: #999; border: none; font-size: 1rem; cursor: pointer;">×</button>
+                        </div>
+                    </div>
+                `).join('')}
+            `).join('');
+        };
+
+        // --- 👀 작업/자재 확인(결재) 기능 ---
+        window.toggleAck = async (id) => {
+            if(!window.loggedInUser) { alert("상단에서 먼저 접속(로그인)을 진행해주세요."); return; }
+            const taskSnap = await getDoc(doc(db, "tasks", id));
+            if(!taskSnap.exists()) return;
+            const task = taskSnap.data(); let acks = task.acks || {};
+            
+            if(acks[window.loggedInUser]) {
+                if(confirm("확인 상태를 취소하시겠습니까?")) {
+                    delete acks[window.loggedInUser];
+                    await updateDoc(doc(db, "tasks", id), { acks: acks });
+                }
+            } else {
+                const now = new Date(); const timeStr = `${now.getMonth()+1}/${now.getDate()} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+                acks[window.loggedInUser] = timeStr;
+                await updateDoc(doc(db, "tasks", id), { acks: acks });
+            }
+        };
+
+        // --- 일정 및 자재 등록/수정/이동/삭제 ---
         window.addCard = async (col) => { 
-            let text = '';
-            let repeat = 'none';
-            let assignee = '';
-            let requester = '';
-            let orderer = '';
+            let text = ''; let repeat = 'none'; let assignee = ''; let requester = ''; let orderer = '';
+            const startDate = document.getElementById(`${col}-start`).value; const dueDate = document.getElementById(`${col}-due`).value;
 
-            const startDate = document.getElementById(`${col}-start`).value;
-            const dueDate = document.getElementById(`${col}-due`).value;
-
-            // 자재 관리인 경우
             if (col.startsWith('mat-')) {
-                const item = document.getElementById(`${col}-item`).value;
-                const spec = document.getElementById(`${col}-spec`).value;
-                const qty = document.getElementById(`${col}-qty`).value;
-                requester = document.getElementById(`${col}-requester`).value;
+                const item = document.getElementById(`${col}-item`).value; const spec = document.getElementById(`${col}-spec`).value; const qty = document.getElementById(`${col}-qty`).value;
+                requester = document.getElementById(`${col}-requester`).value || window.loggedInUser; 
                 orderer = document.getElementById(`${col}-orderer`).value;
-                
                 if (!item) { alert("품명을 입력해주세요."); return; }
+                let textArr = [`[${item}]`]; if (spec) textArr.push(spec); if (qty) textArr.push(`(${qty})`); text = textArr.join(' ');
                 
-                let textArr = [];
-                textArr.push(`[${item}]`);
-                if (spec) textArr.push(spec);
-                if (qty) textArr.push(`(${qty})`);
-                text = textArr.join(' ');
-                
-                // 입력창 초기화
-                document.getElementById(`${col}-item`).value = '';
-                document.getElementById(`${col}-spec`).value = '';
-                document.getElementById(`${col}-qty`).value = '';
-            } 
-            // 일정 관리인 경우
-            else {
-                const input = document.getElementById(`${col}-input`); 
-                text = input.value; 
-                if(!text) return; 
-                input.value = ''; 
+                document.getElementById(`${col}-item`).value = ''; document.getElementById(`${col}-spec`).value = ''; document.getElementById(`${col}-qty`).value = '';
+            } else {
+                const input = document.getElementById(`${col}-input`); text = input.value; 
+                if(!text) return; input.value = ''; 
                 repeat = document.getElementById(`${col}-repeat`) ? document.getElementById(`${col}-repeat`).value : 'none';
-                assignee = document.getElementById(`${col}-assignee`).value;
+                assignee = document.getElementById(`${col}-assignee`).value || window.loggedInUser; 
             }
 
-            await addDoc(collection(db, "tasks"), { 
-                text: text, 
-                status: col, 
-                startDate: startDate, 
-                dueDate: dueDate, 
-                assignee: assignee, 
-                requester: requester,
-                orderer: orderer,
-                repeat: repeat, 
-                createdAt: Date.now() 
-            }); 
+            await addDoc(collection(db, "tasks"), { text: text, status: col, startDate: startDate, dueDate: dueDate, assignee: assignee, requester: requester, orderer: orderer, repeat: repeat, createdAt: Date.now() }); 
 
             const isMaterial = col.startsWith('mat-');
-            let msg = '';
-            if (isMaterial) {
-                msg = `🟢 [자재 등록]\n• 내용: ${text}\n• 요청자: ${requester || '미지정'}\n• 발주자: ${orderer || '미지정'}\n• 발주요청: ${startDate || '미지정'}\n• 반입요청: ${dueDate || '미지정'}`;
-            } else {
-                msg = `🟢 [일정 등록]\n• 내용: ${text}\n• 담당자: ${assignee || '미지정'}\n• 시작일: ${startDate || '미지정'}\n• 마감일: ${dueDate || '미지정'}`;
-            }
+            let msg = isMaterial 
+                ? `🟢 [자재 등록]\n• 내용: ${text}\n• 요청자: ${requester || '미지정'}\n• 발주자: ${orderer || '미지정'}\n• 발주요청: ${startDate || '미지정'}\n• 반입요청: ${dueDate || '미지정'}`
+                : `🟢 [일정 등록]\n• 내용: ${text}\n• 담당자: ${assignee || '미지정'}\n• 시작일: ${startDate || '미지정'}\n• 마감일: ${dueDate || '미지정'}`;
             window.sendLineNotificationProxy(msg);
         };
 
         window.openEditModal = (id) => {
-            const task = currentTasks.find(t => t.id === id);
-            if(!task) return;
-            document.getElementById('edit-id').value = id;
-            document.getElementById('edit-text').value = task.text || '';
-            document.getElementById('edit-start').value = task.startDate || '';
-            document.getElementById('edit-due').value = task.dueDate || '';
+            const task = currentTasks.find(t => t.id === id); if(!task) return;
+            document.getElementById('edit-id').value = id; document.getElementById('edit-text').value = task.text || '';
+            document.getElementById('edit-start').value = task.startDate || ''; document.getElementById('edit-due').value = task.dueDate || '';
             document.getElementById('edit-modal').style.display = 'block';
         };
 
         window.saveEdit = async () => {
-            const id = document.getElementById('edit-id').value;
-            const text = document.getElementById('edit-text').value;
-            const startDate = document.getElementById('edit-start').value;
-            const dueDate = document.getElementById('edit-due').value;
-
+            const id = document.getElementById('edit-id').value; const text = document.getElementById('edit-text').value;
+            const startDate = document.getElementById('edit-start').value; const dueDate = document.getElementById('edit-due').value;
             if(!text.trim()) { alert("내용을 입력해주세요."); return; }
             try {
                 await updateDoc(doc(db, "tasks", id), { text: text, startDate: startDate, dueDate: dueDate });
                 document.getElementById('edit-modal').style.display = 'none';
+                window.sendLineNotificationProxy(`✏️ [항목 수정됨]\n• 내용: ${text}\n• 시작/요청: ${startDate || '미지정'}\n• 마감/반입: ${dueDate || '미지정'}`);
             } catch(error) { alert("저장 중 오류가 발생했습니다."); }
         };
         
@@ -311,16 +635,11 @@
                 const taskSnap = await getDoc(doc(db, "tasks", id));
                 if (taskSnap.exists()) {
                     const taskData = taskSnap.data();
-                    const statusNames = { 
-                        'todo': '할 일', 'inprogress': '진행 중', 'done': '완료',
-                        'mat-request': '발주요청', 'mat-ordered': '발주 완료', 'mat-delivered': '반입완료'
-                    };
+                    const statusNames = { 'todo': '할 일', 'inprogress': '진행 중', 'done': '완료', 'mat-request': '발주요청', 'mat-ordered': '발주 완료', 'mat-delivered': '반입완료' };
                     await updateDoc(doc(db, "tasks", id), { status: newStatus }); 
                     document.getElementById('task-modal').style.display = 'none'; 
-                    
                     const pName = taskData.status.startsWith('mat-') ? `요청:${taskData.requester||'-'}/발주:${taskData.orderer||'-'}` : `담당:${taskData.assignee||'-'}`;
-                    const msg = `📝 [상태 변경]\n• 항목: ${taskData.text}\n• ${pName}\n• 변경: [${statusNames[taskData.status] || taskData.status}] ➔ [${statusNames[newStatus]}]`;
-                    window.sendLineNotificationProxy(msg);
+                    window.sendLineNotificationProxy(`📝 [상태 변경]\n• 항목: ${taskData.text}\n• ${pName}\n• 변경: [${statusNames[taskData.status] || taskData.status}] ➔ [${statusNames[newStatus]}]`);
                 }
             } catch (e) {}
         };
@@ -331,27 +650,19 @@
                 if (taskSnap.exists()) {
                     const taskData = taskSnap.data();
                     await deleteDoc(doc(db, "tasks", id)); 
-                    const msg = `🗑️ [삭제 알림]\n• 삭제된 항목: ${taskData.text}`;
-                    window.sendLineNotificationProxy(msg);
+                    window.sendLineNotificationProxy(`🗑️ [삭제 알림]\n• 삭제된 항목: ${taskData.text}`);
                 }
             }
         };
 
-        window.changeField = async (id, fieldName, newValue) => { 
-            await updateDoc(doc(db, "tasks", id), { [fieldName]: newValue }); 
-        };
+        window.changeField = async (id, fieldName, newValue) => { await updateDoc(doc(db, "tasks", id), { [fieldName]: newValue }); };
         window.changeMonth = (o) => { currentDate.setMonth(currentDate.getMonth() + o); renderCalendar(); };
         
-        // --- 🌟 접속 시 나타나는 종합 일일 브리핑 팝업 함수 ---
-        window.showDailyBriefing = (tomorrowStr) => {
-            const modal = document.getElementById('task-modal');
-            const list = document.getElementById('modal-list');
-            const title = document.getElementById('modal-title');
+        // --- 🌟 DB 기반 1일 1회 브리핑 알림 ---
+        window.showDailyBriefing = async (tomorrowStr) => {
+            const modal = document.getElementById('task-modal'); const list = document.getElementById('modal-list'); const title = document.getElementById('modal-title');
+            title.innerText = '🔔 일일 현황 브리핑'; let html = '';
             
-            title.innerText = '🔔 일일 현황 브리핑';
-            let html = '';
-            
-            // 1. 내일 예정 항목 
             const tomorrowItems = currentTasks.filter(t => (t.dueDate === tomorrowStr || t.startDate === tomorrowStr) && t.status !== 'done' && t.status !== 'mat-delivered');
             html += `<h4 style="margin:5px 0; color:var(--primary-color);">📅 내일 예정(시작/마감) 항목</h4>`;
             if(tomorrowItems.length > 0) {
@@ -363,85 +674,61 @@
                     const nameStr = t.status.startsWith('mat-') ? `요청: ${t.requester||'-'}` : `담당: ${t.assignee||'-'}`;
                     return `<div class="card" style="margin-bottom:5px; font-size:0.8rem;"><strong>${prefix}${t.text||''}</strong><br><small>${t.startDate||''} ~ ${t.dueDate||''} | ${nameStr}</small></div>`;
                 }).join('');
-            } else {
-                html += `<p style="font-size:0.75rem; color:#666;">내일 예정된 항목이 없습니다.</p>`;
-            }
+            } else { html += `<p style="font-size:0.75rem; color:#666;">내일 예정된 항목이 없습니다.</p>`; }
             
-            // 2. 자재 발주 대기 현황 (미발주)
             const matRequests = currentTasks.filter(t => t.status === 'mat-request');
             html += `<h4 style="margin:15px 0 5px 0; color:#ff9f43;">📦 발주 대기 중인 자재 (미발주)</h4>`;
             if(matRequests.length > 0) {
-                html += matRequests.map(t => {
-                    return `<div class="card" style="margin-bottom:5px; font-size:0.8rem; border-left: 3px solid #ff9f43;"><strong>${t.text||''}</strong><br><small>요청일: ${t.startDate||'-'} | 요청자: ${t.requester||'-'}</small></div>`;
-                }).join('');
-            } else {
-                html += `<p style="font-size:0.75rem; color:#666;">발주 대기 중인 자재가 없습니다.</p>`;
-            }
+                html += matRequests.map(t => { return `<div class="card" style="margin-bottom:5px; font-size:0.8rem; border-left: 3px solid #ff9f43;"><strong>${t.text||''}</strong><br><small>요청일: ${t.startDate||'-'} | 요청자: ${t.requester||'-'}</small></div>`; }).join('');
+            } else { html += `<p style="font-size:0.75rem; color:#666;">발주 대기 중인 자재가 없습니다.</p>`; }
 
-            // 3. 자재 반입 대기 현황 (발주완료)
             const matOrdered = currentTasks.filter(t => t.status === 'mat-ordered');
             html += `<h4 style="margin:15px 0 5px 0; color:#36B37E;">🚚 반입 대기 중인 자재 (발주완료)</h4>`;
             if(matOrdered.length > 0) {
-                html += matOrdered.map(t => {
-                    return `<div class="card" style="margin-bottom:5px; font-size:0.8rem; border-left: 3px solid #36B37E;"><strong>${t.text||''}</strong><br><small>반입예정: ${t.dueDate||'-'} | 발주자: ${t.orderer||'-'}</small></div>`;
-                }).join('');
-            } else {
-                html += `<p style="font-size:0.75rem; color:#666;">반입 대기 중인 자재가 없습니다.</p>`;
-            }
+                html += matOrdered.map(t => { return `<div class="card" style="margin-bottom:5px; font-size:0.8rem; border-left: 3px solid #36B37E;"><strong>${t.text||''}</strong><br><small>반입예정: ${t.dueDate||'-'} | 발주자: ${t.orderer||'-'}</small></div>`; }).join('');
+            } else { html += `<p style="font-size:0.75rem; color:#666;">반입 대기 중인 자재가 없습니다.</p>`; }
             
-            list.innerHTML = html;
-            modal.style.display = 'block';
+            list.innerHTML = html; modal.style.display = 'block';
 
-            // 👇👇👇 라인 알림 전송 로직 추가됨 👇👇👇
-            let lineMsg = `🔔 [일일 현황 브리핑]\n\n`;
+            // DB 기록 조회하여 오늘 이미 전송되었는지 확인
+            const today = new Date().toISOString().split('T')[0];
+            const notiRef = doc(db, "system", "dailyBriefing");
             
-            lineMsg += `[📅 내일 예정 항목]\n`;
-            if(tomorrowItems.length > 0) {
-                tomorrowItems.forEach(t => { lineMsg += `• ${t.text || ''} (${t.startDate || ''} ~ ${t.dueDate || ''})\n`; });
-            } else {
-                lineMsg += `없음\n`;
-            }
-            
-            lineMsg += `\n[📦 발주 대기 중인 자재]\n`;
-            if(matRequests.length > 0) {
-                matRequests.forEach(t => { lineMsg += `• ${t.text || ''} (요청자: ${t.requester || '-'}) \n`; });
-            } else {
-                lineMsg += `없음\n`;
-            }
-            
-            lineMsg += `\n[🚚 반입 대기 중인 자재]\n`;
-            if(matOrdered.length > 0) {
-                matOrdered.forEach(t => { lineMsg += `• ${t.text || ''} (발주자: ${t.orderer || '-'}) \n`; });
-            } else {
-                lineMsg += `없음\n`;
-            }
-            
-            window.sendLineNotificationProxy(lineMsg);
-            // 👆👆👆 라인 알림 전송 로직 끝 👆👆👆
+            try {
+                const notiSnap = await getDoc(notiRef);
+                let shouldSend = false;
+                if(notiSnap.exists()) {
+                    if(notiSnap.data().lastSentDate !== today) shouldSend = true;
+                } else {
+                    shouldSend = true;
+                }
+
+                if(shouldSend) {
+                    if(notiSnap.exists()) { await updateDoc(notiRef, { lastSentDate: today }); } 
+                    else { await setDoc(notiRef, { lastSentDate: today }); }
+
+                    let lineMsg = `🔔 [일일 현황 브리핑]\n\n[📅 내일 예정 항목]\n`;
+                    if(tomorrowItems.length > 0) { tomorrowItems.forEach(t => { lineMsg += `• ${t.text || ''} (${t.startDate || ''} ~ ${t.dueDate || ''})\n`; }); } else { lineMsg += `없음\n`; }
+                    lineMsg += `\n[📦 발주 대기 중인 자재]\n`;
+                    if(matRequests.length > 0) { matRequests.forEach(t => { lineMsg += `• ${t.text || ''} (요청자: ${t.requester || '-'}) \n`; }); } else { lineMsg += `없음\n`; }
+                    lineMsg += `\n[🚚 반입 대기 중인 자재]\n`;
+                    if(matOrdered.length > 0) { matOrdered.forEach(t => { lineMsg += `• ${t.text || ''} (발주자: ${t.orderer || '-'}) \n`; }); } else { lineMsg += `없음\n`; }
+                    
+                    window.sendLineNotificationProxy(lineMsg);
+                }
+            } catch(e) { console.error("알림 발송 제한 처리 에러", e); }
         };
 
         window.showPopup = (type, value, status) => {
-            const modal = document.getElementById('task-modal');
-            const list = document.getElementById('modal-list');
-            const title = document.getElementById('modal-title');
-            
+            const modal = document.getElementById('task-modal'); const list = document.getElementById('modal-list'); const title = document.getElementById('modal-title');
             let filtered = [];
-            if (type === 'assignee') {
-                filtered = currentTasks.filter(t => (t.assignee === value || t.requester === value || t.orderer === value) && (status ? t.status === status : true));
-            } else if (type === 'date-task') {
-                filtered = currentTasks.filter(t => t.dueDate === value && ['todo', 'inprogress'].includes(t.status));
-            } else if (type === 'date-mat') {
-                filtered = currentTasks.filter(t => t.dueDate === value && ['mat-request', 'mat-ordered'].includes(t.status));
-            } else if (type === 'overdue') {
-                filtered = currentTasks.filter(t => (t.dueDate === value || t.startDate === value) && t.status !== 'done' && t.status !== 'mat-delivered');
-            } else {
-                filtered = currentTasks.filter(t => t.id === value);
-            }
+            if (type === 'assignee') { filtered = currentTasks.filter(t => (t.assignee === value || t.requester === value || t.orderer === value) && (status ? t.status === status : true)); } 
+            else if (type === 'date-task') { filtered = currentTasks.filter(t => t.dueDate === value && ['todo', 'inprogress'].includes(t.status)); } 
+            else if (type === 'date-mat') { filtered = currentTasks.filter(t => t.dueDate === value && ['mat-request', 'mat-ordered'].includes(t.status)); } 
+            else if (type === 'overdue') { filtered = currentTasks.filter(t => (t.dueDate === value || t.startDate === value) && t.status !== 'done' && t.status !== 'mat-delivered'); } 
+            else { filtered = currentTasks.filter(t => t.id === value); }
 
-            title.innerText = (type === 'assignee' ? `${value} 님의 관련 항목` 
-                          : (type.startsWith('date') ? `${value} 예정 내역`
-                          : (type === 'overdue' ? `${value} 지연 항목` : '상세')));
-            
+            title.innerText = (type === 'assignee' ? `${value} 님의 관련 항목` : (type.startsWith('date') ? `${value} 예정 내역` : (type === 'overdue' ? `${value} 지연 항목` : '상세')));
             list.innerHTML = filtered.length > 0 ? filtered.map(t => {
                 let prefix = '';
                 if (type === 'overdue') {
@@ -452,68 +739,87 @@
                 const nameStr = t.status.startsWith('mat-') ? `요청: ${t.requester||'-'} / 발주: ${t.orderer||'-'}` : `담당: ${t.assignee||'-'}`;
                 return `<div class="card"><strong>${prefix}${t.text||''}</strong><br><small>${t.startDate||''} ~ ${t.dueDate||''} | ${nameStr}</small></div>`;
             }).join('') : '<p>해당하는 항목이 없습니다.</p>';
-            
             modal.style.display = 'block';
         };
 
-        onSnapshot(query(collection(db, "team")), (s) => { teamMembers = s.docs.map(d => ({ id: d.id, name: d.data().name })); renderTeamModal(); updateUI(); });
+        // 데이터베이스 실시간 연동 리스너
+        onSnapshot(query(collection(db, "team")), (s) => { 
+            teamMembers = s.docs.map(d => ({ id: d.id, name: d.data().name })); 
+            renderTeamModal(); updateUI(); 
+            
+            const loginSelect = document.getElementById('login-user-select');
+            if(loginSelect) { loginSelect.innerHTML = '<option value="">본인 이름을 선택하세요</option>' + teamMembers.map(m => `<option value="${m.name}">${m.name}</option>`).join(''); }
+            
+            if(window.loggedInUser && teamMembers.find(m => m.name === window.loggedInUser)) {
+                document.getElementById('login-overlay').style.display = 'none';
+                document.getElementById('header-user-name').innerText = window.loggedInUser + ' 님';
+            } else {
+                document.getElementById('login-overlay').style.display = 'flex';
+                document.getElementById('header-user-name').innerText = '';
+            }
+        });
+        
+        onSnapshot(query(collection(db, "contactGroups")), (s) => { contactGroupList = s.docs.map(d => ({ id: d.id, name: d.data().name })); renderContactGroupModal(); updateContactGroupDropdowns(); renderContacts(); });
+        onSnapshot(query(collection(db, "siteGroups")), (s) => { siteGroupList = s.docs.map(d => ({ id: d.id, name: d.data().name })); renderSiteGroupModal(); updateSiteGroupDropdowns(); renderSites(); });
+        onSnapshot(query(collection(db, "contacts"), orderBy("createdAt", "desc")), (s) => { currentContacts = s.docs.map(d => ({ id: d.id, ...d.data() })); renderContacts(); });
+        onSnapshot(query(collection(db, "sites"), orderBy("createdAt", "desc")), (s) => { currentSites = s.docs.map(d => ({ id: d.id, ...d.data() })); renderSites(); });
         
         onSnapshot(query(collection(db, "tasks"), orderBy("createdAt", "desc")), (s) => { 
             currentTasks = s.docs.map(d => ({ id: d.id, ...d.data() })); 
             updateUI(); 
-            
             const tomorrowStr = new Date(Date.now() + 86400000).toISOString().split('T')[0];
-            
-            if (!hasShownAlert) {
+            if (!hasShownAlert && window.loggedInUser) {
                 const hasTomorrow = currentTasks.some(t => (t.dueDate === tomorrowStr || t.startDate === tomorrowStr) && t.status !== 'done' && t.status !== 'mat-delivered');
                 const hasMatPending = currentTasks.some(t => t.status === 'mat-request' || t.status === 'mat-ordered');
-                
-                if (hasTomorrow || hasMatPending) {
-                    window.showDailyBriefing(tomorrowStr); 
-                }
+                if (hasTomorrow || hasMatPending) { window.showDailyBriefing(tomorrowStr); }
                 hasShownAlert = true; 
             }
         });
 
         function renderTeamModal() {
-            const list = document.getElementById('team-list');
-            if(!list) return;
+            const list = document.getElementById('team-list'); if(!list) return;
             list.innerHTML = teamMembers.map(m => `<div class="team-item"><input type="text" id="in-${m.id}" value="${m.name}"><button onclick="renameMember('${m.id}', document.getElementById('in-${m.id}').value)">변경</button><button style="background:var(--warning-color); color:white;" onclick="deleteTeamMember('${m.id}')">삭제</button></div>`).join('');
+        }
+        function renderContactGroupModal() {
+            const list = document.getElementById('contact-group-list'); if(!list) return;
+            list.innerHTML = contactGroupList.map(g => `<div class="team-item"><input type="text" id="in-cg-${g.id}" value="${g.name}"><button onclick="renameContactGroup('${g.id}', document.getElementById('in-cg-${g.id}').value)">변경</button><button style="background:var(--warning-color); color:white;" onclick="deleteContactGroup('${g.id}')">삭제</button></div>`).join('');
+        }
+        function updateContactGroupDropdowns() {
+            const options = contactGroupList.map(g => `<option value="${g.name}">${g.name}</option>`).join('');
+            const safeOpts = options || '<option value="">그룹을 추가해주세요</option>';
+            const cg = document.getElementById('contact-group'); if(cg) cg.innerHTML = safeOpts;
+            const ecg = document.getElementById('edit-contact-group'); if(ecg) ecg.innerHTML = safeOpts;
+            const cf = document.getElementById('contact-filter'); if(cf) cf.innerHTML = '<option value="">전체 그룹보기</option>' + options;
+        }
+        function renderSiteGroupModal() {
+            const list = document.getElementById('site-group-list'); if(!list) return;
+            list.innerHTML = siteGroupList.map(g => `<div class="team-item"><input type="text" id="in-sg-${g.id}" value="${g.name}"><button onclick="renameSiteGroup('${g.id}', document.getElementById('in-sg-${g.id}').value)">변경</button><button style="background:var(--warning-color); color:white;" onclick="deleteSiteGroup('${g.id}')">삭제</button></div>`).join('');
+        }
+        function updateSiteGroupDropdowns() {
+            const options = siteGroupList.map(g => `<option value="${g.name}">${g.name}</option>`).join('');
+            const safeOpts = options || '<option value="">그룹을 추가해주세요</option>';
+            const sg = document.getElementById('site-group'); if(sg) sg.innerHTML = safeOpts;
+            const esg = document.getElementById('edit-site-group'); if(esg) esg.innerHTML = safeOpts;
         }
 
         function updateUI() {
             const columns = ['todo', 'inprogress', 'done', 'mat-request', 'mat-ordered', 'mat-delivered'];
-            
             columns.forEach(col => {
-                const assigneeSelect = document.getElementById(`${col}-assignee`);
-                const reqSelect = document.getElementById(`${col}-requester`);
-                const ordSelect = document.getElementById(`${col}-orderer`);
+                const assigneeSelect = document.getElementById(`${col}-assignee`); const reqSelect = document.getElementById(`${col}-requester`); const ordSelect = document.getElementById(`${col}-orderer`);
                 const optionsHtml = teamMembers.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
-                
                 if (assigneeSelect) assigneeSelect.innerHTML = '<option value="">담당자</option>' + optionsHtml;
                 if (reqSelect) reqSelect.innerHTML = '<option value="">요청자</option>' + optionsHtml;
                 if (ordSelect) ordSelect.innerHTML = '<option value="">발주자</option>' + optionsHtml;
             });
 
             columns.forEach(col => {
-                const listContainer = document.getElementById(`${col}-list`);
-                if(!listContainer) return;
-                listContainer.innerHTML = '';
-                
+                const listContainer = document.getElementById(`${col}-list`); if(!listContainer) return; listContainer.innerHTML = '';
                 const tasks = currentTasks.filter(t => t.status === col).sort((a,b) => (b.dueDate||'').localeCompare(a.dueDate||''));
-                const countEl = document.getElementById(`${col}-count`);
-                if(countEl) countEl.innerText = tasks.length;
-
-                const groups = {};
-                tasks.forEach(t => {
-                    const month = t.dueDate ? t.dueDate.substring(0, 7) : '미지정';
-                    if(!groups[month]) groups[month] = [];
-                    groups[month].push(t);
-                });
+                const countEl = document.getElementById(`${col}-count`); if(countEl) countEl.innerText = tasks.length;
+                const groups = {}; tasks.forEach(t => { const month = t.dueDate ? t.dueDate.substring(0, 7) : '미지정'; if(!groups[month]) groups[month] = []; groups[month].push(t); });
 
                 Object.keys(groups).sort((a, b) => b.localeCompare(a)).forEach(month => {
-                    const gid = `${col}-${month}`;
-                    const groupDiv = document.createElement('div');
+                    const gid = `${col}-${month}`; const groupDiv = document.createElement('div');
                     groupDiv.innerHTML = `<div class="month-group-header" onclick="toggleMonth('${gid}')">${month} (${groups[month].length}건) <span class="arrow">▲</span></div><div id="${gid}"></div>`;
                     listContainer.appendChild(groupDiv);
                     
@@ -523,19 +829,22 @@
                         const isTask = ['todo', 'inprogress', 'done'].includes(col);
                         const dateStr = (t.startDate || t.dueDate) ? `<div style="font-size:0.6rem; color:#666; margin-bottom:2px;">${t.startDate ? (isTask?'시작:' :'요청:')+t.startDate.slice(5) : ''} ${t.dueDate ? (isTask?'마감:':'반입:')+t.dueDate.slice(5) : ''}</div>` : '';
                         
+                        let acksHtml = ''; const hasMyAck = t.acks && window.loggedInUser && t.acks[window.loggedInUser];
+                        if (t.acks && Object.keys(t.acks).length > 0) {
+                            const ackStrs = Object.keys(t.acks).map(name => `<span style="display:inline-block; margin-right:3px; padding:1px 3px; background:#fff; border-radius:3px;">${name} <small>(${t.acks[name]})</small></span>`);
+                            acksHtml = `<div style="font-size:0.65rem; color:#00875a; margin-bottom:4px; background:#e3fcef; padding:3px; border-radius:4px; line-height:1.4;">✓ 확인: ${ackStrs.join('')}</div>`;
+                        }
+
                         let selectsHtml = '';
                         if (isTask) {
                             const assigneeOptions = `<option value="">담당자 미지정</option>` + teamMembers.map(m => `<option value="${m.name}" ${t.assignee===m.name?'selected':''}>${m.name}</option>`).join('');
-                            selectsHtml = `<select onchange="changeField('${t.id}', 'assignee', this.value)" style="font-size:0.65rem; padding:2px; border:1px solid #ccc; border-radius:3px; width:100%; max-width:120px;">${assigneeOptions}</select>`;
+                            selectsHtml = `<select onchange="changeField('${t.id}', 'assignee', this.value)" style="font-size:0.65rem; padding:2px; border:1px solid #ccc; border-radius:3px; width:100%; box-sizing:border-box; max-width:120px;">${assigneeOptions}</select>`;
                         } else {
                             const reqOptions = `<option value="">요청자 미지정</option>` + teamMembers.map(m => `<option value="${m.name}" ${t.requester===m.name?'selected':''}>${m.name}</option>`).join('');
                             const ordOptions = `<option value="">발주자 미지정</option>` + teamMembers.map(m => `<option value="${m.name}" ${t.orderer===m.name?'selected':''}>${m.name}</option>`).join('');
-                            selectsHtml = `
-                                <div style="display:flex; gap:3px;">
-                                    <select onchange="changeField('${t.id}', 'requester', this.value)" style="flex:1; font-size:0.65rem; padding:2px; border:1px solid #ccc; border-radius:3px;">${reqOptions}</select>
-                                    <select onchange="changeField('${t.id}', 'orderer', this.value)" style="flex:1; font-size:0.65rem; padding:2px; border:1px solid #ccc; border-radius:3px;">${ordOptions}</select>
-                                </div>
-                            `;
+                            selectsHtml = `<div style="display:flex; gap:3px; width:100%; box-sizing:border-box;">
+                                    <select onchange="changeField('${t.id}', 'requester', this.value)" style="flex:1; min-width:0; box-sizing:border-box; font-size:0.65rem; padding:2px; border:1px solid #ccc; border-radius:3px;">${reqOptions}</select>
+                                    <select onchange="changeField('${t.id}', 'orderer', this.value)" style="flex:1; min-width:0; box-sizing:border-box; font-size:0.65rem; padding:2px; border:1px solid #ccc; border-radius:3px;">${ordOptions}</select></div>`;
                         }
 
                         let moveButtons = '';
@@ -549,101 +858,65 @@
                             moveButtons += col!=='mat-delivered'?`<button onclick="moveTask('${t.id}','mat-delivered')">반입</button>`:'';
                         }
 
-                        div.innerHTML = `
-                            <p style="margin:0; margin-bottom:3px; font-weight:bold;">${t.text||''}</p>
-                            ${dateStr}
-                            <div>${selectsHtml}</div>
-                            <div class="card-actions">
-                                <button onclick="openEditModal('${t.id}')">수정</button>
-                                ${moveButtons}
-                                <button style="background:var(--warning-color); color:white;" onclick="deleteTask('${t.id}')">삭제</button>
-                            </div>
-                        `;
+                        const ackBtnStyle = hasMyAck ? 'background:#ffdddd; color:#de350b;' : 'background:#e3fcef; color:#00875a;';
+                        const ackBtnText = hasMyAck ? '확인취소' : '확인';
+                        moveButtons = `<button onclick="toggleAck('${t.id}')" style="${ackBtnStyle} font-weight:bold;">${ackBtnText}</button>` + moveButtons;
+
+                        div.innerHTML = `<p style="margin:0; margin-bottom:3px; font-weight:bold;">${t.text||''}</p>
+                            ${dateStr}${acksHtml}<div>${selectsHtml}</div>
+                            <div class="card-actions"><button onclick="openEditModal('${t.id}')">수정</button>${moveButtons}<button style="background:var(--warning-color); color:white;" onclick="deleteTask('${t.id}')">삭제</button></div>`;
                         cardList.appendChild(div);
                     });
                 });
             });
-            
-            try { renderStats(); } catch(e) { console.error("집계 렌더링 에러:", e); }
-            try { renderCalendar(); } catch(e) { console.error("달력 렌더링 에러:", e); }
+            try { renderStats(); } catch(e) { } try { renderCalendar(); } catch(e) { }
         }
         
         function renderStats() {
-             const aTbody = document.querySelector('#assignee-table tbody'); 
-             const mTbody = document.querySelector('#material-table tbody'); 
-             const tdTbody = document.querySelector('#task-date-table tbody'); 
-             const mdTbody = document.querySelector('#mat-date-table tbody'); 
-             const oTbody = document.querySelector('#overdue-table tbody');
-             const uoTbody = document.querySelector('#un-ordered-table tbody');
-
-             if(!aTbody || !mTbody || !tdTbody || !mdTbody || !oTbody || !uoTbody) return;
-             
+             const aTbody = document.querySelector('#assignee-table tbody'); const mTbody = document.querySelector('#material-table tbody'); 
+             const tdTbody = document.querySelector('#task-date-table tbody'); const mdTbody = document.querySelector('#mat-date-table tbody'); 
+             const oTbody = document.querySelector('#overdue-table tbody'); const uoTbody = document.querySelector('#un-ordered-table tbody');
+             if(!aTbody) return;
              aTbody.innerHTML = ''; mTbody.innerHTML = ''; tdTbody.innerHTML = ''; mdTbody.innerHTML = ''; oTbody.innerHTML = ''; uoTbody.innerHTML = '';
+             
              const today = new Date().toISOString().split('T')[0];
              const aMap = {}, tdMap = {}, mdMap = {};
              
              currentTasks.forEach(t => {
-                 const isMaterial = t.status.startsWith('mat-');
-                 const isCompleted = (t.status === 'done' || t.status === 'mat-delivered');
-                 
+                 const isMaterial = t.status.startsWith('mat-'); const isCompleted = (t.status === 'done' || t.status === 'mat-delivered');
                  const persons = [...new Set([t.assignee, t.requester, t.orderer].filter(Boolean))];
-                 persons.forEach(n => {
-                     if(!aMap[n]) aMap[n] = { todo:0, inprogress:0, done:0, 'mat-request':0, 'mat-ordered':0, 'mat-delivered':0 }; 
-                     if(t.status && aMap[n][t.status] !== undefined) aMap[n][t.status]++;
-                 });
-                 
+                 persons.forEach(n => { if(!aMap[n]) aMap[n] = { todo:0, inprogress:0, done:0, 'mat-request':0, 'mat-ordered':0, 'mat-delivered':0 }; if(t.status && aMap[n][t.status] !== undefined) aMap[n][t.status]++; });
                  if (t.dueDate) {
-                     if (!isMaterial) {
-                         if (!tdMap[t.dueDate]) tdMap[t.dueDate] = {pending:0, done:0};
-                         isCompleted ? tdMap[t.dueDate].done++ : tdMap[t.dueDate].pending++;
-                     } else {
-                         if (!mdMap[t.dueDate]) mdMap[t.dueDate] = {pending:0, done:0};
-                         isCompleted ? mdMap[t.dueDate].done++ : mdMap[t.dueDate].pending++;
-                     }
+                     if (!isMaterial) { if (!tdMap[t.dueDate]) tdMap[t.dueDate] = {pending:0, done:0}; isCompleted ? tdMap[t.dueDate].done++ : tdMap[t.dueDate].pending++; } 
+                     else { if (!mdMap[t.dueDate]) mdMap[t.dueDate] = {pending:0, done:0}; isCompleted ? mdMap[t.dueDate].done++ : mdMap[t.dueDate].pending++; }
                  }
-
                  if (!isMaterial && t.dueDate && t.dueDate < today && !isCompleted) {
-                     const safeText = t.text ? t.text.substring(0,8) : '내용없음';
-                     oTbody.innerHTML += `<tr onclick="showPopup('overdue', '${t.dueDate}')"><td class="clickable">${safeText}..</td><td>${t.dueDate.slice(5)}</td></tr>`;
+                     const safeText = t.text ? t.text.substring(0,8) : '내용없음'; oTbody.innerHTML += `<tr onclick="showPopup('overdue', '${t.dueDate}')"><td class="clickable">${safeText}..</td><td>${t.dueDate.slice(5)}</td></tr>`;
                  }
-
                  if (t.status === 'mat-request' && t.startDate && t.startDate < today) {
-                     const safeText = t.text ? t.text.substring(0,8) : '내용없음';
-                     uoTbody.innerHTML += `<tr onclick="showPopup('overdue', '${t.startDate}')"><td class="clickable">${safeText}..</td><td>${t.startDate.slice(5)}</td></tr>`;
+                     const safeText = t.text ? t.text.substring(0,8) : '내용없음'; uoTbody.innerHTML += `<tr onclick="showPopup('overdue', '${t.startDate}')"><td class="clickable">${safeText}..</td><td>${t.startDate.slice(5)}</td></tr>`;
                  }
              });
 
              for(let n in aMap) {
-                 if(aMap[n].todo > 0 || aMap[n].inprogress > 0 || aMap[n].done > 0) {
-                     aTbody.innerHTML += `<tr><td>${n}</td><td class="clickable" onclick="showPopup('assignee','${n}','todo')">${aMap[n].todo}</td><td class="clickable" onclick="showPopup('assignee','${n}','inprogress')">${aMap[n].inprogress}</td><td class="clickable" onclick="showPopup('assignee','${n}','done')">${aMap[n].done}</td></tr>`;
-                 }
-                 if(aMap[n]['mat-request'] > 0 || aMap[n]['mat-ordered'] > 0 || aMap[n]['mat-delivered'] > 0) {
-                     mTbody.innerHTML += `<tr><td>${n}</td><td class="clickable" onclick="showPopup('assignee','${n}','mat-request')">${aMap[n]['mat-request']}</td><td class="clickable" onclick="showPopup('assignee','${n}','mat-ordered')">${aMap[n]['mat-ordered']}</td><td class="clickable" onclick="showPopup('assignee','${n}','mat-delivered')">${aMap[n]['mat-delivered']}</td></tr>`;
-                 }
+                 if(aMap[n].todo > 0 || aMap[n].inprogress > 0 || aMap[n].done > 0) { aTbody.innerHTML += `<tr><td>${n}</td><td class="clickable" onclick="showPopup('assignee','${n}','todo')">${aMap[n].todo}</td><td class="clickable" onclick="showPopup('assignee','${n}','inprogress')">${aMap[n].inprogress}</td><td class="clickable" onclick="showPopup('assignee','${n}','done')">${aMap[n].done}</td></tr>`; }
+                 if(aMap[n]['mat-request'] > 0 || aMap[n]['mat-ordered'] > 0 || aMap[n]['mat-delivered'] > 0) { mTbody.innerHTML += `<tr><td>${n}</td><td class="clickable" onclick="showPopup('assignee','${n}','mat-request')">${aMap[n]['mat-request']}</td><td class="clickable" onclick="showPopup('assignee','${n}','mat-ordered')">${aMap[n]['mat-ordered']}</td><td class="clickable" onclick="showPopup('assignee','${n}','mat-delivered')">${aMap[n]['mat-delivered']}</td></tr>`; }
              }
-
-             for(let d in tdMap) {
-                 tdTbody.innerHTML += `<tr><td>${d.slice(5)}</td><td class="clickable" onclick="showPopup('date-task','${d}')">${tdMap[d].pending}</td><td class="clickable" onclick="showPopup('date-task','${d}')">${tdMap[d].done}</td></tr>`;
-             }
-             for(let d in mdMap) {
-                 mdTbody.innerHTML += `<tr><td>${d.slice(5)}</td><td class="clickable" onclick="showPopup('date-mat','${d}')">${mdMap[d].pending}</td><td class="clickable" onclick="showPopup('date-mat','${d}')">${mdMap[d].done}</td></tr>`;
-             }
+             for(let d in tdMap) { tdTbody.innerHTML += `<tr><td>${d.slice(5)}</td><td class="clickable" onclick="showPopup('date-task','${d}')">${tdMap[d].pending}</td><td class="clickable" onclick="showPopup('date-task','${d}')">${tdMap[d].done}</td></tr>`; }
+             for(let d in mdMap) { mdTbody.innerHTML += `<tr><td>${d.slice(5)}</td><td class="clickable" onclick="showPopup('date-mat','${d}')">${mdMap[d].pending}</td><td class="clickable" onclick="showPopup('date-mat','${d}')">${mdMap[d].done}</td></tr>`; }
         }
 
         function renderCalendar() {
-            const grid = document.getElementById('calendar-grid');
-            if(!grid) return;
+            const grid = document.getElementById('calendar-grid'); if(!grid) return;
             grid.innerHTML = '일월화수목금토'.split('').map(d => `<div style="font-weight:bold;">${d}</div>`).join('');
-            const y = currentDate.getFullYear(), m = currentDate.getMonth();
-            document.getElementById('calendar-title').innerText = `${y}년 ${m + 1}월`;
+            const y = currentDate.getFullYear(), m = currentDate.getMonth(); document.getElementById('calendar-title').innerText = `${y}년 ${m + 1}월`;
             const first = new Date(y, m, 1).getDay(), last = new Date(y, m + 1, 0).getDate();
             for (let i = 0; i < first; i++) grid.appendChild(document.createElement('div'));
             for (let i = 1; i <= last; i++) {
                 const dStr = `${y}-${(m + 1).toString().padStart(2, '0')}-${i.toString().padStart(2, '0')}`;
                 const count = currentTasks.filter(t => t.dueDate && t.dueDate === dStr).length;
                 const div = document.createElement('div'); div.className = 'calendar-day-cell';
-                div.innerHTML = `<div>${i}</div>` + (count > 0 ? `<div class="task-badge" onclick="showPopup('date-task', '${dStr}')">${count}</div>` : '');
-                grid.appendChild(div);
+                div.innerHTML = `<div>${i}</div>` + (count > 0 ? `<div class="task-badge" onclick="showPopup('date-task', '${dStr}')">${count}</div>` : ''); grid.appendChild(div);
             }
         }
     </script>
