@@ -137,11 +137,12 @@
         </div>
     </header>
 
+    <!-- [유일한 모달창 선언부 시작] (중복 제거 완료) -->
+    
     <!-- 지출 내역 모달창 -->
     <div id="expense-modal" class="modal" onclick="this.style.display='none'">
         <div class="modal-content" style="max-width:600px;" onclick="event.stopPropagation()">
             <h3 style="margin:0 0 15px 0; color:#e91e63;">💳 현장 지출 내역 <button onclick="document.getElementById('expense-modal').style.display='none'" style="float:right; background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button></h3>
-            
             <div style="display:flex; justify-content:space-between; align-items:center; background:#f9f9fa; padding:10px; border-radius:6px; margin-bottom:15px; border:1px solid #eee; flex-wrap:wrap; gap:10px;">
                 <div style="display:flex; align-items:center; gap:10px;">
                     <button onclick="window.changeExpenseMonth(-1)" style="padding:4px 8px; border:1px solid #ccc; background:#fff; border-radius:4px; cursor:pointer;">◀</button>
@@ -154,12 +155,10 @@
                     <span>원</span>
                 </div>
             </div>
-
             <div style="display:flex; justify-content:space-between; margin-bottom:15px; font-size:0.95rem; font-weight:bold; background:#e6effc; padding:12px; border-radius:6px;">
                 <div style="color:#0052cc;">총 사용: <span id="exp-total-used">0</span>원</div>
                 <div style="color:#00875a;">잔액: <span id="exp-balance">0</span>원</div>
             </div>
-
             <div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:15px; border-top:1px dashed #ccc; padding-top:15px;">
                 <input type="date" id="exp-date" style="flex:1; min-width:100px; padding:8px; border:1px solid #ddd; border-radius:4px;" title="지출일">
                 <select id="exp-spender" style="flex:1; min-width:100px; padding:8px; border:1px solid #ddd; border-radius:4px;" title="지출자"></select>
@@ -167,7 +166,6 @@
                 <input type="number" id="exp-amount" placeholder="금액(원)" style="flex:1; min-width:80px; padding:8px; border:1px solid #ddd; border-radius:4px;">
                 <button id="exp-submit-btn" onclick="window.addExpense()" style="background:#e91e63; color:white; border:none; padding:8px 15px; border-radius:4px; font-weight:bold; cursor:pointer;">등록</button>
             </div>
-            
             <div id="expense-list" style="display:flex; flex-direction:column; gap:8px; max-height:350px; overflow-y:auto; padding-right:5px;"></div>
         </div>
     </div>
@@ -185,7 +183,7 @@
         </div>
     </div>
 
-    <!-- 모달창 모음 -->
+    <!-- 초기화 모달 -->
     <div id="init-modal" class="modal" onclick="this.style.display='none'">
         <div class="modal-content" onclick="event.stopPropagation()">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
@@ -203,6 +201,7 @@
         </div>
     </div>
 
+    <!-- 백업/복구 모달 -->
     <div id="backup-modal" class="modal" onclick="this.style.display='none'">
         <div class="modal-content" onclick="event.stopPropagation()">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
@@ -225,6 +224,7 @@
         </div>
     </div>
 
+    <!-- 브리핑 모달 -->
     <div id="briefing-modal" class="modal" onclick="this.style.display='none'">
         <div class="modal-content" onclick="event.stopPropagation()">
             <div style="text-align: center; margin-bottom: 15px;">
@@ -242,6 +242,7 @@
         </div>
     </div>
 
+    <!-- 집계표 클릭 상세보기 팝업 -->
     <div id="task-modal" class="modal" onclick="this.style.display='none'">
         <div class="modal-content" onclick="event.stopPropagation()">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #eee; padding-bottom:10px; margin-bottom:10px;">
@@ -253,14 +254,22 @@
         </div>
     </div>
 
-    <!-- 기본 일정/자재 내용 수정 모달 -->
+    <!-- 내용 및 날짜 수정 전용 팝업 (일반 일정/자재용) -->
     <div id="edit-modal" class="modal" onclick="this.style.display='none'">
         <div class="modal-content" onclick="event.stopPropagation()">
-            <h3 style="margin-top:0; color:var(--primary-color);">✏️ 내용 수정</h3>
+            <h3 style="margin-top:0; color:var(--primary-color);">✏️ 내용 및 날짜 수정</h3>
             <div class="add-card-form">
                 <input type="hidden" id="edit-id">
                 <label style="font-size:0.75rem; font-weight:bold; color:#666;">내용 고치기</label>
                 <textarea id="edit-text" style="height:80px; margin-bottom:10px; padding:8px; border:1px solid #ddd; border-radius:4px; font-size:0.9rem;"></textarea>
+                
+                <label style="font-size:0.75rem; font-weight:bold; color:#666;">날짜 고치기</label>
+                <div class="form-row" style="margin-bottom:15px; justify-content:center;">
+                    <input type="date" id="edit-start-date" style="flex:1; padding:8px;">
+                    <span style="color:#666; font-weight:bold;">~</span>
+                    <input type="date" id="edit-due-date" style="flex:1; padding:8px;">
+                </div>
+
                 <div style="display:flex; gap:5px;">
                     <button onclick="window.saveEdit()" style="flex:2; padding:10px; background:var(--primary-color); color:white; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">저장하기</button>
                     <button onclick="document.getElementById('edit-modal').style.display='none'" style="flex:1; padding:10px; background:#ddd; border:none; border-radius:4px; cursor:pointer;">취소</button>
@@ -269,10 +278,10 @@
         </div>
     </div>
 
-    <!-- 일보 다중 입력 전용 상세 수정 모달 -->
+    <!-- 일보 다중 입력 수정 팝업 -->
     <div id="edit-worklog-modal" class="modal" onclick="this.style.display='none'">
         <div class="modal-content" style="max-width:600px;" onclick="event.stopPropagation()">
-            <h3 style="margin:top:0; color:#673ab7;">📝 일보 내용 및 인원 수정</h3>
+            <h3 style="margin-top:0; color:#673ab7;">📝 일보 내용 및 인원 수정</h3>
             <input type="hidden" id="edit-wl-id">
             <div id="edit-wl-container" style="display:flex; flex-direction:column; gap:10px; max-height:60vh; overflow-y:auto; padding-right:5px;"></div>
             <div style="display:flex; gap:5px; margin-top:15px;">
@@ -282,6 +291,7 @@
         </div>
     </div>
 
+    <!-- 작업자 선택 서브 모달 -->
     <div id="worker-modal" class="modal modal-sub" onclick="this.style.display='none'">
         <div class="modal-content" onclick="event.stopPropagation()">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
@@ -294,8 +304,10 @@
         </div>
     </div>
 
+    <!-- 작업일보 보고 모달 -->
     <div id="report-modal" class="modal" onclick="this.style.display='none'"><div class="modal-content" onclick="event.stopPropagation()"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;"><h3 style="margin:0; color:#673ab7;">📋 일일 작업일보 생성</h3><button onclick="document.getElementById('report-modal').style.display='none'" style="background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button></div><textarea id="report-text" style="width:100%; height:250px; padding:10px; border:1px solid #ddd; border-radius:4px; font-size:0.85rem; margin-bottom:10px;"></textarea><div style="display:flex; gap:5px;"><button onclick="window.sendReportLine()" style="flex:1; background:#00c300; color:white; padding:10px; font-weight:bold;">라인으로 보고</button></div></div></div>
     
+    <!-- 장비 관리 모달 -->
     <div id="equip-modal" class="modal" onclick="this.style.display='none'">
         <div class="modal-content" onclick="event.stopPropagation()">
             <h3 style="margin:0 0 15px 0; color:#795548;">🧰 공구 및 장비 관리 <button onclick="document.getElementById('equip-modal').style.display='none'" style="float:right; background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button></h3>
@@ -309,7 +321,7 @@
         </div>
     </div>
     
-    <!-- 공지 모달 -->
+    <!-- 공지 발송 모달 -->
     <div id="notice-modal" class="modal" onclick="this.style.display='none'">
         <div class="modal-content" onclick="event.stopPropagation()">
             <h3 style="margin:0 0 15px 0; color:var(--warning-color);">📢 공지 발송 및 기록 <button onclick="document.getElementById('notice-modal').style.display='none'" style="float:right; background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button></h3>
@@ -322,7 +334,9 @@
         </div>
     </div>
 
-    <!-- 검색 영역 및 과거 내역 필터링 토글 버튼 -->
+    <!-- [유일한 모달창 선언부 끝] -->
+
+    <!-- 검색 영역 및 엑셀 다운로드 -->
     <div style="max-width:1200px; margin: 0 auto 10px auto; display:flex; gap:10px; padding:0 5px; flex-wrap:wrap;">
         <input type="text" id="main-search-input" placeholder="🔍 작업, 자재, 담당자 검색..." onkeyup="window.updateUI()" style="flex:1; min-width:200px; padding:10px; border-radius:8px; border:1px solid #ddd; font-size:0.9rem;">
         <button id="toggle-old-btn" onclick="window.toggleOldTasks()" style="background:#6b778c; color:white; border:none; padding:10px 15px; border-radius:8px; font-weight:bold; cursor:pointer; white-space:nowrap;">🕒 과거 완료내역 모두 보기</button>
@@ -517,6 +531,7 @@
         window.worklogEntryCount = 0; window.currentWorkerEntryId = null; 
         window.loggedInUser = localStorage.getItem('site_user') || '';
 
+        // 접속자 지역 기준(KST) 오늘 날짜 반환 함수
         window.getLocalDateString = (dateObj = new Date()) => {
             const y = dateObj.getFullYear();
             const m = String(dateObj.getMonth() + 1).padStart(2, '0');
@@ -558,6 +573,7 @@
         window.worklogViewDate = window.getLocalDateString();
         window.showOldDoneTasks = false;
 
+        // --- 🧰 장비 관리 기능 ---
         window.addEquip = async () => {
             const name = document.getElementById('eq-name').value;
             const borrower = document.getElementById('eq-borrower').value;
@@ -587,6 +603,7 @@
         window.returnEquip = async (id) => { await updateDoc(doc(db, "equipments", id), { status: '반납완료', returnDate: window.getLocalDateString() }); };
         window.deleteEquip = async (id) => { if(confirm('이 장비 기록을 삭제하시겠습니까?')) await deleteDoc(doc(db, "equipments", id)); };
 
+        // --- 👥 팀원 관리 기능 ---
         window.addTeamMember = async () => {
             const name = document.getElementById('new-member-name').value.trim();
             if(!name) return alert("이름을 입력하세요.");
@@ -607,6 +624,7 @@
         };
         window.deleteTeamMember = async (id) => { if(confirm('팀원을 삭제하시겠습니까?\n주의: 기존 작성된 글의 작성자 이름이 변경되지는 않습니다.')) await deleteDoc(doc(db, "team", id)); };
 
+        // --- 💳 지출 관리 기능 ---
         window.getExpensePeriod = (dateObj) => {
             let y = dateObj.getFullYear(); let m = dateObj.getMonth(); let d = dateObj.getDate();
             if (d >= 25) m++; 
@@ -933,6 +951,7 @@
             }).join('');
         };
 
+        // 모달창에서도 당월 완료건만 필터링
         window.showTaskModal = (type, key, subType) => {
             const list = document.getElementById('modal-list');
             const title = document.getElementById('modal-title');
@@ -1120,6 +1139,119 @@
             await updateDoc(doc(db, "tasks", id), { status: 'mat-delivered', deliverer: window.loggedInUser, deliverTime: timeStr });
         };
 
+        // ✨ 카드 공통 렌더링 함수
+        const renderCard = (t, s, currentMonthStr) => {
+            const isMat = s.startsWith('mat-');
+            let dropdownHtml = '';
+            let overallUnselNames = '없음'; 
+
+            let content = '';
+            if (s === 'worklog' && t.bundledTasks) {
+                content = `<div style="border-left:3px solid #673ab7; padding-left:8px; display:flex; flex-direction:column; gap:6px;">`;
+                let allAssignedWorkers = []; 
+                
+                t.bundledTasks.forEach((bt, i) => {
+                    const wCount = bt.workers ? bt.workers.length : 0;
+                    const wNames = wCount > 0 ? bt.workers.join(', ') : '없음';
+                    if (bt.workers) allAssignedWorkers.push(...bt.workers);
+
+                    content += `<div style="margin-bottom:2px;">
+                        <span style="font-weight:bold; color:#673ab7;">[작업 ${i+1}]</span> <strong style="font-size:0.9rem;">${bt.detail}</strong>
+                        <div style="font-size:0.75rem; color:#444; margin-top:4px; background:#f4f5f7; padding:4px 6px; border-radius:4px; display:inline-block;">
+                            🙋‍♂️ 투입 ${wCount}명 : <strong style="color:#0052cc;">${wNames}</strong>
+                        </div>
+                    </div>`;
+                });
+                content += `</div>`;
+
+                const uniqueAssigned = [...new Set(allAssignedWorkers)];
+                const allTeamNames = window.teamMembers.map(m => m.name);
+                const overallUnselected = allTeamNames.filter(name => !uniqueAssigned.includes(name));
+                overallUnselNames = overallUnselected.length > 0 ? overallUnselected.join(', ') : '없음';
+                
+            } else {
+                content = t.workDetails ? `<strong style="color:var(--primary-color); white-space:pre-wrap;">${t.workDetails}</strong>` : `<strong>${t.text||'내용없음'}</strong>`;
+            }
+
+            if (!isMat && s !== 'worklog') {
+                const cardDropdownOptions = window.teamMembers.map(m => `<option value="${m.name}" ${t.assignee === m.name ? 'selected' : ''}>${m.name}</option>`).join('');
+                dropdownHtml = `<select onchange="window.changeField('${t.id}', 'assignee', this.value)" style="font-size:0.75rem; padding:3px; border:1px solid #ddd; border-radius:4px; max-width:100px; font-weight:bold; color:#172b4d;">
+                    <option value="">담당자 미지정</option>
+                    ${cardDropdownOptions}
+                </select>`;
+            } else if (isMat) {
+                let ordererText = t.orderer || '-';
+                if (s !== 'mat-request' && t.orderTime) {
+                    ordererText += ` <span style="font-size:0.65rem; color:#00875a; font-weight:normal;">(${t.orderTime})</span>`;
+                }
+                
+                let delivererText = '';
+                if (s === 'mat-delivered' && t.deliverTime) {
+                    delivererText = ` <span style="color:#ddd;">|</span> <span>반입: <strong>${t.deliverer||'-'} <span style="font-size:0.65rem; color:#0052cc; font-weight:normal;">(${t.deliverTime})</span></strong></span>`;
+                }
+                
+                dropdownHtml = `<div style="font-size:0.75rem; color:#555; display:flex; gap:5px; align-items:center; flex-wrap:wrap;">
+                    <span>요청: <strong>${t.requester||'-'}</strong></span> <span style="color:#ddd;">|</span> <span>발주: <strong>${ordererText}</strong></span>${delivererText}
+                </div>`;
+            } else {
+                dropdownHtml = `<div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                    <span style="font-size:0.75rem; color:#555;">등록자: <strong>${t.assignee||'-'}</strong></span>
+                    <span style="font-size:0.7rem; color:#bf2600; background:#ffebe6; padding:2px 6px; border-radius:10px; font-weight:bold;">💤 미투입: ${overallUnselNames}</span>
+                </div>`;
+            }
+
+            let ackDisplayHtml = '';
+            let hasIHaveAcked = false; 
+            if(t.acks && Object.keys(t.acks).length > 0) {
+                ackDisplayHtml = `<div class="ack-box">`;
+                Object.keys(t.acks).forEach(name => {
+                    if(name === window.loggedInUser) hasIHaveAcked = true;
+                    ackDisplayHtml += `<div>✓ 확인: ${name} (${t.acks[name]})</div>`;
+                });
+                ackDisplayHtml += `</div>`;
+            }
+
+            let actionButtonsHtml = '';
+            if (isMat) {
+                actionButtonsHtml = `
+                    <button class="btn-edit" onclick="window.openEditModal('${t.id}')">수정</button>
+                    ${s !== 'mat-request' ? `<button class="btn-move" onclick="window.moveTask('${t.id}', 'mat-request')">요청</button>` : ''}
+                    ${s !== 'mat-ordered' ? `<button class="${s === 'mat-request' ? 'btn-ack' : 'btn-move'}" onclick="${s === 'mat-request' ? `window.orderMaterial('${t.id}')` : `window.moveTask('${t.id}', 'mat-ordered')`}">발주</button>` : ''}
+                    ${s !== 'mat-delivered' ? `<button class="btn-move" onclick="window.deliverMaterial('${t.id}')">반입</button>` : ''}
+                `;
+            } else if (s === 'todo' || s === 'inprogress' || s === 'done') {
+                const btn1 = `<button class="btn-edit" onclick="window.openEditModal('${t.id}')">수정</button>`;
+                const btn2 = `<button class="${hasIHaveAcked ? 'btn-unack' : 'btn-ack'}" onclick="window.toggleAckRecord('${t.id}')">${hasIHaveAcked ? '확인취소' : '확인'}</button>`;
+                let btn3, btn4;
+                if (s === 'todo') {
+                    btn3 = `<button class="btn-move" onclick="window.moveTask('${t.id}', 'inprogress')">진행</button>`;
+                    btn4 = `<button class="btn-move" onclick="window.moveTask('${t.id}', 'done')">완료</button>`;
+                } else if (s === 'inprogress') {
+                    btn3 = `<button class="btn-move" onclick="window.moveTask('${t.id}', 'todo')">할일</button>`;
+                    btn4 = `<button class="btn-move" onclick="window.moveTask('${t.id}', 'done')">완료</button>`;
+                } else {
+                    btn3 = `<button class="btn-move" onclick="window.moveTask('${t.id}', 'todo')">할일</button>`;
+                    btn4 = `<button class="btn-move" onclick="window.moveTask('${t.id}', 'inprogress')">진행</button>`;
+                }
+                actionButtonsHtml = btn1 + btn2 + btn3 + btn4;
+            } else {
+                actionButtonsHtml = `<button class="btn-edit" onclick="window.openEditModal('${t.id}')">수정</button>`;
+            }
+
+            return `<div class="card">
+                <div style="font-size:0.85rem; color:#333; line-height:1.4;">${content}</div>
+                ${ackDisplayHtml} 
+                <div style="font-size:0.75rem; color:#666; margin-top:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px;">
+                    ${dropdownHtml}
+                    <span style="font-size:0.77rem; color:#888;">${t.startDate||''} ~ ${t.dueDate||''}</span>
+                </div>
+                <div class="card-actions">
+                    ${actionButtonsHtml}
+                    <button class="btn-del" onclick="window.deleteTask('${t.id}')">삭제</button>
+                </div>
+            </div>`;
+        };
+
         window.updateUI = () => {
             const statuses = ['worklog', 'todo', 'inprogress', 'done', 'mat-request', 'mat-ordered', 'mat-delivered'];
             const lists = {}; statuses.forEach(s => lists[s] = []);
@@ -1129,7 +1261,7 @@
             const nextWeek = new Date(todayDate);
             nextWeek.setDate(todayDate.getDate() + 7);
             const todayStr = window.getLocalDateString();
-            const currentMonthStr = todayStr.substring(0, 7);
+            const currentMonthStr = todayStr.substring(0, 7); 
             
             const nextWeekStr = `${nextWeek.getFullYear()}-${String(nextWeek.getMonth()+1).padStart(2,'0')}-${String(nextWeek.getDate()).padStart(2,'0')}`;
 
@@ -1159,14 +1291,13 @@
                 
                 if (search && !fullText.toLowerCase().includes(search)) return;
                 
-                // ✨ 리스트 기본 표시: 완료건은 '당월'만, 미완료는 전체 다 표시
-                // (주의: worklog는 별도의 날짜 조회기를 쓰므로 당월 숨김 규칙에서 제외)
+                // 완료건은 '당월'만, 미완료는 전체 다 표시 (worklog 제외)
                 if (!window.showOldDoneTasks && ['done', 'mat-delivered'].includes(t.status)) {
                     const dateToCheck = t.dueDate || t.startDate || '';
                     if (!dateToCheck.startsWith(currentMonthStr)) return; 
                 }
 
-                // 일보는 무조건 지정된 조회 날짜(worklogViewDate)에 맞는 것만 표시
+                // 일보는 무조건 지정된 조회 날짜에 맞는 것만 표시
                 if (t.status === 'worklog' && t.startDate !== window.worklogViewDate) {
                     return; 
                 }
@@ -1174,129 +1305,80 @@
                 if (lists[t.status]) lists[t.status].push(t);
             });
 
+            // ✨ 리스트 월별 아코디언 렌더링 (7일 초과 완료건 자동 접힘 포함)
+            const todayDateObj = new Date(todayStr.split('-')[0], todayStr.split('-')[1]-1, todayStr.split('-')[2]);
+
             statuses.forEach(s => {
                 const el = document.getElementById(`${s}-list`);
                 const countEl = document.getElementById(`${s}-count`);
                 if(countEl) countEl.innerText = lists[s].length;
                 if(!el) return;
-                el.innerHTML = lists[s].map(t => {
-                    const isMat = s.startsWith('mat-');
+
+                if (lists[s].length === 0) {
+                    el.innerHTML = '';
+                    return;
+                }
+
+                // 작업일보는 날짜 1개만 조회하므로 아코디언 묶음 제외
+                if (s === 'worklog') {
+                    el.innerHTML = lists[s].map(t => renderCard(t, s, currentMonthStr)).join('');
+                } else {
+                    const grouped = {};
+                    lists[s].forEach(t => {
+                        let refDate = t.dueDate || t.startDate || '';
+                        let yyyy_mm = refDate ? refDate.substring(0, 7) : '미지정';
+                        let groupKey = yyyy_mm;
+                        
+                        // 당월이면서 '완료' 또는 '반입완료'인 항목 중 7일 이상 경과한 항목은 별도 그룹으로 분리
+                        if (yyyy_mm === currentMonthStr && refDate && (t.status === 'done' || t.status === 'mat-delivered')) {
+                            let rDateObj = new Date(refDate.split('-')[0], refDate.split('-')[1]-1, refDate.split('-')[2]);
+                            let diffDays = (todayDateObj - rDateObj) / (1000 * 60 * 60 * 24);
+                            if (diffDays >= 7) {
+                                groupKey = yyyy_mm + '-old';
+                            }
+                        }
+                        
+                        if(!grouped[groupKey]) grouped[groupKey] = [];
+                        grouped[groupKey].push(t);
+                    });
                     
-                    let dropdownHtml = '';
-                    let overallUnselNames = '없음'; 
-
-                    let content = '';
-                    if (s === 'worklog' && t.bundledTasks) {
-                        content = `<div style="border-left:3px solid #673ab7; padding-left:8px; display:flex; flex-direction:column; gap:6px;">`;
-                        let allAssignedWorkers = []; 
+                    const sortedMonths = Object.keys(grouped).sort((a,b) => {
+                        const aBase = a.replace('-old', '');
+                        const bBase = b.replace('-old', '');
+                        if (aBase !== bBase) return bBase.localeCompare(aBase);
+                        if (a.includes('-old') && !b.includes('-old')) return 1;
+                        if (!a.includes('-old') && b.includes('-old')) return -1;
+                        return 0;
+                    });
+                    
+                    let finalHtml = '';
+                    sortedMonths.forEach(month => {
+                        // 당월(경과안된것)과 미지정만 펼치고, 나머지는 모두 접음 (과거 달 & 7일경과 모두 접힘)
+                        const isCurrent = (month === currentMonthStr || month === '미지정');
+                        const displayStyle = isCurrent ? 'flex' : 'none'; 
+                        const icon = isCurrent ? '▼' : '▶';
+                        let label = '일자 미지정';
                         
-                        t.bundledTasks.forEach((bt, i) => {
-                            const wCount = bt.workers ? bt.workers.length : 0;
-                            const wNames = wCount > 0 ? bt.workers.join(', ') : '없음';
-                            if (bt.workers) allAssignedWorkers.push(...bt.workers);
-
-                            content += `<div style="margin-bottom:2px;">
-                                <span style="font-weight:bold; color:#673ab7;">[작업 ${i+1}]</span> <strong style="font-size:0.9rem;">${bt.detail}</strong>
-                                <div style="font-size:0.75rem; color:#444; margin-top:4px; background:#f4f5f7; padding:4px 6px; border-radius:4px; display:inline-block;">
-                                    🙋‍♂️ 투입 ${wCount}명 : <strong style="color:#0052cc;">${wNames}</strong>
-                                </div>
-                            </div>`;
-                        });
-                        content += `</div>`;
-
-                        const uniqueAssigned = [...new Set(allAssignedWorkers)];
-                        const allTeamNames = window.teamMembers.map(m => m.name);
-                        const overallUnselected = allTeamNames.filter(name => !uniqueAssigned.includes(name));
-                        overallUnselNames = overallUnselected.length > 0 ? overallUnselected.join(', ') : '없음';
-                        
-                    } else {
-                        content = t.workDetails ? `<strong style="color:var(--primary-color); white-space:pre-wrap;">${t.workDetails}</strong>` : `<strong>${t.text||'내용없음'}</strong>`;
-                    }
-
-                    if (!isMat && s !== 'worklog') {
-                        const cardDropdownOptions = window.teamMembers.map(m => `<option value="${m.name}" ${t.assignee === m.name ? 'selected' : ''}>${m.name}</option>`).join('');
-                        dropdownHtml = `<select onchange="window.changeField('${t.id}', 'assignee', this.value)" style="font-size:0.75rem; padding:3px; border:1px solid #ddd; border-radius:4px; max-width:100px; font-weight:bold; color:#172b4d;">
-                            <option value="">담당자 미지정</option>
-                            ${cardDropdownOptions}
-                        </select>`;
-                    } else if (isMat) {
-                        let ordererText = t.orderer || '-';
-                        if (s !== 'mat-request' && t.orderTime) {
-                            ordererText += ` <span style="font-size:0.65rem; color:#00875a; font-weight:normal;">(${t.orderTime})</span>`;
+                        if(month !== '미지정') {
+                            const parts = month.replace('-old','').split('-');
+                            label = `${parts[0]}년 ${parseInt(parts[1])}월`;
+                            if(month.includes('-old')) {
+                                label += ' (7일 경과)';
+                            }
                         }
-                        
-                        let delivererText = '';
-                        if (s === 'mat-delivered' && t.deliverTime) {
-                            delivererText = ` <span style="color:#ddd;">|</span> <span>반입: <strong>${t.deliverer||'-'} <span style="font-size:0.65rem; color:#0052cc; font-weight:normal;">(${t.deliverTime})</span></strong></span>`;
-                        }
-                        
-                        dropdownHtml = `<div style="font-size:0.75rem; color:#555; display:flex; gap:5px; align-items:center; flex-wrap:wrap;">
-                            <span>요청: <strong>${t.requester||'-'}</strong></span> <span style="color:#ddd;">|</span> <span>발주: <strong>${ordererText}</strong></span>${delivererText}
-                        </div>`;
-                    } else {
-                        dropdownHtml = `<div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                            <span style="font-size:0.75rem; color:#555;">등록자: <strong>${t.assignee||'-'}</strong></span>
-                            <span style="font-size:0.7rem; color:#bf2600; background:#ffebe6; padding:2px 6px; border-radius:10px; font-weight:bold;">💤 미투입: ${overallUnselNames}</span>
-                        </div>`;
-                    }
 
-                    let ackDisplayHtml = '';
-                    let hasIHaveAcked = false; 
-                    if(t.acks && Object.keys(t.acks).length > 0) {
-                        ackDisplayHtml = `<div class="ack-box">`;
-                        Object.keys(t.acks).forEach(name => {
-                            if(name === window.loggedInUser) hasIHaveAcked = true;
-                            ackDisplayHtml += `<div>✓ 확인: ${name} (${t.acks[name]})</div>`;
-                        });
-                        ackDisplayHtml += `</div>`;
-                    }
-
-                    let actionButtonsHtml = '';
-                    if (isMat) {
-                        actionButtonsHtml = `
-                            <button class="btn-edit" onclick="window.openEditModal('${t.id}')">수정</button>
-                            ${s !== 'mat-request' ? `<button class="btn-move" onclick="window.moveTask('${t.id}', 'mat-request')">요청</button>` : ''}
-                            ${s !== 'mat-ordered' ? `<button class="${s === 'mat-request' ? 'btn-ack' : 'btn-move'}" onclick="${s === 'mat-request' ? `window.orderMaterial('${t.id}')` : `window.moveTask('${t.id}', 'mat-ordered')`}">발주</button>` : ''}
-                            ${s !== 'mat-delivered' ? `<button class="btn-move" onclick="window.deliverMaterial('${t.id}')">반입</button>` : ''}
+                        finalHtml += `
+                            <div style="background:#d9e2ec; padding:6px 10px; margin-top:5px; margin-bottom:5px; border-radius:4px; font-weight:bold; font-size:0.8rem; cursor:pointer; display:flex; justify-content:space-between; align-items:center; color:#172b4d;"
+                                 onclick="const content = this.nextElementSibling; const ic = this.querySelector('.fold-icon'); if(content.style.display==='none'){content.style.display='flex'; ic.innerText='▼';}else{content.style.display='none'; ic.innerText='▶';}">
+                                ${label} <span class="fold-icon" style="font-size:0.7rem; color:#6b778c;">${icon}</span>
+                            </div>
+                            <div style="display:${displayStyle}; flex-direction:column; gap:5px; margin-bottom:10px;">
+                                ${grouped[month].map(t => renderCard(t, s, currentMonthStr)).join('')}
+                            </div>
                         `;
-                    } else if (s === 'todo') {
-                        actionButtonsHtml = `
-                            <button class="btn-edit" onclick="window.openEditModal('${t.id}')">수정</button>
-                            <button class="${hasIHaveAcked ? 'btn-unack' : 'btn-ack'}" onclick="window.toggleAckRecord('${t.id}')">${hasIHaveAcked ? '확인취소' : '확인'}</button>
-                            <button class="btn-move" onclick="window.moveTask('${t.id}', 'inprogress')">진행</button>
-                            <button class="btn-move" onclick="window.moveTask('${t.id}', 'done')">완료</button>
-                        `;
-                    } else if (s === 'inprogress') {
-                        actionButtonsHtml = `
-                            <button class="btn-edit" onclick="window.openEditModal('${t.id}')">수정</button>
-                            <button class="${hasIHaveAcked ? 'btn-unack' : 'btn-ack'}" onclick="window.toggleAckRecord('${t.id}')">${hasIHaveAcked ? '확인취소' : '확인'}</button>
-                            <button class="btn-move" onclick="window.moveTask('${t.id}', 'todo')">할일</button>
-                            <button class="btn-move" onclick="window.moveTask('${t.id}', 'done')">완료</button>
-                        `;
-                    } else if (s === 'done') {
-                        actionButtonsHtml = `
-                            <button class="btn-edit" onclick="window.openEditModal('${t.id}')">수정</button>
-                            <button class="${hasIHaveAcked ? 'btn-unack' : 'btn-ack'}" onclick="window.toggleAckRecord('${t.id}')">${hasIHaveAcked ? '확인취소' : '확인'}</button>
-                            <button class="btn-move" onclick="window.moveTask('${t.id}', 'todo')">할일</button>
-                            <button class="btn-move" onclick="window.moveTask('${t.id}', 'inprogress')">진행</button>
-                        `;
-                    } else {
-                        actionButtonsHtml = `<button class="btn-edit" onclick="window.openEditModal('${t.id}')">수정</button>`;
-                    }
-
-                    return `<div class="card">
-                        <div style="font-size:0.85rem; color:#333; line-height:1.4;">${content}</div>
-                        ${ackDisplayHtml} 
-                        <div style="font-size:0.75rem; color:#666; margin-top:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px;">
-                            ${dropdownHtml}
-                            <span style="font-size:0.77rem; color:#888;">${t.startDate||''} ~ ${t.dueDate||''}</span>
-                        </div>
-                        <div class="card-actions">
-                            ${actionButtonsHtml}
-                            <button class="btn-del" onclick="window.deleteTask('${t.id}')">삭제</button>
-                        </div>
-                    </div>`;
-                }).join('');
+                    });
+                    el.innerHTML = finalHtml;
+                }
             });
             
             const assignees = {};      
@@ -1379,6 +1461,7 @@
                 const refDate = eq.returnDate || eq.borrowDate || '';
                 const isCurrentMonth = refDate.startsWith(currentMonthStr);
                 
+                // 반납완료 건인데 당월 아니면 집계 안함
                 if (isReturned && !isCurrentMonth) return;
 
                 if(!eqStats[b]) eqStats[b] = { renting: 0, returned: 0 };
@@ -1530,6 +1613,8 @@
             } else {
                 document.getElementById('edit-id').value = id; 
                 document.getElementById('edit-text').value = task.workDetails || task.text || '';
+                document.getElementById('edit-start-date').value = task.startDate || '';
+                document.getElementById('edit-due-date').value = task.dueDate || '';
                 document.getElementById('edit-modal').style.display = 'block';
             }
         };
@@ -1589,15 +1674,18 @@
         window.saveEdit = async () => {
             const id = document.getElementById('edit-id').value; 
             const text = document.getElementById('edit-text').value.trim();
+            const startDate = document.getElementById('edit-start-date').value;
+            const dueDate = document.getElementById('edit-due-date').value;
+
             if(!text) return alert("내용을 입력해 주세요.");
             
             const task = window.currentTasks.find(t => t.id === id);
-            if(task) window.sendLineNotificationProxy(`✏️ [내용 수정]\n수정자: ${window.loggedInUser}\n기존 내용: ${task.text || task.workDetails || '없음'}\n변경 내용: ${text}`);
+            if(task) window.sendLineNotificationProxy(`✏️ [항목 수정]\n수정자: ${window.loggedInUser}\n기존 내용: ${task.text || task.workDetails || '없음'}\n변경 내용: ${text}`);
 
             if(task && task.status === 'worklog') {
                 await updateDoc(doc(db, "tasks", id), { workDetails: text });
             } else {
-                await updateDoc(doc(db, "tasks", id), { text: text });
+                await updateDoc(doc(db, "tasks", id), { text: text, startDate: startDate, dueDate: dueDate });
             }
             document.getElementById('edit-modal').style.display = 'none';
         };
