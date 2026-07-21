@@ -137,12 +137,11 @@
         </div>
     </header>
 
-    <!-- [유일한 모달창 선언부 시작] (중복 제거 완료) -->
-    
     <!-- 지출 내역 모달창 -->
     <div id="expense-modal" class="modal" onclick="this.style.display='none'">
         <div class="modal-content" style="max-width:600px;" onclick="event.stopPropagation()">
             <h3 style="margin:0 0 15px 0; color:#e91e63;">💳 현장 지출 내역 <button onclick="document.getElementById('expense-modal').style.display='none'" style="float:right; background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button></h3>
+            
             <div style="display:flex; justify-content:space-between; align-items:center; background:#f9f9fa; padding:10px; border-radius:6px; margin-bottom:15px; border:1px solid #eee; flex-wrap:wrap; gap:10px;">
                 <div style="display:flex; align-items:center; gap:10px;">
                     <button onclick="window.changeExpenseMonth(-1)" style="padding:4px 8px; border:1px solid #ccc; background:#fff; border-radius:4px; cursor:pointer;">◀</button>
@@ -155,10 +154,12 @@
                     <span>원</span>
                 </div>
             </div>
+
             <div style="display:flex; justify-content:space-between; margin-bottom:15px; font-size:0.95rem; font-weight:bold; background:#e6effc; padding:12px; border-radius:6px;">
                 <div style="color:#0052cc;">총 사용: <span id="exp-total-used">0</span>원</div>
                 <div style="color:#00875a;">잔액: <span id="exp-balance">0</span>원</div>
             </div>
+
             <div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:15px; border-top:1px dashed #ccc; padding-top:15px;">
                 <input type="date" id="exp-date" style="flex:1; min-width:100px; padding:8px; border:1px solid #ddd; border-radius:4px;" title="지출일">
                 <select id="exp-spender" style="flex:1; min-width:100px; padding:8px; border:1px solid #ddd; border-radius:4px;" title="지출자"></select>
@@ -166,6 +167,7 @@
                 <input type="number" id="exp-amount" placeholder="금액(원)" style="flex:1; min-width:80px; padding:8px; border:1px solid #ddd; border-radius:4px;">
                 <button id="exp-submit-btn" onclick="window.addExpense()" style="background:#e91e63; color:white; border:none; padding:8px 15px; border-radius:4px; font-weight:bold; cursor:pointer;">등록</button>
             </div>
+            
             <div id="expense-list" style="display:flex; flex-direction:column; gap:8px; max-height:350px; overflow-y:auto; padding-right:5px;"></div>
         </div>
     </div>
@@ -183,7 +185,7 @@
         </div>
     </div>
 
-    <!-- 초기화 모달 -->
+    <!-- 시스템 초기화 모달 -->
     <div id="init-modal" class="modal" onclick="this.style.display='none'">
         <div class="modal-content" onclick="event.stopPropagation()">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
@@ -224,7 +226,7 @@
         </div>
     </div>
 
-    <!-- 브리핑 모달 -->
+    <!-- 브리핑 팝업 -->
     <div id="briefing-modal" class="modal" onclick="this.style.display='none'">
         <div class="modal-content" onclick="event.stopPropagation()">
             <div style="text-align: center; margin-bottom: 15px;">
@@ -278,7 +280,7 @@
         </div>
     </div>
 
-    <!-- 일보 다중 입력 수정 팝업 -->
+    <!-- 일보 다중 입력 전용 상세 수정 모달 -->
     <div id="edit-worklog-modal" class="modal" onclick="this.style.display='none'">
         <div class="modal-content" style="max-width:600px;" onclick="event.stopPropagation()">
             <h3 style="margin-top:0; color:#673ab7;">📝 일보 내용 및 인원 수정</h3>
@@ -334,9 +336,7 @@
         </div>
     </div>
 
-    <!-- [유일한 모달창 선언부 끝] -->
-
-    <!-- 검색 영역 및 엑셀 다운로드 -->
+    <!-- 검색 영역 및 과거 내역 필터링 토글 버튼 -->
     <div style="max-width:1200px; margin: 0 auto 10px auto; display:flex; gap:10px; padding:0 5px; flex-wrap:wrap;">
         <input type="text" id="main-search-input" placeholder="🔍 작업, 자재, 담당자 검색..." onkeyup="window.updateUI()" style="flex:1; min-width:200px; padding:10px; border-radius:8px; border:1px solid #ddd; font-size:0.9rem;">
         <button id="toggle-old-btn" onclick="window.toggleOldTasks()" style="background:#6b778c; color:white; border:none; padding:10px 15px; border-radius:8px; font-weight:bold; cursor:pointer; white-space:nowrap;">🕒 과거 완료내역 모두 보기</button>
@@ -531,7 +531,6 @@
         window.worklogEntryCount = 0; window.currentWorkerEntryId = null; 
         window.loggedInUser = localStorage.getItem('site_user') || '';
 
-        // 접속자 지역 기준(KST) 오늘 날짜 반환 함수
         window.getLocalDateString = (dateObj = new Date()) => {
             const y = dateObj.getFullYear();
             const m = String(dateObj.getMonth() + 1).padStart(2, '0');
@@ -573,7 +572,6 @@
         window.worklogViewDate = window.getLocalDateString();
         window.showOldDoneTasks = false;
 
-        // --- 🧰 장비 관리 기능 ---
         window.addEquip = async () => {
             const name = document.getElementById('eq-name').value;
             const borrower = document.getElementById('eq-borrower').value;
@@ -603,7 +601,6 @@
         window.returnEquip = async (id) => { await updateDoc(doc(db, "equipments", id), { status: '반납완료', returnDate: window.getLocalDateString() }); };
         window.deleteEquip = async (id) => { if(confirm('이 장비 기록을 삭제하시겠습니까?')) await deleteDoc(doc(db, "equipments", id)); };
 
-        // --- 👥 팀원 관리 기능 ---
         window.addTeamMember = async () => {
             const name = document.getElementById('new-member-name').value.trim();
             if(!name) return alert("이름을 입력하세요.");
@@ -624,7 +621,6 @@
         };
         window.deleteTeamMember = async (id) => { if(confirm('팀원을 삭제하시겠습니까?\n주의: 기존 작성된 글의 작성자 이름이 변경되지는 않습니다.')) await deleteDoc(doc(db, "team", id)); };
 
-        // --- 💳 지출 관리 기능 ---
         window.getExpensePeriod = (dateObj) => {
             let y = dateObj.getFullYear(); let m = dateObj.getMonth(); let d = dateObj.getDate();
             if (d >= 25) m++; 
@@ -694,6 +690,8 @@
             let cycleKey = `${window.expenseViewCycle.year}-${String(window.expenseViewCycle.month).padStart(2,'0')}`;
             let val = Number(document.getElementById('exp-limit-input').value) || 0;
             await setDoc(doc(db, "expense_limits", cycleKey), { limit: val });
+            window.expenseLimits[cycleKey] = val; 
+            window.renderExpenses();
         };
 
         window.editExpense = (id) => {
@@ -1461,7 +1459,6 @@
                 const refDate = eq.returnDate || eq.borrowDate || '';
                 const isCurrentMonth = refDate.startsWith(currentMonthStr);
                 
-                // 반납완료 건인데 당월 아니면 집계 안함
                 if (isReturned && !isCurrentMonth) return;
 
                 if(!eqStats[b]) eqStats[b] = { renting: 0, returned: 0 };
@@ -1501,7 +1498,7 @@
 
         window.openWorkerModal = (id) => {
             window.currentWorkerEntryId = id;
-            const hiddenInput = document.getElementById(id.includes('edit') ? `wl-workers-hidden-${id}` : `wl-workers-hidden-${id}`);
+            const hiddenInput = document.getElementById(`wl-workers-hidden-${id}`);
             const selected = hiddenInput && hiddenInput.value ? hiddenInput.value.split(',') : [];
             
             const allPeople = [...new Set(window.teamMembers.map(m=>m.name))].filter(Boolean);
@@ -1522,10 +1519,10 @@
             const checkboxes = document.querySelectorAll('#worker-modal-list input[type="checkbox"]:checked');
             const selected = Array.from(checkboxes).map(cb => cb.value);
             
-            const targetHidden = document.getElementById(id.includes('edit') ? `wl-workers-hidden-${id}` : `wl-workers-hidden-${id}`);
+            const targetHidden = document.getElementById(`wl-workers-hidden-${id}`);
             if (targetHidden) targetHidden.value = selected.join(',');
             
-            const displayEl = document.getElementById(id.includes('edit') ? `wl-workers-display-${id}` : `wl-workers-display-${id}`);
+            const displayEl = document.getElementById(`wl-workers-display-${id}`);
             if(displayEl) {
                 if(selected.length > 0) {
                     displayEl.innerHTML = `투입 ${selected.length}명 : <strong style="color:#0052cc;">${selected.join(', ')}</strong>`;
