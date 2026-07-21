@@ -28,7 +28,13 @@
         #login-overlay { display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f4f5f7; z-index: 99999; flex-direction: column; align-items: center; justify-content: center; }
         .login-box { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); text-align: center; width: 80%; max-width: 320px; }
         
-        .dashboard-container { display: flex; flex-direction: column; gap: 8px; max-width: 1200px; margin: 0 auto 10px auto; align-items: flex-start; width: 100%; box-sizing: border-box; }
+        /* 3단 레이아웃 (PC용 사이드 패널) */
+        .page-wrapper { display: flex; justify-content: center; gap: 15px; padding: 0 5px; align-items: flex-start; max-width: 100%; margin: 0 auto; }
+        .main-content { flex: 1; max-width: 1200px; min-width: 0; width: 100%; display: flex; flex-direction: column; }
+        .side-panel { display: none; width: 260px; flex-shrink: 0; flex-direction: column; gap: 15px; position: sticky; top: 10px; height: calc(100vh - 20px); overflow-y: auto; }
+        .side-panel-box { background: #fff; border-radius: 6px; padding: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-top: 4px solid var(--primary-color); }
+        
+        .dashboard-container { display: flex; flex-direction: column; gap: 8px; width: 100%; box-sizing: border-box; margin-bottom:10px; }
         .panel { background: #fff; border-radius: 6px; padding: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); width: 100%; box-sizing: border-box; }
         
         .summary-group { margin-bottom: 15px; }
@@ -47,7 +53,7 @@
         .calendar-day-cell:hover { background: #f0f4f8; }
         .calendar-num-badge { font-size: 0.65rem; background: var(--primary-color); color: white; border-radius: 50%; width: 18px; height: 18px; line-height: 18px; text-align: center; margin-top: 4px; font-weight: bold; }
         
-        .board { display: flex; flex-direction: column; gap: 8px; max-width: 1200px; margin: 0 auto; width: 100%; box-sizing: border-box; }
+        .board { display: flex; flex-direction: column; gap: 8px; width: 100%; box-sizing: border-box; }
         .column { background-color: var(--column-bg); flex: 1 1 0%; min-width: 0; border-radius: 6px; padding: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.12); box-sizing: border-box; }
         .column h2 { font-size: 0.9rem; margin: 0 0 5px 0; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
         
@@ -76,21 +82,18 @@
         .brief-item:last-child { border-bottom: none; }
         .brief-meta { font-size: 0.75rem; color: #666; margin-top: 2px; }
 
-        .section-header { max-width: 1200px; margin: 15px auto 5px; font-size: 1rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; padding: 5px; border-radius: 4px; transition: background 0.2s; }
+        .section-header { width: 100%; box-sizing:border-box; margin: 15px auto 5px; font-size: 1rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; padding: 5px; border-radius: 4px; transition: background 0.2s; }
         .section-header:hover { background-color: #e5e5e5; }
         .section-icon { font-size: 0.8rem; color: #666; }
 
-        @media (max-width: 767px) {
-            .hide-on-mobile { display: none !important; }
-        }
-
-        @media (min-width: 768px) {
-            .summary-grid { grid-template-columns: repeat(3, 1fr); }
-        }
-
+        @media (max-width: 767px) { .hide-on-mobile { display: none !important; } }
+        @media (min-width: 768px) { .summary-grid { grid-template-columns: repeat(3, 1fr); } }
         @media (min-width: 900px) { 
             .dashboard-container { flex-direction: row; } 
             .board { flex-direction: row; align-items: flex-start; } 
+        }
+        @media (min-width: 1400px) { 
+            .side-panel { display: flex; } 
         }
     </style>
 </head>
@@ -101,7 +104,7 @@
             <h2 style="color:var(--primary-color); margin-top:0;">📱 현장 관리 보드</h2>
             <p style="font-size:0.85rem; color:#666; margin-bottom:20px;">본인의 이름을 선택하고 접속해주세요.</p>
             <select id="login-user-select" style="width:100%; padding:12px; margin-bottom:15px; border:2px solid var(--primary-color); border-radius:6px; font-size:1rem; font-weight:bold;">
-                <option value="">이름을 선택하세요 (로딩중...)</option>
+                <option value="">데이터 연결 중입니다 (잠시만 대기)...</option>
             </select>
             <button onclick="window.loginUser()" style="width:100%; background:var(--primary-color); color:white; border:none; padding:12px; border-radius:6px; font-weight:bold; font-size:1rem; cursor:pointer; margin-bottom:20px;">접속하기</button>
             <div style="border-top:1px solid #eee; margin-bottom:15px;"></div>
@@ -116,8 +119,9 @@
     <!-- 헤더 영역 -->
     <header>
         <div class="header-left hide-on-mobile">
+            <button class="btn-team" style="background:#42526e; color:#fff;" onclick="document.getElementById('trash-modal').style.display='block'; window.renderTrash();">🗑️ 휴지통</button>
             <button class="btn-team" style="background:#34495e; color:#fff;" onclick="document.getElementById('backup-modal').style.display='block'">💾 백업/복구</button>
-            <button class="btn-team" style="background:#bf2600; color:#fff;" onclick="window.openInitModal()">💣 데이터 초기화</button>
+            <button class="btn-team" style="background:#bf2600; color:#fff;" onclick="window.openInitModal()">💣 초기화</button>
         </div>
         
         <div class="header-center">
@@ -128,6 +132,11 @@
             <span id="header-user-name" style="font-size:0.8rem; font-weight:bold; color:var(--primary-color); margin-right:3px;"></span>
             <button class="btn-team" style="background:#888; padding: 4px 6px; font-size: 0.65rem;" onclick="window.logoutUser()">로그아웃</button>
             <div style="width:1px; height:15px; background:#ccc; margin:0 3px;"></div>
+            
+            <button class="btn-team" style="background:#d35400; color:#fff;" onclick="document.getElementById('otherco-modal').style.display='block'; window.renderOtherCos();">🏢 타업체</button>
+            <button class="btn-team" style="background:#009688; color:#fff;" onclick="document.getElementById('contact-modal').style.display='block'; window.renderContacts();">📞 연락처</button>
+            <button class="btn-team" style="background:#607d8b; color:#fff;" onclick="document.getElementById('site-modal').style.display='block'; window.renderSites();">🔗 사이트</button>
+            
             <button class="btn-team" style="background:#ff9f43; color:#fff;" onclick="window.showDailyBriefing()">🔔 브리핑</button>
             <button class="btn-team" style="background:#673ab7;" onclick="window.openReportModal()">📋 일보</button>
             <button class="btn-team" style="background:#795548;" onclick="document.getElementById('equip-modal').style.display='block'">🧰 장비</button>
@@ -137,11 +146,339 @@
         </div>
     </header>
 
-    <!-- 지출 내역 모달창 -->
+    <!-- ✨ 전체 레이아웃을 감싸는 Wrapper (PC에서 양옆 사이드바 표시) -->
+    <div class="page-wrapper">
+        
+        <!-- 좌측 사이드바 (연락처 고정) -->
+        <aside class="side-panel left-panel">
+            <div class="side-panel-box" style="border-top-color: #009688;">
+                <h3 style="margin-top:0; margin-bottom:10px; color:#009688; display:flex; justify-content:space-between; align-items:center;">
+                    <span>📞 비상 연락망</span>
+                    <button onclick="document.getElementById('contact-modal').style.display='block'; window.renderContacts();" style="background:none; border:none; color:#009688; cursor:pointer; font-size:0.8rem; font-weight:bold;">+관리</button>
+                </h3>
+                <div id="side-contact-list"></div>
+            </div>
+        </aside>
+
+        <!-- 중앙 메인 보드 -->
+        <main class="main-content">
+            
+            <!-- 검색 영역 및 일괄 삭제/엑셀 다운로드 -->
+            <div style="width:100%; margin: 0 auto 10px auto; display:flex; gap:10px; padding:0 5px; flex-wrap:wrap; align-items:center; box-sizing:border-box;">
+                <input type="text" id="main-search-input" placeholder="🔍 작업, 자재, 담당자 검색..." onkeyup="window.updateUI()" style="flex:1; min-width:200px; padding:10px; border-radius:8px; border:1px solid #ddd; font-size:0.9rem;">
+                <button onclick="window.deleteSelectedTasks()" style="background:#ff5630; color:white; border:none; padding:10px 15px; border-radius:8px; font-weight:bold; cursor:pointer; white-space:nowrap;">🗑️ 선택 일괄 삭제</button>
+                <button id="toggle-old-btn" onclick="window.toggleOldTasks()" style="background:#6b778c; color:white; border:none; padding:10px 15px; border-radius:8px; font-weight:bold; cursor:pointer; white-space:nowrap;">🕒 과거 완료내역 모두 보기</button>
+                <button onclick="window.downloadExcel()" style="background:#217346; color:white; border:none; padding:10px 15px; border-radius:8px; font-weight:bold; cursor:pointer;">📊 엑셀 다운로드</button>
+            </div>
+            
+            <!-- 📊 대시보드 집계표 -->
+            <div class="dashboard-container">
+                <div style="display:flex; width:100%; gap:8px; flex-direction:column; @media(min-width:900px){flex-direction:row;}">
+                    <div class="panel" style="flex:1; min-width:250px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                            <button onclick="window.changeMonth(-1)" style="border:1px solid #ccc; background:#fff; padding:4px 10px; border-radius:4px; cursor:pointer; font-weight:bold;">◀</button>
+                            <h4 id="calendar-title" style="margin:0; font-size:0.9rem;">년 월</h4>
+                            <button onclick="window.changeMonth(1)" style="border:1px solid #ccc; background:#fff; padding:4px 10px; border-radius:4px; cursor:pointer; font-weight:bold;">▶</button>
+                        </div>
+                        <div id="calendar-grid" style="display:grid; grid-template-columns:repeat(7,1fr); gap:1px; text-align:center; font-size:0.65rem;"></div>
+                    </div>
+                    
+                    <div class="panel" style="flex:3;">
+                        <div class="summary-group">
+                            <div class="summary-group-title" style="color:#3b2a50;">📅 일정 현황</div>
+                            <div class="summary-grid">
+                                <div>
+                                    <h4 style="margin:0 0 3px 0; font-size:0.75rem; color:#555;">👤 담당자</h4>
+                                    <table class="summary-table" id="assignee-table"><thead><tr><th>이름</th><th>할일</th><th>진행</th><th>완료</th></tr></thead><tbody></tbody></table>
+                                </div>
+                                <div>
+                                    <h4 style="margin:0 0 3px 0; font-size:0.75rem; color:#0052cc;">⏳ 마감 예정 (7일 이내)</h4>
+                                    <table class="summary-table" id="task-date-table"><thead><tr><th>날짜</th><th>대기</th><th>완료</th></tr></thead><tbody></tbody></table>
+                                </div>
+                                <div>
+                                    <h4 style="margin:0 0 3px 0; font-size:0.75rem; color:var(--warning-color);">⚠️ 기한 지연</h4>
+                                    <table class="summary-table" id="overdue-table"><thead><tr><th>항목</th><th>일자</th></tr></thead><tbody></tbody></table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="summary-group">
+                            <div class="summary-group-title" style="color:#00875a;">📦 자재 현황</div>
+                            <div class="summary-grid">
+                                <div>
+                                    <h4 style="margin:0 0 3px 0; font-size:0.75rem; color:#555;">📋 발주현황</h4>
+                                    <table class="summary-table" id="material-table"><thead><tr><th>이름</th><th>요청</th><th>발주</th><th>반입</th></tr></thead><tbody></tbody></table>
+                                </div>
+                                <div>
+                                    <h4 style="margin:0 0 3px 0; font-size:0.75rem; color:#0052cc;">🚚 반입 예정 (7일 이내)</h4>
+                                    <table class="summary-table" id="mat-date-table"><thead><tr><th>날짜</th><th>대기</th><th>완료</th></tr></thead><tbody></tbody></table>
+                                </div>
+                                <div>
+                                    <h4 style="margin:0 0 3px 0; font-size:0.75rem; color:var(--warning-color);">⚠️ 발주 지연 (미발주)</h4>
+                                    <table class="summary-table" id="un-ordered-table"><thead><tr><th>항목</th><th>요청일</th></tr></thead><tbody></tbody></table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="summary-group" style="margin-bottom:0;">
+                            <div class="summary-group-title" style="color:#795548;">🧰 장비 대여 현황</div>
+                            <div class="summary-grid">
+                                <div>
+                                    <table class="summary-table" id="equip-table"><thead><tr><th>빌려간사람</th><th>대여중</th><th>반납완료</th></tr></thead><tbody></tbody></table>
+                                </div>
+                                <div></div>
+                                <div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 당일 작업 일지 보드 -->
+            <h3 class="section-header" style="color: #673ab7;" onclick="window.toggleMainSection('worklog-wrap', this)">
+                <span>📝 당일 작업 내용 (일보 다중 입력)</span> <span class="section-icon">▼</span>
+            </h3>
+            <div id="worklog-wrap" style="display: block;">
+                <div class="board">
+                    <div class="column" id="col-worklog">
+                        <h2 onclick="window.toggleColumn('worklog')">
+                            <span>작업 내역 <span id="worklog-count">0</span></span>
+                        </h2>
+                        
+                        <div class="add-card-form" style="border: 2px solid #e1e4e8; padding: 10px; border-radius: 8px; background: #fafbfc;">
+                            <div id="worklog-entries"></div>
+                            
+                            <div style="display:flex; gap:6px; width:100%; align-items:center; flex-wrap:wrap; margin-top:5px;">
+                                <button onclick="window.addWorklogEntry()" style="background:#e6effc; color:#0052cc; border:1px dashed #0052cc; padding:8px; border-radius:4px; font-weight:bold; cursor:pointer; flex:1; white-space:nowrap; min-width:80px;">➕ 추가</button>
+                                
+                                <div style="display:flex; align-items:center; gap:5px; flex:1.5; min-width:140px;">
+                                    <span style="font-size:0.75rem; font-weight:bold; color:#666; white-space:nowrap;">기준일:</span>
+                                    <input type="date" id="worklog-start" style="width:100%; padding:8px; border-radius:4px; border:1px solid #ddd; box-sizing:border-box;">
+                                </div>
+                                
+                                <button onclick="window.saveAllWorklogs()" style="background:#673ab7; color:white; padding:8px 15px; font-size:0.85rem; font-weight:bold; border-radius:4px; border:none; cursor:pointer; flex:2; white-space:nowrap; min-width:150px;">💾 한 번에 묶어서 저장</button>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin: 15px 0 5px 0; padding: 6px 10px; background: #ebecf0; border-radius: 4px; border-left: 4px solid #673ab7;">
+                            <span style="font-size: 0.85rem; font-weight: bold; color: #333;">📋 저장된 작업 기록</span>
+                            <span style="font-size: 0.75rem; font-weight: normal; color: #555; text-align: right;">
+                                <div>조회: <input type="date" id="worklog-view-date" onchange="window.changeWorklogViewDate(this.value)" style="padding:2px 4px; border:1px solid #ccc; border-radius:4px; font-size:0.75rem; color:#333; margin-left:4px;"></div>
+                                <div id="worklog-recorded-dates" style="margin-top: 4px; font-size: 0.7rem; color: #673ab7; font-weight: bold;"></div>
+                            </span>
+                        </div>
+
+                        <div id="worklog-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 일정 관리 보드 -->
+            <h3 class="section-header" style="color: var(--text-color);" onclick="window.toggleMainSection('schedule-wrap', this)">
+                <span>📅 일정 관리 (할 일)</span> <span class="section-icon">▼</span>
+            </h3>
+            <div id="schedule-wrap" style="display: block;">
+                <div class="board" style="flex-direction: row; align-items: flex-start;">
+                    <div class="column" id="col-todo"><h2 onclick="window.toggleColumn('todo')">할 일 <span id="todo-count">0</span></h2>
+                        <div class="add-card-form">
+                            <input type="text" id="todo-input" placeholder="새 일정...">
+                            <div class="form-row"><input type="date" id="todo-start" onchange="window.syncDueDate('todo')"><input type="date" id="todo-due"></div>
+                            <div class="form-row"><select id="todo-assignee"><option value="">담당자</option></select><button onclick="window.addCard('todo')">등록</button></div>
+                        </div>
+                        <div id="todo-list"></div>
+                    </div>
+                    <div class="column" id="col-inprogress"><h2 onclick="window.toggleColumn('inprogress')">진행 중 <span id="inprogress-count">0</span></h2>
+                        <div class="add-card-form">
+                            <input type="text" id="inprogress-input" placeholder="새 일정...">
+                            <div class="form-row"><input type="date" id="inprogress-start" onchange="window.syncDueDate('inprogress')"><input type="date" id="inprogress-due"></div>
+                            <div class="form-row"><select id="inprogress-assignee"><option value="">담당자</option></select><button onclick="window.addCard('inprogress')">등록</button></div>
+                        </div>
+                        <div id="inprogress-list"></div>
+                    </div>
+                    <div class="column" id="col-done"><h2 onclick="window.toggleColumn('done')">완료 <span id="done-count">0</span></h2>
+                        <div class="add-card-form">
+                            <input type="text" id="done-input" placeholder="새 일정...">
+                            <div class="form-row"><input type="date" id="done-start" onchange="window.syncDueDate('done')"><input type="date" id="done-due"></div>
+                            <div class="form-row"><select id="done-assignee"><option value="">담당자</option></select><button onclick="window.addCard('done')">등록</button></div>
+                        </div>
+                        <div id="done-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 자재 관리 보드 -->
+            <h3 class="section-header" style="color: #0052cc;" onclick="window.toggleMainSection('material-wrap', this)">
+                <span>📦 자재 발주 관리</span> <span class="section-icon">▼</span>
+            </h3>
+            <div id="material-wrap" style="display: block;">
+                <div class="board" style="flex-direction: row; align-items: flex-start;">
+                    <div class="column" id="col-mat-request"><h2 onclick="window.toggleColumn('mat-request')">발주요청 <span id="mat-request-count">0</span></h2>
+                        <div class="add-card-form">
+                            <div class="form-row"><input type="text" id="mat-request-item" placeholder="품명" style="flex:2.5;"><input type="text" id="mat-request-spec" placeholder="규격" style="flex:1;"><input type="number" id="mat-request-qty" placeholder="수량" style="flex:0.8;"></div>
+                            <div class="form-row"><input type="date" id="mat-request-start" onchange="window.syncDueDate('mat-request')"><input type="date" id="mat-request-due"></div>
+                            <div class="form-row"><select id="mat-request-requester"><option value="">요청자</option></select><select id="mat-request-orderer"><option value="">발주자</option></select><button onclick="window.addCard('mat-request')">등록</button></div>
+                        </div>
+                        <div id="mat-request-list"></div>
+                    </div>
+                    <div class="column" id="col-mat-ordered"><h2 onclick="window.toggleColumn('mat-ordered')">발주 완료 <span id="mat-ordered-count">0</span></h2>
+                        <div class="add-card-form">
+                            <div class="form-row"><input type="text" id="mat-ordered-item" placeholder="품명" style="flex:2.5;"><input type="text" id="mat-ordered-spec" placeholder="규격" style="flex:1;"><input type="number" id="mat-ordered-qty" placeholder="수량" style="flex:0.8;"></div>
+                            <div class="form-row"><input type="date" id="mat-ordered-start" onchange="window.syncDueDate('mat-ordered')"><input type="date" id="mat-ordered-due"></div>
+                            <div class="form-row"><select id="mat-ordered-requester"><option value="">요청자</option></select><select id="mat-ordered-orderer"><option value="">발주자</option></select><button onclick="window.addCard('mat-ordered')">등록</button></div>
+                        </div>
+                        <div id="mat-ordered-list"></div>
+                    </div>
+                    <div class="column" id="col-mat-delivered"><h2 onclick="window.toggleColumn('mat-delivered')">반입완료 <span id="mat-delivered-count">0</span></h2>
+                        <div class="add-card-form">
+                            <div class="form-row"><input type="text" id="mat-delivered-item" placeholder="품명" style="flex:2.5;"><input type="text" id="mat-delivered-spec" placeholder="규격" style="flex:1;"><input type="number" id="mat-delivered-qty" placeholder="수량" style="flex:0.8;"></div>
+                            <div class="form-row"><input type="date" id="mat-delivered-start" onchange="window.syncDueDate('mat-delivered')"><input type="date" id="mat-delivered-due"></div>
+                            <div class="form-row"><select id="mat-delivered-requester"><option value="">요청자</option></select><select id="mat-delivered-orderer"><option value="">발주자</option></select><button onclick="window.addCard('mat-delivered')">등록</button></div>
+                        </div>
+                        <div id="mat-delivered-list"></div>
+                    </div>
+                </div>
+            </div>
+            <div style="height:50px;"></div>
+        </main>
+
+        <!-- 우측 사이드바 (사이트 / 타업체 고정) -->
+        <aside class="side-panel right-panel">
+            <div class="side-panel-box" style="border-top-color: #607d8b;">
+                <h3 style="margin-top:0; margin-bottom:10px; color:#607d8b; display:flex; justify-content:space-between; align-items:center;">
+                    <span>🔗 사이트</span>
+                    <button onclick="document.getElementById('site-modal').style.display='block'; window.renderSites();" style="background:none; border:none; color:#607d8b; cursor:pointer; font-size:0.8rem; font-weight:bold;">+관리</button>
+                </h3>
+                <div id="side-site-list"></div>
+            </div>
+            
+            <div class="side-panel-box" style="border-top-color: #d35400;">
+                <h3 style="margin-top:0; margin-bottom:10px; color:#d35400; display:flex; justify-content:space-between; align-items:center;">
+                    <span>🏢 타업체</span>
+                    <button onclick="document.getElementById('otherco-modal').style.display='block'; window.renderOtherCos();" style="background:none; border:none; color:#d35400; cursor:pointer; font-size:0.8rem; font-weight:bold;">+관리</button>
+                </h3>
+                <div id="side-otherco-list"></div>
+            </div>
+        </aside>
+
+    </div> <!-- // page-wrapper 끝 -->
+
+    <!-- [단 하나의 모달창 묶음 시작] (모든 팝업창은 무조건 여기에만 딱 1번 선언) -->
+    
+    <!-- 그룹 관리 서브 모달들 -->
+    <div id="contact-group-modal" class="modal modal-sub" onclick="this.style.display='none'">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h3 style="margin:0 0 15px 0; color:#009688;">⚙️ 연락처 그룹 관리 <button onclick="document.getElementById('contact-group-modal').style.display='none'" style="float:right; background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button></h3>
+            <div style="display:flex; gap:5px; margin-bottom:15px;">
+                <input type="text" id="new-contact-group" placeholder="새 그룹명 (예: 본사, 협력업체)" style="flex:1; padding:8px; border:1px solid #ddd; border-radius:4px;">
+                <button onclick="window.addContactGroup()" style="background:#009688; color:white; border:none; padding:8px 15px; border-radius:4px; font-weight:bold; cursor:pointer;">추가</button>
+            </div>
+            <div id="contact-group-list" style="max-height:200px; overflow-y:auto; display:flex; flex-direction:column; gap:5px;"></div>
+        </div>
+    </div>
+
+    <div id="site-group-modal" class="modal modal-sub" onclick="this.style.display='none'">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h3 style="margin:0 0 15px 0; color:#607d8b;">⚙️ 사이트 그룹 관리 <button onclick="document.getElementById('site-group-modal').style.display='none'" style="float:right; background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button></h3>
+            <div style="display:flex; gap:5px; margin-bottom:15px;">
+                <input type="text" id="new-site-group" placeholder="새 그룹명 (예: 도면, 포털)" style="flex:1; padding:8px; border:1px solid #ddd; border-radius:4px;">
+                <button onclick="window.addSiteGroup()" style="background:#607d8b; color:white; border:none; padding:8px 15px; border-radius:4px; font-weight:bold; cursor:pointer;">추가</button>
+            </div>
+            <div id="site-group-list" style="max-height:200px; overflow-y:auto; display:flex; flex-direction:column; gap:5px;"></div>
+        </div>
+    </div>
+
+    <div id="otherco-group-modal" class="modal modal-sub" onclick="this.style.display='none'">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h3 style="margin:0 0 15px 0; color:#d35400;">⚙️ 타업체 그룹 관리 <button onclick="document.getElementById('otherco-group-modal').style.display='none'" style="float:right; background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button></h3>
+            <div style="display:flex; gap:5px; margin-bottom:15px;">
+                <input type="text" id="new-otherco-group" placeholder="새 그룹명 (예: 철근, 장비)" style="flex:1; padding:8px; border:1px solid #ddd; border-radius:4px;">
+                <button onclick="window.addOtherCoGroup()" style="background:#d35400; color:white; border:none; padding:8px 15px; border-radius:4px; font-weight:bold; cursor:pointer;">추가</button>
+            </div>
+            <div id="otherco-group-list" style="max-height:200px; overflow-y:auto; display:flex; flex-direction:column; gap:5px;"></div>
+        </div>
+    </div>
+
+    <!-- 주소록/사이트/타업체 메인 모달 -->
+    <div id="contact-modal" class="modal" onclick="this.style.display='none'">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h3 style="margin:0 0 15px 0; color:#009688;">📞 비상 연락망 <button onclick="document.getElementById('contact-modal').style.display='none'" style="float:right; background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button></h3>
+            <div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:10px; align-items:center;">
+                <select id="contact-group-select" style="flex:1; min-width:100px; padding:8px; border:1px solid #ddd; border-radius:4px;"><option value="">그룹 미지정</option></select>
+                <button onclick="document.getElementById('contact-group-modal').style.display='block'" style="padding:8px; background:#e0e0e0; border:none; border-radius:4px; cursor:pointer; font-weight:bold; color:#333;">⚙️ 관리</button>
+            </div>
+            <div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:10px;">
+                <input type="text" id="contact-name" placeholder="이름/업체명" style="flex:1; min-width:120px; padding:8px; border:1px solid #ddd; border-radius:4px;">
+                <input type="text" id="contact-phone" placeholder="연락처 (예: 010-0000-0000)" style="flex:1.5; min-width:150px; padding:8px; border:1px solid #ddd; border-radius:4px;">
+            </div>
+            <div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:15px;">
+                <input type="text" id="contact-note" placeholder="비고 (직책, 내용 등)" style="flex:3; min-width:150px; padding:8px; border:1px solid #ddd; border-radius:4px;">
+                <button id="contact-submit-btn" onclick="window.addContact()" style="background:#009688; color:white; padding:8px 15px; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">등록</button>
+            </div>
+            <div style="margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid #eee;">
+                <select id="contact-group-filter" onchange="window.renderContacts()" style="width:100%; padding:8px; border:1px solid #009688; border-radius:4px; color:#009688; font-weight:bold; outline:none;"><option value="">📂 전체 그룹 보기</option></select>
+            </div>
+            <div id="contact-list" style="display:flex; flex-direction:column; gap:8px; max-height:300px; overflow-y:auto; padding-right:5px;"></div>
+        </div>
+    </div>
+
+    <div id="site-modal" class="modal" onclick="this.style.display='none'">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h3 style="margin:0 0 15px 0; color:#607d8b;">🔗 주요 사이트 관리 <button onclick="document.getElementById('site-modal').style.display='none'" style="float:right; background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button></h3>
+            <div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:10px; align-items:center;">
+                <select id="site-group-select" style="flex:1; min-width:100px; padding:8px; border:1px solid #ddd; border-radius:4px;"><option value="">그룹 미지정</option></select>
+                <button onclick="document.getElementById('site-group-modal').style.display='block'" style="padding:8px; background:#e0e0e0; border:none; border-radius:4px; cursor:pointer; font-weight:bold; color:#333;">⚙️ 관리</button>
+            </div>
+            <div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:10px;">
+                <input type="text" id="site-name" placeholder="사이트명" style="flex:1; min-width:120px; padding:8px; border:1px solid #ddd; border-radius:4px;">
+            </div>
+            <div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:15px;">
+                <input type="text" id="site-url" placeholder="URL 주소 (http://...)" style="flex:3; min-width:200px; padding:8px; border:1px solid #ddd; border-radius:4px;">
+                <button id="site-submit-btn" onclick="window.addSite()" style="background:#607d8b; color:white; padding:8px 15px; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">등록</button>
+            </div>
+            <div style="margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid #eee;">
+                <select id="site-group-filter" onchange="window.renderSites()" style="width:100%; padding:8px; border:1px solid #607d8b; border-radius:4px; color:#607d8b; font-weight:bold; outline:none;"><option value="">📂 전체 그룹 보기</option></select>
+            </div>
+            <div id="site-list" style="display:flex; flex-direction:column; gap:8px; max-height:300px; overflow-y:auto; padding-right:5px;"></div>
+        </div>
+    </div>
+
+    <div id="otherco-modal" class="modal" onclick="this.style.display='none'">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h3 style="margin:0 0 15px 0; color:#d35400;">🏢 타업체 관리 <button onclick="document.getElementById('otherco-modal').style.display='none'" style="float:right; background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button></h3>
+            <div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:10px; align-items:center;">
+                <select id="otherco-group-select" style="flex:1; min-width:100px; padding:8px; border:1px solid #ddd; border-radius:4px;"><option value="">그룹 미지정</option></select>
+                <button onclick="document.getElementById('otherco-group-modal').style.display='block'" style="padding:8px; background:#e0e0e0; border:none; border-radius:4px; cursor:pointer; font-weight:bold; color:#333;">⚙️ 관리</button>
+            </div>
+            <div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:10px;">
+                <input type="text" id="otherco-name" placeholder="업체명" style="flex:1; min-width:120px; padding:8px; border:1px solid #ddd; border-radius:4px;">
+                <input type="text" id="otherco-phone" placeholder="연락처/담당자" style="flex:1.5; min-width:150px; padding:8px; border:1px solid #ddd; border-radius:4px;">
+            </div>
+            <div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:15px;">
+                <input type="text" id="otherco-note" placeholder="주요업무 / 비고" style="flex:3; min-width:150px; padding:8px; border:1px solid #ddd; border-radius:4px;">
+                <button id="otherco-submit-btn" onclick="window.addOtherCo()" style="background:#d35400; color:white; padding:8px 15px; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">등록</button>
+            </div>
+            <div style="margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid #eee;">
+                <select id="otherco-group-filter" onchange="window.renderOtherCos()" style="width:100%; padding:8px; border:1px solid #d35400; border-radius:4px; color:#d35400; font-weight:bold; outline:none;"><option value="">📂 전체 그룹 보기</option></select>
+            </div>
+            <div id="otherco-list" style="display:flex; flex-direction:column; gap:8px; max-height:300px; overflow-y:auto; padding-right:5px;"></div>
+        </div>
+    </div>
+
+    <!-- 일반 도구 모달들 -->
+    <div id="trash-modal" class="modal" onclick="this.style.display='none'">
+        <div class="modal-content" style="max-width:600px;" onclick="event.stopPropagation()">
+            <h3 style="margin:0 0 15px 0; color:#42526e;">🗑️ 휴지통 <button onclick="document.getElementById('trash-modal').style.display='none'" style="float:right; background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button></h3>
+            <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;">
+                <span style="font-size:0.85rem; color:#666;">삭제된 항목 복구 및 영구 삭제</span>
+                <button onclick="window.emptyTrash()" style="background:#bf2600; color:white; border:none; padding:6px 12px; border-radius:4px; font-weight:bold; cursor:pointer;">휴지통 비우기</button>
+            </div>
+            <div id="trash-list" style="display:flex; flex-direction:column; gap:8px; max-height:400px; overflow-y:auto; padding-right:5px;"></div>
+        </div>
+    </div>
+
     <div id="expense-modal" class="modal" onclick="this.style.display='none'">
         <div class="modal-content" style="max-width:600px;" onclick="event.stopPropagation()">
             <h3 style="margin:0 0 15px 0; color:#e91e63;">💳 현장 지출 내역 <button onclick="document.getElementById('expense-modal').style.display='none'" style="float:right; background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button></h3>
-            
             <div style="display:flex; justify-content:space-between; align-items:center; background:#f9f9fa; padding:10px; border-radius:6px; margin-bottom:15px; border:1px solid #eee; flex-wrap:wrap; gap:10px;">
                 <div style="display:flex; align-items:center; gap:10px;">
                     <button onclick="window.changeExpenseMonth(-1)" style="padding:4px 8px; border:1px solid #ccc; background:#fff; border-radius:4px; cursor:pointer;">◀</button>
@@ -150,16 +487,14 @@
                 </div>
                 <div style="display:flex; align-items:center; gap:5px; font-size:0.85rem; font-weight:bold;">
                     <span>한도:</span>
-                    <input type="number" id="exp-limit-input" placeholder="금액 입력" onchange="window.saveExpenseLimit()" style="width:110px; padding:6px; border:1px solid #ddd; border-radius:4px; font-weight:bold; text-align:right;">
+                    <input type="number" id="exp-limit-input" placeholder="금액 입력" oninput="window.saveExpenseLimit()" style="width:110px; padding:6px; border:1px solid #ddd; border-radius:4px; font-weight:bold; text-align:right;">
                     <span>원</span>
                 </div>
             </div>
-
             <div style="display:flex; justify-content:space-between; margin-bottom:15px; font-size:0.95rem; font-weight:bold; background:#e6effc; padding:12px; border-radius:6px;">
                 <div style="color:#0052cc;">총 사용: <span id="exp-total-used">0</span>원</div>
                 <div style="color:#00875a;">잔액: <span id="exp-balance">0</span>원</div>
             </div>
-
             <div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:15px; border-top:1px dashed #ccc; padding-top:15px;">
                 <input type="date" id="exp-date" style="flex:1; min-width:100px; padding:8px; border:1px solid #ddd; border-radius:4px;" title="지출일">
                 <select id="exp-spender" style="flex:1; min-width:100px; padding:8px; border:1px solid #ddd; border-radius:4px;" title="지출자"></select>
@@ -167,12 +502,10 @@
                 <input type="number" id="exp-amount" placeholder="금액(원)" style="flex:1; min-width:80px; padding:8px; border:1px solid #ddd; border-radius:4px;">
                 <button id="exp-submit-btn" onclick="window.addExpense()" style="background:#e91e63; color:white; border:none; padding:8px 15px; border-radius:4px; font-weight:bold; cursor:pointer;">등록</button>
             </div>
-            
             <div id="expense-list" style="display:flex; flex-direction:column; gap:8px; max-height:350px; overflow-y:auto; padding-right:5px;"></div>
         </div>
     </div>
 
-    <!-- 팀원 관리 모달창 -->
     <div id="team-modal" class="modal" onclick="this.style.display='none'">
         <div class="modal-content" onclick="event.stopPropagation()">
             <h3 style="margin:0 0 15px 0;">👥 팀원 관리 <button onclick="document.getElementById('team-modal').style.display='none'" style="float:right; background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button></h3>
@@ -185,7 +518,6 @@
         </div>
     </div>
 
-    <!-- 시스템 초기화 모달 -->
     <div id="init-modal" class="modal" onclick="this.style.display='none'">
         <div class="modal-content" onclick="event.stopPropagation()">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
@@ -193,7 +525,7 @@
                 <button onclick="document.getElementById('init-modal').style.display='none'" style="background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button>
             </div>
             <div style="background:#fff4f4; padding:15px; border-radius:6px; border:1px solid #ffebe6; margin-bottom:15px;">
-                <p style="font-size:0.9rem; color:#333; line-height:1.5; margin-top:0;">모든 일보, 일정, 자재, 장비, 지출, 팀원 명단 데이터가 <strong>영구적으로 삭제</strong>됩니다.<br>오작동을 방지하기 위해 아래 입력창에 정확히 <strong style="color:#bf2600;">[초기화 승인]</strong> 이라고 입력해주세요.</p>
+                <p style="font-size:0.9rem; color:#333; line-height:1.5; margin-top:0;">모든 일보, 일정, 자재, 장비, 지출, 팀원, 연락처, 사이트 등 데이터가 <strong>영구적으로 삭제</strong>됩니다.<br>오작동 방지를 위해 아래에 정확히 <strong style="color:#bf2600;">[초기화 승인]</strong> 이라고 입력해주세요.</p>
                 <input type="text" id="init-confirm-text" placeholder="초기화 승인" style="width:100%; box-sizing:border-box; padding:12px; border:2px solid #bf2600; border-radius:6px; font-weight:bold; font-size:1rem; text-align:center;">
             </div>
             <div style="display:flex; gap:5px;">
@@ -203,7 +535,6 @@
         </div>
     </div>
 
-    <!-- 백업/복구 모달 -->
     <div id="backup-modal" class="modal" onclick="this.style.display='none'">
         <div class="modal-content" onclick="event.stopPropagation()">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
@@ -226,7 +557,7 @@
         </div>
     </div>
 
-    <!-- 브리핑 팝업 -->
+    <!-- ✨ 브리핑 팝업 -->
     <div id="briefing-modal" class="modal" onclick="this.style.display='none'">
         <div class="modal-content" onclick="event.stopPropagation()">
             <div style="text-align: center; margin-bottom: 15px;">
@@ -244,7 +575,7 @@
         </div>
     </div>
 
-    <!-- 집계표 클릭 상세보기 팝업 -->
+    <!-- 상세 내역 모달 -->
     <div id="task-modal" class="modal" onclick="this.style.display='none'">
         <div class="modal-content" onclick="event.stopPropagation()">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #eee; padding-bottom:10px; margin-bottom:10px;">
@@ -256,10 +587,10 @@
         </div>
     </div>
 
-    <!-- 내용 및 날짜 수정 전용 팝업 (일반 일정/자재용) -->
+    <!-- 내용 수정 모달 -->
     <div id="edit-modal" class="modal" onclick="this.style.display='none'">
         <div class="modal-content" onclick="event.stopPropagation()">
-            <h3 style="margin-top:0; color:var(--primary-color);">✏️ 내용 및 날짜 수정</h3>
+            <h3 style="margin:0 0 15px 0; color:var(--primary-color);">✏️ 내용 및 날짜 수정</h3>
             <div class="add-card-form">
                 <input type="hidden" id="edit-id">
                 <label style="font-size:0.75rem; font-weight:bold; color:#666;">내용 고치기</label>
@@ -271,7 +602,6 @@
                     <span style="color:#666; font-weight:bold;">~</span>
                     <input type="date" id="edit-due-date" style="flex:1; padding:8px;">
                 </div>
-
                 <div style="display:flex; gap:5px;">
                     <button onclick="window.saveEdit()" style="flex:2; padding:10px; background:var(--primary-color); color:white; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">저장하기</button>
                     <button onclick="document.getElementById('edit-modal').style.display='none'" style="flex:1; padding:10px; background:#ddd; border:none; border-radius:4px; cursor:pointer;">취소</button>
@@ -280,10 +610,10 @@
         </div>
     </div>
 
-    <!-- 일보 다중 입력 전용 상세 수정 모달 -->
+    <!-- 일보 다중입력 수정 모달 -->
     <div id="edit-worklog-modal" class="modal" onclick="this.style.display='none'">
         <div class="modal-content" style="max-width:600px;" onclick="event.stopPropagation()">
-            <h3 style="margin-top:0; color:#673ab7;">📝 일보 내용 및 인원 수정</h3>
+            <h3 style="margin:0; color:#673ab7;">📝 일보 내용 및 인원 수정</h3>
             <input type="hidden" id="edit-wl-id">
             <div id="edit-wl-container" style="display:flex; flex-direction:column; gap:10px; max-height:60vh; overflow-y:auto; padding-right:5px;"></div>
             <div style="display:flex; gap:5px; margin-top:15px;">
@@ -293,29 +623,41 @@
         </div>
     </div>
 
-    <!-- 작업자 선택 서브 모달 -->
+    <!-- 인원 선택 모달 -->
     <div id="worker-modal" class="modal modal-sub" onclick="this.style.display='none'">
         <div class="modal-content" onclick="event.stopPropagation()">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                <h3 style="margin:0; color:var(--primary-color);">👷 투입 인원 선택</h3>
+                <h3 style="margin:0; color:var(--primary-color);">👷 투입 인원 선택 (연락처 기반)</h3>
                 <button onclick="document.getElementById('worker-modal').style.display='none'" style="background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button>
             </div>
             <p style="font-size:0.75rem; color:#666; margin-top:-5px;">해당 작업에 투입된 인원을 모두 체크해주세요.</p>
-            <div id="worker-modal-list" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(100px, 1fr)); gap:10px; max-height: 250px; overflow-y:auto; padding:15px; background:#f9f9fa; border:1px solid #eee; border-radius:6px; margin-bottom:15px;"></div>
+            <div id="worker-modal-list" style="display:flex; flex-direction:column; gap:10px; max-height: 250px; overflow-y:auto; padding:10px; background:#f9f9fa; border:1px solid #eee; border-radius:6px; margin-bottom:15px;"></div>
             <button onclick="window.saveWorkerSelection()" style="width:100%; background:var(--primary-color); color:white; border:none; padding:12px; border-radius:6px; font-weight:bold; font-size:1rem; cursor:pointer;">선택 완료</button>
         </div>
     </div>
 
-    <!-- 작업일보 보고 모달 -->
-    <div id="report-modal" class="modal" onclick="this.style.display='none'"><div class="modal-content" onclick="event.stopPropagation()"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;"><h3 style="margin:0; color:#673ab7;">📋 일일 작업일보 생성</h3><button onclick="document.getElementById('report-modal').style.display='none'" style="background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button></div><textarea id="report-text" style="width:100%; height:250px; padding:10px; border:1px solid #ddd; border-radius:4px; font-size:0.85rem; margin-bottom:10px;"></textarea><div style="display:flex; gap:5px;"><button onclick="window.sendReportLine()" style="flex:1; background:#00c300; color:white; padding:10px; font-weight:bold;">라인으로 보고</button></div></div></div>
+    <!-- 보고 생성 모달 -->
+    <div id="report-modal" class="modal" onclick="this.style.display='none'">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h3 style="margin:0; color:#673ab7;">📋 일일 작업일보 생성</h3>
+                <button onclick="document.getElementById('report-modal').style.display='none'" style="background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button>
+            </div>
+            <textarea id="report-text" style="width:100%; height:250px; padding:10px; border:1px solid #ddd; border-radius:4px; font-size:0.85rem; margin-bottom:10px;"></textarea>
+            <div style="display:flex; gap:5px;">
+                <button onclick="window.sendReportLine()" style="flex:1; background:#00c300; color:white; border:none; border-radius:4px; padding:10px; font-weight:bold; cursor:pointer;">라인으로 보고</button>
+            </div>
+        </div>
+    </div>
     
-    <!-- 장비 관리 모달 -->
+    <!-- 장비 모달 -->
     <div id="equip-modal" class="modal" onclick="this.style.display='none'">
         <div class="modal-content" onclick="event.stopPropagation()">
             <h3 style="margin:0 0 15px 0; color:#795548;">🧰 공구 및 장비 관리 <button onclick="document.getElementById('equip-modal').style.display='none'" style="float:right; background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button></h3>
             <div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:15px;">
                 <input type="text" id="eq-name" placeholder="장비/공구명" style="flex:2; padding:8px;">
                 <input type="text" id="eq-borrower" placeholder="빌려간 사람" style="flex:1.5; padding:8px;">
+                <!-- 장비 날짜 입력칸 -->
                 <input type="date" id="eq-due" style="flex:1; padding:8px;">
                 <button onclick="window.addEquip()" style="background:#795548; color:white; padding:8px 15px; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">등록</button>
             </div>
@@ -323,7 +665,7 @@
         </div>
     </div>
     
-    <!-- 공지 발송 모달 -->
+    <!-- 공지 모달 -->
     <div id="notice-modal" class="modal" onclick="this.style.display='none'">
         <div class="modal-content" onclick="event.stopPropagation()">
             <h3 style="margin:0 0 15px 0; color:var(--warning-color);">📢 공지 발송 및 기록 <button onclick="document.getElementById('notice-modal').style.display='none'" style="float:right; background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button></h3>
@@ -335,229 +677,18 @@
             </div>
         </div>
     </div>
+    <!-- [단 하나의 모달창 묶음 끝] -->
 
-    <!-- 검색 영역 및 과거 내역 필터링 토글 버튼 -->
-    <div style="max-width:1200px; margin: 0 auto 10px auto; display:flex; gap:10px; padding:0 5px; flex-wrap:wrap;">
-        <input type="text" id="main-search-input" placeholder="🔍 작업, 자재, 담당자 검색..." onkeyup="window.updateUI()" style="flex:1; min-width:200px; padding:10px; border-radius:8px; border:1px solid #ddd; font-size:0.9rem;">
-        <button id="toggle-old-btn" onclick="window.toggleOldTasks()" style="background:#6b778c; color:white; border:none; padding:10px 15px; border-radius:8px; font-weight:bold; cursor:pointer; white-space:nowrap;">🕒 과거 완료내역 모두 보기</button>
-        <button onclick="window.downloadExcel()" style="background:#217346; color:white; border:none; padding:10px 15px; border-radius:8px; font-weight:bold; cursor:pointer;">📊 엑셀 다운로드 (섹션별 자동분류)</button>
-    </div>
-    
-    <!-- 📊 대시보드 집계표 -->
-    <div class="dashboard-container">
-        <!-- 달력 패널 -->
-        <div class="panel" style="flex:1; min-width:250px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-                <button onclick="window.changeMonth(-1)" style="border:1px solid #ccc; background:#fff; padding:4px 10px; border-radius:4px; cursor:pointer; font-weight:bold;">◀</button>
-                <h4 id="calendar-title" style="margin:0; font-size:0.9rem;">년 월</h4>
-                <button onclick="window.changeMonth(1)" style="border:1px solid #ccc; background:#fff; padding:4px 10px; border-radius:4px; cursor:pointer; font-weight:bold;">▶</button>
-            </div>
-            <div id="calendar-grid" style="display:grid; grid-template-columns:repeat(7,1fr); gap:1px; text-align:center; font-size:0.65rem;"></div>
-        </div>
-        
-        <!-- 요약 집계 패널 -->
-        <div class="panel" style="flex:3;">
-            <div class="summary-group">
-                <div class="summary-group-title" style="color:#3b2a50;">📅 일정 현황</div>
-                <div class="summary-grid">
-                    <div>
-                        <h4 style="margin:0 0 3px 0; font-size:0.75rem; color:#555;">👤 담당자</h4>
-                        <table class="summary-table" id="assignee-table"><thead><tr><th>이름</th><th>할일</th><th>진행</th><th>완료</th></tr></thead><tbody></tbody></table>
-                    </div>
-                    <div>
-                        <h4 style="margin:0 0 3px 0; font-size:0.75rem; color:#0052cc;">⏳ 마감 예정 (7일 이내)</h4>
-                        <table class="summary-table" id="task-date-table"><thead><tr><th>날짜</th><th>대기</th><th>완료</th></tr></thead><tbody></tbody></table>
-                    </div>
-                    <div>
-                        <h4 style="margin:0 0 3px 0; font-size:0.75rem; color:var(--warning-color);">⚠️ 기한 지연</h4>
-                        <table class="summary-table" id="overdue-table"><thead><tr><th>항목</th><th>일자</th></tr></thead><tbody></tbody></table>
-                    </div>
-                </div>
-            </div>
-
-            <div class="summary-group">
-                <div class="summary-group-title" style="color:#00875a;">📦 자재 현황</div>
-                <div class="summary-grid">
-                    <div>
-                        <h4 style="margin:0 0 3px 0; font-size:0.75rem; color:#555;">📋 발주현황</h4>
-                        <table class="summary-table" id="material-table"><thead><tr><th>이름</th><th>요청</th><th>발주</th><th>반입</th></tr></thead><tbody></tbody></table>
-                    </div>
-                    <div>
-                        <h4 style="margin:0 0 3px 0; font-size:0.75rem; color:#0052cc;">🚚 반입 예정 (7일 이내)</h4>
-                        <table class="summary-table" id="mat-date-table"><thead><tr><th>날짜</th><th>대기</th><th>완료</th></tr></thead><tbody></tbody></table>
-                    </div>
-                    <div>
-                        <h4 style="margin:0 0 3px 0; font-size:0.75rem; color:var(--warning-color);">⚠️ 발주 지연 (미발주)</h4>
-                        <table class="summary-table" id="un-ordered-table"><thead><tr><th>항목</th><th>요청일</th></tr></thead><tbody></tbody></table>
-                    </div>
-                </div>
-            </div>
-
-            <div class="summary-group" style="margin-bottom:0;">
-                <div class="summary-group-title" style="color:#795548;">🧰 장비 대여 현황</div>
-                <div class="summary-grid">
-                    <div>
-                        <table class="summary-table" id="equip-table"><thead><tr><th>빌려간사람</th><th>대여중</th><th>반납완료</th></tr></thead><tbody></tbody></table>
-                    </div>
-                    <div></div>
-                    <div></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 당일 작업 일지 보드 -->
-    <h3 class="section-header" style="color: #673ab7;" onclick="window.toggleMainSection('worklog-wrap', this)">
-        <span>📝 당일 작업 내용 (일보 다중 입력)</span> <span class="section-icon">▼</span>
-    </h3>
-    <div id="worklog-wrap" style="display: block;">
-        <div class="board">
-            <div class="column" id="col-worklog">
-                <h2 onclick="window.toggleColumn('worklog')">
-                    <span>작업 내역 <span id="worklog-count">0</span></span>
-                </h2>
-                
-                <div class="add-card-form" style="border: 2px solid #e1e4e8; padding: 10px; border-radius: 8px; background: #fafbfc;">
-                    <div id="worklog-entries"></div>
-                    
-                    <div style="display:flex; gap:6px; width:100%; align-items:center; flex-wrap:wrap; margin-top:5px;">
-                        <button onclick="window.addWorklogEntry()" style="background:#e6effc; color:#0052cc; border:1px dashed #0052cc; padding:8px; border-radius:4px; font-weight:bold; cursor:pointer; flex:1; white-space:nowrap; min-width:80px;">➕ 추가</button>
-                        
-                        <div style="display:flex; align-items:center; gap:5px; flex:1.5; min-width:140px;">
-                            <span style="font-size:0.75rem; font-weight:bold; color:#666; white-space:nowrap;">기준일:</span>
-                            <input type="date" id="worklog-start" style="width:100%; padding:8px; border-radius:4px; border:1px solid #ddd; box-sizing:border-box;">
-                        </div>
-                        
-                        <button onclick="window.saveAllWorklogs()" style="background:#673ab7; color:white; padding:8px 15px; font-size:0.85rem; font-weight:bold; border-radius:4px; border:none; cursor:pointer; flex:2; white-space:nowrap; min-width:150px;">💾 한 번에 묶어서 저장</button>
-                    </div>
-                </div>
-
-                <div style="display: flex; justify-content: space-between; align-items: center; margin: 15px 0 5px 0; padding: 6px 10px; background: #ebecf0; border-radius: 4px; border-left: 4px solid #673ab7;">
-                    <span style="font-size: 0.85rem; font-weight: bold; color: #333;">📋 저장된 작업 기록</span>
-                    <span style="font-size: 0.75rem; font-weight: normal; color: #555;">
-                        조회: <input type="date" id="worklog-view-date" onchange="window.changeWorklogViewDate(this.value)" style="padding:2px 4px; border:1px solid #ccc; border-radius:4px; font-size:0.75rem; color:#333; margin-left:4px;">
-                    </span>
-                </div>
-
-                <div id="worklog-list"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 일정 관리 보드 -->
-    <h3 class="section-header" style="color: var(--text-color);" onclick="window.toggleMainSection('schedule-wrap', this)">
-        <span>📅 일정 관리 (할 일)</span> <span class="section-icon">▼</span>
-    </h3>
-    <div id="schedule-wrap" style="display: block;">
-        <div class="board">
-            <div class="column" id="col-todo"><h2 onclick="window.toggleColumn('todo')">할 일 <span id="todo-count">0</span></h2>
-                <div class="add-card-form">
-                    <input type="text" id="todo-input" placeholder="새 일정...">
-                    <div class="form-row"><input type="date" id="todo-start" onchange="window.syncDueDate('todo')"><input type="date" id="todo-due"></div>
-                    <div class="form-row"><select id="todo-assignee"><option value="">담당자</option></select><button onclick="window.addCard('todo')">등록</button></div>
-                </div>
-                <div id="todo-list"></div>
-            </div>
-            <div class="column" id="col-inprogress"><h2 onclick="window.toggleColumn('inprogress')">진행 중 <span id="inprogress-count">0</span></h2>
-                <div class="add-card-form">
-                    <input type="text" id="inprogress-input" placeholder="새 일정...">
-                    <div class="form-row"><input type="date" id="inprogress-start" onchange="window.syncDueDate('inprogress')"><input type="date" id="inprogress-due"></div>
-                    <div class="form-row"><select id="inprogress-assignee"><option value="">담당자</option></select><button onclick="window.addCard('inprogress')">등록</button></div>
-                </div>
-                <div id="inprogress-list"></div>
-            </div>
-            <div class="column" id="col-done"><h2 onclick="window.toggleColumn('done')">완료 <span id="done-count">0</span></h2>
-                <div class="add-card-form">
-                    <input type="text" id="done-input" placeholder="새 일정...">
-                    <div class="form-row"><input type="date" id="done-start" onchange="window.syncDueDate('done')"><input type="date" id="done-due"></div>
-                    <div class="form-row"><select id="done-assignee"><option value="">담당자</option></select><button onclick="window.addCard('done')">등록</button></div>
-                </div>
-                <div id="done-list"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 자재 관리 보드 -->
-    <h3 class="section-header" style="color: #0052cc;" onclick="window.toggleMainSection('material-wrap', this)">
-        <span>📦 자재 발주 관리</span> <span class="section-icon">▼</span>
-    </h3>
-    <div id="material-wrap" style="display: block;">
-        <div class="board">
-            <div class="column" id="col-mat-request"><h2 onclick="window.toggleColumn('mat-request')">발주요청 <span id="mat-request-count">0</span></h2>
-                <div class="add-card-form">
-                    <div class="form-row"><input type="text" id="mat-request-item" placeholder="품명" style="flex:2.5;"><input type="text" id="mat-request-spec" placeholder="규격" style="flex:1;"><input type="number" id="mat-request-qty" placeholder="수량" style="flex:0.8;"></div>
-                    <div class="form-row"><input type="date" id="mat-request-start" onchange="window.syncDueDate('mat-request')"><input type="date" id="mat-request-due"></div>
-                    <div class="form-row"><select id="mat-request-requester"><option value="">요청자</option></select><select id="mat-request-orderer"><option value="">발주자</option></select><button onclick="window.addCard('mat-request')">등록</button></div>
-                </div>
-                <div id="mat-request-list"></div>
-            </div>
-            <div class="column" id="col-mat-ordered"><h2 onclick="window.toggleColumn('mat-ordered')">발주 완료 <span id="mat-ordered-count">0</span></h2>
-                <div class="add-card-form">
-                    <div class="form-row"><input type="text" id="mat-ordered-item" placeholder="품명" style="flex:2.5;"><input type="text" id="mat-ordered-spec" placeholder="규격" style="flex:1;"><input type="number" id="mat-ordered-qty" placeholder="수량" style="flex:0.8;"></div>
-                    <div class="form-row"><input type="date" id="mat-ordered-start" onchange="window.syncDueDate('mat-ordered')"><input type="date" id="mat-ordered-due"></div>
-                    <div class="form-row"><select id="mat-ordered-requester"><option value="">요청자</option></select><select id="mat-ordered-orderer"><option value="">발주자</option></select><button onclick="window.addCard('mat-ordered')">등록</button></div>
-                </div>
-                <div id="mat-ordered-list"></div>
-            </div>
-            <div class="column" id="col-mat-delivered"><h2 onclick="window.toggleColumn('mat-delivered')">반입완료 <span id="mat-delivered-count">0</span></h2>
-                <div class="add-card-form">
-                    <div class="form-row"><input type="text" id="mat-delivered-item" placeholder="품명" style="flex:2.5;"><input type="text" id="mat-delivered-spec" placeholder="규격" style="flex:1;"><input type="number" id="mat-delivered-qty" placeholder="수량" style="flex:0.8;"></div>
-                    <div class="form-row"><input type="date" id="mat-delivered-start" onchange="window.syncDueDate('mat-delivered')"><input type="date" id="mat-delivered-due"></div>
-                    <div class="form-row"><select id="mat-delivered-requester"><option value="">요청자</option></select><select id="mat-delivered-orderer"><option value="">발주자</option></select><button onclick="window.addCard('mat-delivered')">등록</button></div>
-                </div>
-                <div id="mat-delivered-list"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 🚨 자바스크립트 로직부 -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query, orderBy, getDoc, getDocs, setDoc, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-        const firebaseConfig = { apiKey: "AIzaSyDSERFM9_UmjfPt5x3HTsL0flekVb-p6HA", authDomain: "project-5a01b.firebaseapp.com", projectId: "project-5a01b" };
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-
-        enableIndexedDbPersistence(db).catch((err) => {
-            if (err.code == 'failed-precondition') console.warn('여러 탭이 열려 있어 오프라인 모드를 사용할 수 없습니다.');
-            else if (err.code == 'unimplemented') console.warn('현재 브라우저가 오프라인 모드를 지원하지 않습니다.');
-        });
-        
-        window.currentTasks = []; window.teamMembers = []; window.currentEquips = []; 
-        window.currentExpenses = []; window.expenseLimits = {}; window.expenseViewCycle = null;
-        window.currentNotices = []; window.editExpenseId = null;
-        window.currentDate = new Date(); window.hasShownAlert = false;
-        window.worklogEntryCount = 0; window.currentWorkerEntryId = null; 
-        window.loggedInUser = localStorage.getItem('site_user') || '';
-
-        window.getLocalDateString = (dateObj = new Date()) => {
+    <!-- 🚨 스크립트 1. 기초 동작 및 날짜 세팅 최우선 렌더링 -->
+    <script>
+        window.getLocalDateString = function(dateObj = new Date()) {
             const y = dateObj.getFullYear();
             const m = String(dateObj.getMonth() + 1).padStart(2, '0');
             const d = String(dateObj.getDate()).padStart(2, '0');
             return `${y}-${m}-${d}`;
         };
 
-        window.resetDates = () => {
-            const today = window.getLocalDateString();
-            const dateInputs = [
-                'exp-date', 'todo-start', 'todo-due', 
-                'inprogress-start', 'inprogress-due', 
-                'done-start', 'done-due', 
-                'mat-request-start', 'mat-request-due', 
-                'mat-ordered-start', 'mat-ordered-due', 
-                'mat-delivered-start', 'mat-delivered-due', 
-                'worklog-start', 'worklog-view-date'
-            ];
-            dateInputs.forEach(id => {
-                const el = document.getElementById(id);
-                if (el && !el.value) el.value = today;
-            });
-            const viewDateEl = document.getElementById('worklog-view-date');
-            if (viewDateEl) window.worklogViewDate = viewDateEl.value || today;
-        };
-
-        window.updateClock = () => {
+        window.updateClock = function() {
             const now = new Date();
             const y = now.getFullYear();
             const m = String(now.getMonth() + 1).padStart(2, '0');
@@ -569,9 +700,535 @@
             if (clockEl) clockEl.innerText = `⏰ ${y}년 ${m}월 ${d}일 ${h}:${min}:${s}`;
         };
 
-        window.worklogViewDate = window.getLocalDateString();
+        window.fetchWeather = async function() {
+            try {
+                const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=36.7836&longitude=127.0041&current_weather=true');
+                const data = await res.json();
+                const temp = data.current_weather.temperature;
+                const code = data.current_weather.weathercode;
+                let icon = '☀️';
+                if ([1,2,3].includes(code)) icon = '⛅';
+                else if ([45,48].includes(code)) icon = '🌫️';
+                else if ([51,53,55,56,57,61,63,65,66,67,80,81,82].includes(code)) icon = '🌧️';
+                else if ([71,73,75,77,85,86].includes(code)) icon = '❄️';
+                else if ([95,96,99].includes(code)) icon = '⛈️';
+                const wEl = document.getElementById('weather-widget');
+                if(wEl) wEl.innerText = `${icon} 아산시 ${temp}℃`;
+            } catch(e) { 
+                const wEl = document.getElementById('weather-widget');
+                if(wEl) wEl.innerText = `☀️ 아산시 (날씨 확인불가)`; 
+            }
+        };
+
+        window.resetDates = function() {
+            const today = window.getLocalDateString();
+            const dateInputs = [
+                'exp-date', 'todo-start', 'todo-due', 
+                'inprogress-start', 'inprogress-due', 
+                'done-start', 'done-due', 
+                'mat-request-start', 'mat-request-due', 
+                'mat-ordered-start', 'mat-ordered-due', 
+                'mat-delivered-start', 'mat-delivered-due', 
+                'worklog-start', 'worklog-view-date',
+                'eq-due' 
+            ];
+            dateInputs.forEach(id => {
+                const el = document.getElementById(id);
+                if (el && !el.value) el.value = today;
+            });
+            const viewDateEl = document.getElementById('worklog-view-date');
+            if (viewDateEl && !viewDateEl.value) {
+                window.worklogViewDate = today;
+            } else if (viewDateEl) {
+                window.worklogViewDate = viewDateEl.value;
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            window.resetDates();
+            window.updateClock();
+            setInterval(window.updateClock, 1000);
+            window.fetchWeather();
+        });
+    </script>
+
+    <!-- 🚨 스크립트 2. Firebase 데이터 로직 (단일 블록으로 완벽하게 병합) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query, orderBy, getDoc, getDocs, setDoc, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = { apiKey: "AIzaSyDSERFM9_UmjfPt5x3HTsL0flekVb-p6HA", authDomain: "project-5a01b.firebaseapp.com", projectId: "project-5a01b" };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        enableIndexedDbPersistence(db).catch(() => {});
+        
+        window.currentTasks = []; window.teamMembers = []; window.currentEquips = []; 
+        window.currentExpenses = []; window.expenseLimits = {}; window.expenseViewCycle = null;
+        window.currentNotices = []; window.editExpenseId = null;
+        window.currentContacts = []; window.currentSites = [];
+        window.currentContactGroups = []; window.currentSiteGroups = [];
+        window.currentOtherCos = []; window.currentOtherCoGroups = [];
+        
+        window.editingContactId = null; 
+        window.editingSiteId = null;
+        window.editingOtherCoId = null;
+
+        window.currentDate = new Date(); window.hasShownAlert = false;
+        window.worklogEntryCount = 0; window.currentWorkerEntryId = null; 
+        window.loggedInUser = localStorage.getItem('site_user') || '';
         window.showOldDoneTasks = false;
 
+        window.getFallbackDate = (createdAt) => {
+            if (!createdAt) return '';
+            try {
+                const d = new Date(createdAt);
+                if (isNaN(d.getTime())) return ''; 
+                return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+            } catch(e) { return ''; }
+        };
+
+        // --- 연락처 / 사이트 그룹 관리 ---
+        window.addContactGroup = async () => {
+            const name = document.getElementById('new-contact-group').value.trim();
+            if(!name) return;
+            if(window.currentContactGroups.find(g => g.name === name)) return alert('이미 존재하는 그룹입니다.');
+            await addDoc(collection(db, "contactGroups"), { name, createdAt: Date.now() });
+            document.getElementById('new-contact-group').value = '';
+        };
+
+        window.deleteContactGroup = async (id) => {
+            if(confirm('이 그룹을 삭제하시겠습니까?\n(해당 그룹으로 지정된 기존 연락처는 지워지지 않으며 "미지정"으로 남게 됩니다.)')) {
+                await deleteDoc(doc(db, "contactGroups", id));
+            }
+        };
+
+        window.renderContactGroups = () => {
+            const list = document.getElementById('contact-group-list');
+            if(list) {
+                list.innerHTML = window.currentContactGroups.map(g => `
+                    <div style="display:flex; justify-content:space-between; padding:8px; border:1px solid #eee; border-radius:4px; align-items:center; background:#f9f9fa;">
+                        <span style="font-weight:bold; color:#009688;">${g.name}</span>
+                        <button onclick="window.deleteContactGroup('${g.id}')" style="background:#ffebe6; color:#bf2600; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.7rem; font-weight:bold;">삭제</button>
+                    </div>
+                `).join('');
+            }
+            const options = window.currentContactGroups.map(g => `<option value="${g.name}">${g.name}</option>`).join('');
+            const addSelect = document.getElementById('contact-group-select');
+            if(addSelect) addSelect.innerHTML = `<option value="">그룹 미지정</option>` + options;
+            const filterSelect = document.getElementById('contact-group-filter');
+            if(filterSelect) {
+                const currentVal = filterSelect.value;
+                filterSelect.innerHTML = `<option value="">📂 전체 그룹 보기</option>` + options;
+                filterSelect.value = currentVal || '';
+            }
+        };
+
+        window.addSiteGroup = async () => {
+            const name = document.getElementById('new-site-group').value.trim();
+            if(!name) return;
+            if(window.currentSiteGroups.find(g => g.name === name)) return alert('이미 존재하는 그룹입니다.');
+            await addDoc(collection(db, "siteGroups"), { name, createdAt: Date.now() });
+            document.getElementById('new-site-group').value = '';
+        };
+
+        window.deleteSiteGroup = async (id) => {
+            if(confirm('이 그룹을 삭제하시겠습니까?\n(해당 그룹으로 지정된 기존 사이트는 지워지지 않으며 "미지정"으로 남게 됩니다.)')) {
+                await deleteDoc(doc(db, "siteGroups", id));
+            }
+        };
+
+        window.renderSiteGroups = () => {
+            const list = document.getElementById('site-group-list');
+            if(list) {
+                list.innerHTML = window.currentSiteGroups.map(g => `
+                    <div style="display:flex; justify-content:space-between; padding:8px; border:1px solid #eee; border-radius:4px; align-items:center; background:#f9f9fa;">
+                        <span style="font-weight:bold; color:#607d8b;">${g.name}</span>
+                        <button onclick="window.deleteSiteGroup('${g.id}')" style="background:#ffebe6; color:#bf2600; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.7rem; font-weight:bold;">삭제</button>
+                    </div>
+                `).join('');
+            }
+            const options = window.currentSiteGroups.map(g => `<option value="${g.name}">${g.name}</option>`).join('');
+            const addSelect = document.getElementById('site-group-select');
+            if(addSelect) addSelect.innerHTML = `<option value="">그룹 미지정</option>` + options;
+            const filterSelect = document.getElementById('site-group-filter');
+            if(filterSelect) {
+                const currentVal = filterSelect.value;
+                filterSelect.innerHTML = `<option value="">📂 전체 그룹 보기</option>` + options;
+                filterSelect.value = currentVal || '';
+            }
+        };
+
+        // --- 연락처 기능 ---
+        window.editContact = (id) => {
+            const c = window.currentContacts.find(x => x.id === id);
+            if(!c) return;
+            document.getElementById('contact-group-select').value = c.group || '';
+            document.getElementById('contact-name').value = c.name || '';
+            document.getElementById('contact-phone').value = c.phone || '';
+            document.getElementById('contact-note').value = c.note || '';
+            window.editingContactId = id;
+            const btn = document.getElementById('contact-submit-btn');
+            btn.innerText = "수정 저장"; btn.style.background = "#ff9f43";
+        };
+
+        window.addContact = async () => {
+            const group = document.getElementById('contact-group-select').value;
+            const name = document.getElementById('contact-name').value.trim();
+            const phone = document.getElementById('contact-phone').value.trim();
+            const note = document.getElementById('contact-note').value.trim();
+            if(!name || !phone) return alert("이름/업체명과 연락처를 모두 입력하세요.");
+
+            if (window.editingContactId) {
+                await updateDoc(doc(db, "contacts", window.editingContactId), { group, name, phone, note });
+                window.editingContactId = null;
+                const btn = document.getElementById('contact-submit-btn');
+                btn.innerText = "등록"; btn.style.background = "#009688";
+            } else {
+                await addDoc(collection(db, "contacts"), { group, name, phone, note, createdAt: Date.now() });
+            }
+            document.getElementById('contact-name').value = '';
+            document.getElementById('contact-phone').value = '';
+            document.getElementById('contact-note').value = '';
+        };
+
+        window.renderContacts = () => {
+            const list = document.getElementById('contact-list');
+            const filterEl = document.getElementById('contact-group-filter');
+            if(!list || !filterEl) return;
+            
+            const currentFilter = filterEl.value;
+            let filteredContacts = window.currentContacts;
+            if (currentFilter) filteredContacts = filteredContacts.filter(c => (c.group || '') === currentFilter);
+
+            if(filteredContacts.length === 0) { 
+                list.innerHTML = '<div style="text-align:center; padding:10px; color:#999; font-size:0.85rem;">해당 그룹에 등록된 연락처가 없습니다.</div>'; 
+                return; 
+            }
+            
+            // ✨ 그룹별 접기 기능 (모달 내부)
+            const grouped = {};
+            filteredContacts.forEach(c => {
+                const g = c.group || '미지정';
+                if(!grouped[g]) grouped[g] = [];
+                grouped[g].push(c);
+            });
+
+            let html = '';
+            Object.keys(grouped).sort().forEach(g => {
+                html += `<div style="background:#e0f2f1; padding:6px 10px; margin-top:5px; border-radius:4px; font-weight:bold; font-size:0.85rem; color:#009688; cursor:pointer; display:flex; justify-content:space-between; align-items:center;"
+                     onclick="const content = this.nextElementSibling; const ic = this.querySelector('.fold-icon'); if(content.style.display==='none'){content.style.display='flex'; ic.innerText='▼';}else{content.style.display='none'; ic.innerText='▶';}">
+                    <span>📁 ${g} (${grouped[g].length})</span> <span class="fold-icon" style="font-size:0.7rem;">▼</span>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:8px; padding:5px 0;">`;
+                grouped[g].forEach(c => {
+                    html += `
+                    <div style="background:#f9f9fa; border:1px solid #ddd; padding:10px; border-radius:6px; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <div style="font-size:0.9rem; font-weight:bold; color:#172b4d;">${c.name} <span style="font-size:0.75rem; color:#666; font-weight:normal;">${c.note ? `(${c.note})` : ''}</span></div>
+                            <div style="font-size:0.85rem; color:#0052cc; margin-top:3px;"><a href="tel:${c.phone}" style="text-decoration:none; color:#0052cc; font-weight:bold;">📞 ${c.phone}</a></div>
+                        </div>
+                        <div style="display:flex; gap:5px;">
+                            <button onclick="window.editContact('${c.id}')" style="background:#e6effc; color:#0052cc; border:1px solid #0052cc; padding:4px 8px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:0.7rem;">수정</button>
+                            <button onclick="window.deleteContact('${c.id}')" style="background:#ffebe6; color:#bf2600; border:1px solid #bf2600; padding:4px 8px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:0.7rem;">삭제</button>
+                        </div>
+                    </div>`;
+                });
+                html += `</div>`;
+            });
+            list.innerHTML = html;
+        };
+        window.deleteContact = async (id) => { if(confirm('이 연락처를 삭제하시겠습니까?')) await deleteDoc(doc(db, "contacts", id)); };
+
+        // --- 사이트 기능 ---
+        window.editSite = (id) => {
+            const s = window.currentSites.find(x => x.id === id);
+            if(!s) return;
+            document.getElementById('site-group-select').value = s.group || '';
+            document.getElementById('site-name').value = s.name || '';
+            document.getElementById('site-url').value = s.url || '';
+            window.editingSiteId = id;
+            const btn = document.getElementById('site-submit-btn');
+            btn.innerText = "수정 저장"; btn.style.background = "#ff9f43";
+        };
+
+        window.addSite = async () => {
+            const group = document.getElementById('site-group-select').value;
+            const name = document.getElementById('site-name').value.trim();
+            const url = document.getElementById('site-url').value.trim();
+            if(!name || !url) return alert("사이트명과 URL 주소를 모두 입력하세요.");
+            
+            let finalUrl = url;
+            if(!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
+                finalUrl = 'https://' + finalUrl;
+            }
+
+            if (window.editingSiteId) {
+                await updateDoc(doc(db, "sites", window.editingSiteId), { group, name, url: finalUrl });
+                window.editingSiteId = null;
+                const btn = document.getElementById('site-submit-btn');
+                btn.innerText = "등록";
+                btn.style.background = "#607d8b";
+            } else {
+                await addDoc(collection(db, "sites"), { group, name, url: finalUrl, createdAt: Date.now() });
+            }
+            document.getElementById('site-name').value = ''; document.getElementById('site-url').value = '';
+        };
+
+        window.renderSites = () => {
+            const list = document.getElementById('site-list');
+            const filterEl = document.getElementById('site-group-filter');
+            if(!list || !filterEl) return;
+            
+            const currentFilter = filterEl.value;
+            let filteredSites = window.currentSites;
+            if (currentFilter) filteredSites = filteredSites.filter(s => (s.group || '') === currentFilter);
+
+            if(filteredSites.length === 0) { 
+                list.innerHTML = '<div style="text-align:center; padding:10px; color:#999; font-size:0.85rem;">해당 그룹에 등록된 사이트가 없습니다.</div>'; 
+                return; 
+            }
+            
+            // ✨ 사이트 그룹별 접기 기능 (모달 내부)
+            const grouped = {};
+            filteredSites.forEach(s => {
+                const g = s.group || '미지정';
+                if(!grouped[g]) grouped[g] = [];
+                grouped[g].push(s);
+            });
+
+            let html = '';
+            Object.keys(grouped).sort().forEach(g => {
+                html += `<div style="background:#eceff1; padding:6px 10px; margin-top:5px; border-radius:4px; font-weight:bold; font-size:0.85rem; color:#607d8b; cursor:pointer; display:flex; justify-content:space-between; align-items:center;"
+                     onclick="const content = this.nextElementSibling; const ic = this.querySelector('.fold-icon'); if(content.style.display==='none'){content.style.display='flex'; ic.innerText='▼';}else{content.style.display='none'; ic.innerText='▶';}">
+                    <span>📁 ${g} (${grouped[g].length})</span> <span class="fold-icon" style="font-size:0.7rem;">▼</span>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:8px; padding:5px 0;">`;
+                grouped[g].forEach(s => {
+                    html += `
+                    <div style="background:#f9f9fa; border:1px solid #ddd; padding:10px; border-radius:6px; display:flex; justify-content:space-between; align-items:center;">
+                        <div style="overflow:hidden; flex:1;">
+                            <div style="font-size:0.9rem; font-weight:bold; color:#172b4d;">${s.name}</div>
+                            <div style="font-size:0.75rem; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><a href="${s.url}" target="_blank" style="color:#0052cc;">${s.url}</a></div>
+                        </div>
+                        <div style="display:flex; gap:5px; margin-left:10px;">
+                            <button onclick="window.editSite('${s.id}')" style="background:#e6effc; color:#0052cc; border:1px solid #0052cc; padding:4px 8px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:0.7rem;">수정</button>
+                            <button onclick="window.deleteSite('${s.id}')" style="background:#ffebe6; color:#bf2600; border:1px solid #bf2600; padding:4px 8px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:0.7rem;">삭제</button>
+                        </div>
+                    </div>`;
+                });
+                html += `</div>`;
+            });
+            list.innerHTML = html;
+        };
+        window.deleteSite = async (id) => { if(confirm('이 사이트 링크를 삭제하시겠습니까?')) await deleteDoc(doc(db, "sites", id)); };
+
+        // --- ✨ 타업체 관리 기능 ---
+        window.addOtherCoGroup = async () => {
+            const name = document.getElementById('new-otherco-group').value.trim();
+            if(!name) return;
+            if(window.currentOtherCoGroups.find(g => g.name === name)) return alert('이미 존재하는 그룹입니다.');
+            await addDoc(collection(db, "otherCompanyGroups"), { name, createdAt: Date.now() });
+            document.getElementById('new-otherco-group').value = '';
+        };
+
+        window.deleteOtherCoGroup = async (id) => {
+            if(confirm('이 그룹을 삭제하시겠습니까?')) await deleteDoc(doc(db, "otherCompanyGroups", id));
+        };
+
+        window.renderOtherCoGroups = () => {
+            const list = document.getElementById('otherco-group-list');
+            if(list) {
+                list.innerHTML = window.currentOtherCoGroups.map(g => `
+                    <div style="display:flex; justify-content:space-between; padding:8px; border:1px solid #eee; border-radius:4px; align-items:center; background:#f9f9fa;">
+                        <span style="font-weight:bold; color:#d35400;">${g.name}</span>
+                        <button onclick="window.deleteOtherCoGroup('${g.id}')" style="background:#ffebe6; color:#bf2600; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.7rem; font-weight:bold;">삭제</button>
+                    </div>
+                `).join('');
+            }
+            const options = window.currentOtherCoGroups.map(g => `<option value="${g.name}">${g.name}</option>`).join('');
+            const addSelect = document.getElementById('otherco-group-select');
+            if(addSelect) addSelect.innerHTML = `<option value="">그룹 미지정</option>` + options;
+            const filterSelect = document.getElementById('otherco-group-filter');
+            if(filterSelect) {
+                const currentVal = filterSelect.value;
+                filterSelect.innerHTML = `<option value="">📂 전체 그룹 보기</option>` + options;
+                filterSelect.value = currentVal || '';
+            }
+        };
+
+        window.editOtherCo = (id) => {
+            const c = window.currentOtherCos.find(x => x.id === id);
+            if(!c) return;
+            document.getElementById('otherco-group-select').value = c.group || '';
+            document.getElementById('otherco-name').value = c.name || '';
+            document.getElementById('otherco-phone').value = c.phone || '';
+            document.getElementById('otherco-note').value = c.note || '';
+            window.editingOtherCoId = id;
+            const btn = document.getElementById('otherco-submit-btn');
+            btn.innerText = "수정 저장"; btn.style.background = "#ff9f43";
+        };
+
+        window.addOtherCo = async () => {
+            const group = document.getElementById('otherco-group-select').value;
+            const name = document.getElementById('otherco-name').value.trim();
+            const phone = document.getElementById('otherco-phone').value.trim();
+            const note = document.getElementById('otherco-note').value.trim();
+            if(!name || !phone) return alert("업체명과 연락처/담당자를 입력하세요.");
+
+            if (window.editingOtherCoId) {
+                await updateDoc(doc(db, "otherCompanies", window.editingOtherCoId), { group, name, phone, note });
+                window.editingOtherCoId = null;
+                const btn = document.getElementById('otherco-submit-btn');
+                btn.innerText = "등록"; btn.style.background = "#d35400";
+            } else {
+                await addDoc(collection(db, "otherCompanies"), { group, name, phone, note, createdAt: Date.now() });
+            }
+            document.getElementById('otherco-name').value = '';
+            document.getElementById('otherco-phone').value = '';
+            document.getElementById('otherco-note').value = '';
+        };
+
+        window.renderOtherCos = () => {
+            const list = document.getElementById('otherco-list');
+            const filterEl = document.getElementById('otherco-group-filter');
+            if(!list || !filterEl) return;
+            
+            const currentFilter = filterEl.value;
+            let filteredCos = window.currentOtherCos;
+            if (currentFilter) filteredCos = filteredCos.filter(c => (c.group || '') === currentFilter);
+
+            if(filteredCos.length === 0) { 
+                list.innerHTML = '<div style="text-align:center; padding:10px; color:#999; font-size:0.85rem;">해당 그룹에 등록된 타업체가 없습니다.</div>'; 
+                return; 
+            }
+            
+            // ✨ 타업체 그룹별 접기 기능 (모달 내부)
+            const grouped = {};
+            filteredCos.forEach(c => {
+                const g = c.group || '미지정';
+                if(!grouped[g]) grouped[g] = [];
+                grouped[g].push(c);
+            });
+
+            let html = '';
+            Object.keys(grouped).sort().forEach(g => {
+                html += `<div style="background:#fdf0e9; padding:6px 10px; margin-top:5px; border-radius:4px; font-weight:bold; font-size:0.85rem; color:#d35400; cursor:pointer; display:flex; justify-content:space-between; align-items:center;"
+                     onclick="const content = this.nextElementSibling; const ic = this.querySelector('.fold-icon'); if(content.style.display==='none'){content.style.display='flex'; ic.innerText='▼';}else{content.style.display='none'; ic.innerText='▶';}">
+                    <span>📁 ${g} (${grouped[g].length})</span> <span class="fold-icon" style="font-size:0.7rem;">▼</span>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:8px; padding:5px 0;">`;
+                grouped[g].forEach(c => {
+                    html += `
+                    <div style="background:#f9f9fa; border:1px solid #ddd; padding:10px; border-radius:6px; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <div style="font-size:0.9rem; font-weight:bold; color:#172b4d;">${c.name}</div>
+                            <div style="font-size:0.85rem; color:#0052cc; margin-top:3px;"><a href="tel:${c.phone}" style="text-decoration:none; color:#0052cc; font-weight:bold;">📞 ${c.phone}</a></div>
+                            ${c.note ? `<div style="font-size:0.75rem; color:#666; margin-top:3px;">${c.note}</div>` : ''}
+                        </div>
+                        <div style="display:flex; gap:5px; margin-left:10px;">
+                            <button onclick="window.editOtherCo('${c.id}')" style="background:#e6effc; color:#0052cc; border:1px solid #0052cc; padding:4px 8px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:0.7rem;">수정</button>
+                            <button onclick="window.deleteOtherCo('${c.id}')" style="background:#ffebe6; color:#bf2600; border:1px solid #bf2600; padding:4px 8px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:0.7rem;">삭제</button>
+                        </div>
+                    </div>`;
+                });
+                html += `</div>`;
+            });
+            list.innerHTML = html;
+        };
+        window.deleteOtherCo = async (id) => { if(confirm('이 타업체를 삭제하시겠습니까?')) await deleteDoc(doc(db, "otherCompanies", id)); };
+
+
+        // --- ✨ 사이드 패널 렌더링 로직 (PC 전용 접기 기능 추가) ---
+        window.renderSidePanels = () => {
+            // 1. 연락처 사이드 패널
+            const contactList = document.getElementById('side-contact-list');
+            if(contactList) {
+                if(window.currentContacts.length === 0) {
+                    contactList.innerHTML = '<div style="color:#999; font-size:0.8rem; text-align:center;">등록된 연락처가 없습니다.</div>';
+                } else {
+                    const grouped = {};
+                    window.currentContacts.forEach(c => { const g = c.group || '미지정'; if(!grouped[g]) grouped[g] = []; grouped[g].push(c); });
+                    let html = '';
+                    Object.keys(grouped).sort().forEach(g => {
+                        html += `<div style="font-size:0.75rem; font-weight:bold; color:#009688; margin-top:10px; border-bottom:1px solid #eee; padding-bottom:3px; cursor:pointer; display:flex; justify-content:space-between;"
+                                 onclick="const content = this.nextElementSibling; const ic = this.querySelector('span'); if(content.style.display==='none'){content.style.display='block'; ic.innerText='▼';}else{content.style.display='none'; ic.innerText='▶';}">
+                            <span>📁 ${g}</span> <span>▼</span>
+                        </div>
+                        <div style="display:block; padding-top:5px;">`;
+                        grouped[g].forEach(c => {
+                            html += `
+                            <div style="padding:6px 0; border-bottom:1px dashed #eee;">
+                                <div style="font-size:0.85rem; font-weight:bold; color:#333;">${c.name} <span style="font-size:0.7rem; color:#888; font-weight:normal;">${c.note ? `(${c.note})` : ''}</span></div>
+                                <div style="font-size:0.8rem; margin-top:2px;"><a href="tel:${c.phone}" style="text-decoration:none; color:#0052cc;">📞 ${c.phone}</a></div>
+                            </div>`;
+                        });
+                        html += `</div>`;
+                    });
+                    contactList.innerHTML = html;
+                }
+            }
+
+            // 2. 사이트 사이드 패널
+            const siteList = document.getElementById('side-site-list');
+            if(siteList) {
+                if(window.currentSites.length === 0) {
+                    siteList.innerHTML = '<div style="color:#999; font-size:0.8rem; text-align:center;">등록된 사이트가 없습니다.</div>';
+                } else {
+                    const grouped = {};
+                    window.currentSites.forEach(s => { const g = s.group || '미지정'; if(!grouped[g]) grouped[g] = []; grouped[g].push(s); });
+                    let html = '';
+                    Object.keys(grouped).sort().forEach(g => {
+                        html += `<div style="font-size:0.75rem; font-weight:bold; color:#607d8b; margin-top:10px; border-bottom:1px solid #eee; padding-bottom:3px; cursor:pointer; display:flex; justify-content:space-between;"
+                                 onclick="const content = this.nextElementSibling; const ic = this.querySelector('span'); if(content.style.display==='none'){content.style.display='block'; ic.innerText='▼';}else{content.style.display='none'; ic.innerText='▶';}">
+                            <span>📁 ${g}</span> <span>▼</span>
+                        </div>
+                        <div style="display:block; padding-top:5px;">`;
+                        grouped[g].forEach(s => {
+                            html += `
+                            <div style="padding:6px 0; border-bottom:1px dashed #eee;">
+                                <div style="font-size:0.85rem; font-weight:bold; color:#333;">${s.name}</div>
+                                <div style="font-size:0.75rem; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><a href="${s.url}" target="_blank" style="color:#0052cc;">${s.url}</a></div>
+                            </div>`;
+                        });
+                        html += `</div>`;
+                    });
+                    siteList.innerHTML = html;
+                }
+            }
+
+            // 3. 타업체 사이드 패널
+            const otherCoList = document.getElementById('side-otherco-list');
+            if(otherCoList) {
+                if(window.currentOtherCos.length === 0) {
+                    otherCoList.innerHTML = '<div style="color:#999; font-size:0.8rem; text-align:center;">등록된 타업체가 없습니다.</div>';
+                } else {
+                    const grouped = {};
+                    window.currentOtherCos.forEach(c => { const g = c.group || '미지정'; if(!grouped[g]) grouped[g] = []; grouped[g].push(c); });
+                    let html = '';
+                    Object.keys(grouped).sort().forEach(g => {
+                        html += `<div style="font-size:0.75rem; font-weight:bold; color:#d35400; margin-top:10px; border-bottom:1px solid #eee; padding-bottom:3px; cursor:pointer; display:flex; justify-content:space-between;"
+                                 onclick="const content = this.nextElementSibling; const ic = this.querySelector('span'); if(content.style.display==='none'){content.style.display='block'; ic.innerText='▼';}else{content.style.display='none'; ic.innerText='▶';}">
+                            <span>📁 ${g}</span> <span>▼</span>
+                        </div>
+                        <div style="display:block; padding-top:5px;">`;
+                        grouped[g].forEach(c => {
+                            html += `
+                            <div style="padding:6px 0; border-bottom:1px dashed #eee;">
+                                <div style="font-size:0.85rem; font-weight:bold; color:#333;">${c.name}</div>
+                                <div style="font-size:0.8rem; margin-top:2px;"><a href="tel:${c.phone}" style="text-decoration:none; color:#0052cc;">📞 ${c.phone}</a></div>
+                                ${c.note ? `<div style="font-size:0.7rem; color:#888; margin-top:2px;">${c.note}</div>` : ''}
+                            </div>`;
+                        });
+                        html += `</div>`;
+                    });
+                    otherCoList.innerHTML = html;
+                }
+            }
+        };
+
+
+        // --- 기타 기능 (장비, 팀원, 일보 등) ---
         window.addEquip = async () => {
             const name = document.getElementById('eq-name').value;
             const borrower = document.getElementById('eq-borrower').value;
@@ -691,7 +1348,7 @@
             let val = Number(document.getElementById('exp-limit-input').value) || 0;
             await setDoc(doc(db, "expense_limits", cycleKey), { limit: val });
             window.expenseLimits[cycleKey] = val; 
-            window.renderExpenses();
+            window.renderExpenses(); 
         };
 
         window.editExpense = (id) => {
@@ -726,447 +1383,86 @@
 
         window.deleteExpense = async (id) => { if(confirm("이 지출 내역을 삭제하시겠습니까?")) await deleteDoc(doc(db, "expenses", id)); };
 
-        window.changeWorklogViewDate = (val) => { if(val) { window.worklogViewDate = val; window.updateUI(); } };
-
-        window.syncDueDate = (prefix) => {
-            const startInput = document.getElementById(`${prefix}-start`);
-            const dueInput = document.getElementById(`${prefix}-due`);
-            if (startInput && dueInput && startInput.value) dueInput.value = startInput.value;
+        // 휴지통
+        window.openTrashModal = () => {
+            window.renderTrash();
+            document.getElementById('trash-modal').style.display = 'block';
         };
 
-        window.toggleOldTasks = () => {
-            window.showOldDoneTasks = !window.showOldDoneTasks;
-            document.getElementById('toggle-old-btn').innerText = window.showOldDoneTasks ? '🙈 이전 완료내역 숨기기' : '🕒 과거 완료내역 모두 보기';
-            window.updateUI();
-        };
-
-        window.downloadExcel = () => {
-            if (typeof XLSX === 'undefined') return alert("엑셀 라이브러리가 로드되지 않았습니다. 잠시 후 다시 시도해주세요.");
-            const wb = XLSX.utils.book_new();
-
-            const worklogs = window.currentTasks.filter(t => t.status === 'worklog');
-            const ws_worklog_data = [["기준일", "작성자", "상세작업내용", "투입인원", "생성일시"]];
-            worklogs.forEach(t => {
-                const createdAt = new Date(t.createdAt).toLocaleString();
-                if(t.bundledTasks && t.bundledTasks.length > 0) {
-                    t.bundledTasks.forEach((bt, idx) => {
-                        const workers = bt.workers && bt.workers.length > 0 ? bt.workers.join(', ') : '없음';
-                        ws_worklog_data.push([t.startDate, t.assignee, `[작업 ${idx+1}] ${bt.detail}`, workers, createdAt]);
-                    });
-                } else {
-                    ws_worklog_data.push([t.startDate, t.assignee, t.workDetails || t.text, '', createdAt]);
+        window.renderTrash = () => {
+            const list = document.getElementById('trash-list');
+            const trashItems = window.currentTasks.filter(t => t.status === 'deleted');
+            if(trashItems.length === 0) {
+                list.innerHTML = '<div style="padding:20px; text-align:center; color:#999; font-size:0.9rem;">휴지통이 비어있습니다.</div>';
+                return;
+            }
+            list.innerHTML = trashItems.map(t => {
+                let text = t.text || t.workDetails || '내용없음';
+                if (Array.isArray(t.bundledTasks) && t.bundledTasks.length > 0) {
+                    text = `[작업일보] ${t.bundledTasks[0]?.detail || ''} 등 ${t.bundledTasks.length}건`;
                 }
-            });
-            const ws_worklog = XLSX.utils.aoa_to_sheet(ws_worklog_data);
-            ws_worklog['!cols'] = [{wch: 15}, {wch: 12}, {wch: 60}, {wch: 25}, {wch: 25}];
-            XLSX.utils.book_append_sheet(wb, ws_worklog, "작업일보");
-
-            const schedules = window.currentTasks.filter(t => ['todo', 'inprogress', 'done'].includes(t.status));
-            const statusMap = { 'todo': '할 일', 'inprogress': '진행 중', 'done': '완료' };
-            const ws_schedule_data = [["상태", "일정내용", "담당자", "시작일", "마감일", "생성일시"]];
-            schedules.forEach(t => { ws_schedule_data.push([statusMap[t.status], t.text, t.assignee || '', t.startDate || '', t.dueDate || '', new Date(t.createdAt).toLocaleString()]); });
-            const ws_schedule = XLSX.utils.aoa_to_sheet(ws_schedule_data);
-            ws_schedule['!cols'] = [{wch: 12}, {wch: 50}, {wch: 12}, {wch: 15}, {wch: 15}, {wch: 25}];
-            XLSX.utils.book_append_sheet(wb, ws_schedule, "일정관리");
-
-            const materials = window.currentTasks.filter(t => t.status.startsWith('mat-'));
-            const matStatusMap = { 'mat-request': '발주요청', 'mat-ordered': '발주완료', 'mat-delivered': '반입완료' };
-            const ws_mat_data = [["상태", "자재정보", "요청자", "발주/반입자", "요청일", "반입예정/완료일", "생성일시"]];
-            materials.forEach(t => {
-                let ordererInfo = t.orderer || '';
-                if (t.status === 'mat-delivered' && t.deliverer) ordererInfo = t.deliverer; 
-                ws_mat_data.push([matStatusMap[t.status], t.text, t.requester || '', ordererInfo, t.startDate || '', t.dueDate || '', new Date(t.createdAt).toLocaleString()]);
-            });
-            const ws_mat = XLSX.utils.aoa_to_sheet(ws_mat_data);
-            ws_mat['!cols'] = [{wch: 12}, {wch: 60}, {wch: 12}, {wch: 12}, {wch: 15}, {wch: 15}, {wch: 25}];
-            XLSX.utils.book_append_sheet(wb, ws_mat, "자재관리");
-
-            const ws_exp_data = [["지출일", "지출자", "지출내역", "금액(원)", "등록일시"]];
-            window.currentExpenses.forEach(e => { ws_exp_data.push([e.date, e.spender, e.desc, e.amount, new Date(e.createdAt).toLocaleString()]); });
-            const ws_exp = XLSX.utils.aoa_to_sheet(ws_exp_data);
-            ws_exp['!cols'] = [{wch: 15}, {wch: 12}, {wch: 40}, {wch: 15}, {wch: 25}];
-            XLSX.utils.book_append_sheet(wb, ws_exp, "지출내역");
-
-            const ws_eq_data = [["상태", "장비/공구명", "대여자", "대여일"]];
-            window.currentEquips.forEach(e => { ws_eq_data.push([e.status, e.name, e.borrower, e.borrowDate]); });
-            const ws_eq = XLSX.utils.aoa_to_sheet(ws_eq_data);
-            ws_eq['!cols'] = [{wch: 12}, {wch: 30}, {wch: 12}, {wch: 15}];
-            XLSX.utils.book_append_sheet(wb, ws_eq, "장비관리");
-
-            XLSX.writeFile(wb, `현장관리현황_${window.getLocalDateString()}.xlsx`);
-        };
-
-        window.openInitModal = () => { document.getElementById('init-confirm-text').value = ''; document.getElementById('init-modal').style.display = 'block'; };
-
-        window.executeInit = async () => {
-            const text = document.getElementById('init-confirm-text').value.trim();
-            if(text !== '초기화 승인') return alert('입력된 문구가 정확하지 않습니다. 띄어쓰기를 포함해 [초기화 승인] 이라고 입력해주세요.');
-            if(!confirm('🚨 경고: 정말 모든 데이터를 영구적으로 삭제하시겠습니까?\n이 작업은 복구할 수 없습니다.')) return;
-
-            const collections = ['tasks', 'team', 'equipments', 'expenses', 'expense_limits', 'notices', 'contacts', 'contactGroups', 'sites', 'siteGroups', 'warehouse'];
-            let deleteCount = 0;
-            try {
-                for (const colName of collections) {
-                    const snap = await getDocs(collection(db, colName));
-                    for (const d of snap.docs) { await deleteDoc(doc(db, colName, d.id)); deleteCount++; }
-                }
-                const sender = window.loggedInUser || '미상';
-                const initMsg = `🚨 [시스템 알림]\n${sender} 님이 현장 보드의 모든 데이터를 초기화했습니다. (총 ${deleteCount}건 데이터 삭제됨)`;
-                await addDoc(collection(db, "notices"), { text: initMsg, sender: '시스템(자동)', createdAt: Date.now() });
-                
-                alert(`초기화가 성공적으로 완료되었습니다.\n초기화 실행자: ${sender}`);
-                document.getElementById('init-modal').style.display = 'none';
-                location.reload();
-            } catch(e) { console.error(e); alert("초기화 중 오류가 발생했습니다. 개발자에게 문의하세요."); }
-        };
-
-        window.backupData = async () => {
-            if(!confirm("모든 데이터를 백업하시겠습니까?")) return;
-            const collections = ['tasks', 'team', 'equipments', 'expenses', 'expense_limits', 'notices', 'contacts', 'contactGroups', 'sites', 'siteGroups', 'warehouse'];
-            const backup = {};
-            try {
-                for (const colName of collections) {
-                    const snap = await getDocs(collection(db, colName));
-                    backup[colName] = {};
-                    snap.forEach(d => { backup[colName][d.id] = d.data(); });
-                }
-                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backup));
-                const link = document.createElement('a');
-                link.href = dataStr;
-                link.download = `현장보드_전체백업_${window.getLocalDateString()}.json`;
-                document.body.appendChild(link);
-                link.click();
-                link.remove();
-                document.getElementById('backup-modal').style.display='none';
-            } catch(e) { console.error(e); alert("백업 중 오류가 발생했습니다."); }
-        };
-
-        window.restoreData = (event) => {
-            const file = event.target.files[0];
-            if(!file) return;
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                try {
-                    const backup = JSON.parse(e.target.result);
-                    if(confirm("기존 데이터가 덮어쓰기 되며, 없는 데이터는 추가됩니다. 정말 복구를 진행하시겠습니까?")) {
-                        for (const colName in backup) {
-                            const docs = backup[colName];
-                            for (const docId in docs) { await setDoc(doc(db, colName, docId), docs[docId]); }
-                        }
-                        alert("데이터 복구가 성공적으로 완료되었습니다! 변경사항 적용을 위해 화면을 새로고침합니다.");
-                        location.reload();
-                    }
-                } catch(err) { alert("잘못된 백업 파일이거나 복구 중 오류가 발생했습니다."); }
-                event.target.value = '';
-            };
-            reader.readAsText(file);
-        };
-
-        window.fetchWeather = async () => {
-            try {
-                const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=36.7836&longitude=127.0041&current_weather=true');
-                const data = await res.json();
-                const temp = data.current_weather.temperature;
-                const code = data.current_weather.weathercode;
-                let icon = '☀️';
-                if ([1,2,3].includes(code)) icon = '⛅';
-                else if ([45,48].includes(code)) icon = '🌫️';
-                else if ([51,53,55,56,57,61,63,65,66,67,80,81,82].includes(code)) icon = '🌧️';
-                else if ([71,73,75,77,85,86].includes(code)) icon = '❄️';
-                else if ([95,96,99].includes(code)) icon = '⛈️';
-                document.getElementById('weather-widget').innerText = `${icon} 아산시 ${temp}℃`;
-            } catch(e) { document.getElementById('weather-widget').innerText = `날씨 로드실패`; }
-        };
-
-        window.openReportModal = () => {
-            const today = window.getLocalDateString();
-            const doneTasks = window.currentTasks.filter(t => t.status === 'worklog' && t.startDate === today);
-            const deliveredMats = window.currentTasks.filter(t => t.status === 'mat-delivered' && (t.dueDate === today || t.startDate === today));
-            
-            let report = `📋 [일일 작업일보 - ${today}]\n`;
-            report += `작성자: ${window.loggedInUser || '미상'}\n`;
-            report += `날씨: ${document.getElementById('weather-widget').innerText}\n\n`;
-            
-            report += `[✅ 금일 작업 내용]\n`;
-            if(doneTasks.length > 0) { 
-                doneTasks.forEach(t => {
-                    if (t.bundledTasks && t.bundledTasks.length > 0) {
-                        t.bundledTasks.forEach((bt) => {
-                            const wNames = (bt.workers && bt.workers.length > 0) ? ` (투입: ${bt.workers.join(', ')})` : '';
-                            report += `- ${bt.detail}${wNames}\n`;
-                        });
-                    } else {
-                        const mainText = t.workDetails || '내용없음';
-                        const workerText = (t.workers && t.workers.length > 0) ? ` (투입: ${t.workers.join(', ')})` : '';
-                        report += `- ${mainText}${workerText}\n`;
-                    }
-                }); 
-            } else { report += `- 내역 없음\n`; }
-            
-            report += `\n[📦 금일 반입된 자재]\n`;
-            if(deliveredMats.length > 0) { deliveredMats.forEach(t => report += `- ${t.text} (발주: ${t.orderer||'미지정'})\n`); } 
-            else { report += `- 내역 없음\n`; }
-            
-            document.getElementById('report-text').value = report;
-            document.getElementById('report-modal').style.display = 'block';
-        };
-
-        window.sendReportLine = () => {
-            const text = document.getElementById('report-text').value;
-            if(!text.trim()) return;
-            window.sendLineNotificationProxy(text);
-            alert("일일 작업일보가 라인으로 전송되었습니다.");
-            document.getElementById('report-modal').style.display = 'none';
-        };
-
-        window.sendLineNotificationProxy = function(messageText) {
-            const gasUrl = "https://script.google.com/macros/s/AKfycbyXn99LNYF-MgSEylL3PmcIgt0UaapVhiHXeexHfJCLHIGl5jj4nNRwwoSw0v5u-OgnJA/exec"; 
-            if (!gasUrl || gasUrl.includes("YOUR_GAS_WEB_APP_URL")) return;
-            fetch(gasUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ messages: [{ type: "text", text: messageText }] }) });
-        };
-
-        window.sendNotice = async () => {
-            const text = document.getElementById('notice-text').value;
-            if(!text.trim()) { alert("공지할 내용을 입력해주세요."); return; }
-            const sender = window.loggedInUser ? window.loggedInUser : '미상';
-            window.sendLineNotificationProxy(`📢 [전체 공지]\n작성자: ${sender}\n\n${text}`);
-            await addDoc(collection(db, "notices"), { text, sender, createdAt: Date.now() });
-            alert("공지사항이 라인으로 전송 및 데이터에 저장되었습니다.");
-            document.getElementById('notice-text').value = ''; 
-        };
-
-        window.renderNotices = () => {
-            const list = document.getElementById('notice-list');
-            if(!list) return;
-            if(window.currentNotices.length === 0) { list.innerHTML = '<div style="color:#999; font-size:0.8rem; text-align:center; padding:10px 0;">기존 공지 내역이 없습니다.</div>'; return; }
-            list.innerHTML = window.currentNotices.map(n => {
-                const dt = new Date(n.createdAt);
-                const dStr = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
-                return `<div style="background:#fdfdfd; border:1px solid #eee; border-radius:6px; padding:10px;">
-                    <div style="font-size:0.75rem; color:#666; margin-bottom:5px; font-weight:bold;">${n.sender} <span style="font-weight:normal; color:#aaa; margin-left:5px;">${dStr}</span></div>
-                    <div style="font-size:0.85rem; color:#333; white-space:pre-wrap; word-break:break-all; line-height:1.4;">${n.text}</div>
+                const pStatusMap = { 'todo':'할 일', 'inprogress':'진행중', 'done':'완료', 'worklog':'당일작업', 'mat-request':'발주요청', 'mat-ordered':'발주완료', 'mat-delivered':'반입완료' };
+                const prevLabel = pStatusMap[t.prevStatus] || t.prevStatus || '미상';
+                return `<div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee; background:#fff; border-radius:6px; align-items:center;">
+                    <div style="flex:1;">
+                        <div style="font-size:0.75rem; color:#888; margin-bottom:4px;">삭제일: ${t.deletedAt || '-'} <span style="color:#ddd;">|</span> 원래상태: <strong style="color:#0052cc;">${prevLabel}</strong></div>
+                        <div style="font-size:0.9rem; font-weight:bold; color:#333;">${text}</div>
+                    </div>
+                    <div style="display:flex; gap:5px;">
+                        <button onclick="window.restoreTask('${t.id}', '${t.prevStatus || 'todo'}')" style="background:#00875a; color:white; border:none; padding:5px 8px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:0.75rem;">복구</button>
+                        <button onclick="window.permanentDelete('${t.id}')" style="background:#ff5630; color:white; border:none; padding:5px 8px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:0.75rem;">영구삭제</button>
+                    </div>
                 </div>`;
             }).join('');
         };
 
-        // 모달창에서도 당월 완료건만 필터링
-        window.showTaskModal = (type, key, subType) => {
-            const list = document.getElementById('modal-list');
-            const title = document.getElementById('modal-title');
-            let filtered = [];
-            const currentMonthStr = window.getLocalDateString().substring(0, 7);
+        window.restoreTask = async (id, prevStatus) => {
+            await updateDoc(doc(db, "tasks", id), { status: prevStatus });
+            alert("원래 상태로 복구되었습니다.");
+            if(document.getElementById('trash-modal').style.display === 'block') window.renderTrash();
+        };
 
-            if (type === 'assignee') {
-                title.innerText = `👤 ${key} 님의 일정 (${subType === 'todo' ? '할일' : subType === 'inprogress' ? '진행중' : '완료'})`;
-                filtered = window.currentTasks.filter(t => t.assignee === key);
-                if(subType === 'todo') filtered = filtered.filter(t => t.status === 'todo');
-                if(subType === 'inprogress') filtered = filtered.filter(t => t.status === 'inprogress');
-                if(subType === 'done') {
-                    filtered = filtered.filter(t => (t.status === 'done' || t.status === 'worklog') && ((t.startDate || '').startsWith(currentMonthStr) || (t.dueDate || '').startsWith(currentMonthStr)));
+        window.permanentDelete = async (id) => {
+            if(confirm("영구 삭제하시겠습니까?\n이 작업은 복구할 수 없습니다.")) {
+                await deleteDoc(doc(db, "tasks", id));
+                if(document.getElementById('trash-modal').style.display === 'block') window.renderTrash();
+            }
+        };
+
+        window.emptyTrash = async () => {
+            const trashItems = window.currentTasks.filter(t => t.status === 'deleted');
+            if(trashItems.length === 0) return alert("휴지통이 비어있습니다.");
+            if(confirm(`휴지통에 있는 ${trashItems.length}개의 항목을 모두 영구 삭제하시겠습니까?`)) {
+                for(let t of trashItems) {
+                    await deleteDoc(doc(db, "tasks", t.id));
                 }
-            } else if (type === 'dueDate') {
-                title.innerText = `📅 일정 마감일: ${key}`;
-                filtered = window.currentTasks.filter(t => t.dueDate === key && !t.status.startsWith('mat-') && t.status !== 'worklog');
-                if(subType === 'done') filtered = filtered.filter(t => t.status === 'done');
-                else filtered = filtered.filter(t => t.status !== 'done');
-            } else if (type === 'overdue') {
-                title.innerText = `⚠️ 기한 지연 일정`;
-                filtered = window.currentTasks.filter(t => t.dueDate < key && !t.status.startsWith('mat-') && t.status !== 'done' && t.status !== 'worklog');
-            } else if (type === 'requester') {
-                title.innerText = `📦 ${key} 님의 자재 현황`;
-                filtered = window.currentTasks.filter(t => t.requester === key && t.status.startsWith('mat-'));
-                if(subType === 'req') filtered = filtered.filter(t => t.status === 'mat-request');
-                if(subType === 'ord') filtered = filtered.filter(t => t.status === 'mat-ordered');
-                if(subType === 'del') {
-                    filtered = filtered.filter(t => t.status === 'mat-delivered' && ((t.startDate || '').startsWith(currentMonthStr) || (t.dueDate || '').startsWith(currentMonthStr)));
-                }
-            } else if (type === 'dueDate-mat') {
-                title.innerText = `🚚 자재 반입일: ${key}`;
-                filtered = window.currentTasks.filter(t => t.dueDate === key && t.status.startsWith('mat-'));
-                if(subType === 'done') filtered = filtered.filter(t => t.status === 'mat-delivered');
-                else filtered = filtered.filter(t => t.status !== 'mat-delivered');
-            } else if (type === 'unordered-mat') {
-                title.innerText = `⚠️ 발주 지연 자재`;
-                filtered = window.currentTasks.filter(t => t.status === 'mat-request' && t.startDate < key);
-            } else if (type === 'single') {
-                title.innerText = `상세 보기`;
-                filtered = window.currentTasks.filter(t => t.id === key);
-            } else if (type === 'calendar-click') {
-                title.innerText = `📅 ${key} 등록 일정 목록`;
-                filtered = window.currentTasks.filter(t => (t.startDate === key || t.dueDate === key) && !t.status.startsWith('mat-') && t.status !== 'worklog');
+                alert("휴지통이 비워졌습니다.");
+                if(document.getElementById('trash-modal').style.display === 'block') window.renderTrash();
             }
-
-            if (type === 'equip') {
-                title.innerText = `🧰 ${key} 님의 장비 내역`;
-                let eqs = window.currentEquips.filter(e => e.borrower === key);
-                if(subType === '대여중') eqs = eqs.filter(e => e.status === '대여중');
-                if(subType === '반납완료') {
-                    eqs = eqs.filter(e => e.status === '반납완료' && (e.returnDate || e.borrowDate || '').startsWith(currentMonthStr));
-                }
-                list.innerHTML = eqs.map(e => `<div style="padding:10px; border-bottom:1px solid #eee;"><strong>${e.name}</strong><br><span style="font-size:0.8rem;color:#666;">대여일: ${e.borrowDate}</span></div>`).join('');
-            } else {
-                list.innerHTML = filtered.map(t => {
-                    let main = t.workDetails || t.text || '내용없음';
-                    if (t.status === 'worklog' && t.bundledTasks) {
-                        main = `<div style="border-left:3px solid #673ab7; padding-left:8px; display:flex; flex-direction:column; gap:6px;">`;
-                        let allAssignedWorkers = [];
-                        
-                        t.bundledTasks.forEach((bt, index) => {
-                            const wCount = bt.workers ? bt.workers.length : 0;
-                            const wNames = wCount > 0 ? bt.workers.join(', ') : '없음';
-                            if (bt.workers) allAssignedWorkers.push(...bt.workers);
-                            main += `<div style="margin-bottom:2px;">
-                                <span style="font-weight:bold; color:#673ab7;">[작업 ${index+1}]</span> <strong style="font-size:0.9rem;">${bt.detail}</strong>
-                                <div style="font-size:0.75rem; color:#444; margin-top:4px; background:#f4f5f7; padding:4px 6px; border-radius:4px; display:inline-block;">
-                                    🙋‍♂️ 투입 ${wCount}명 : <strong style="color:#0052cc;">${wNames}</strong>
-                                </div>
-                            </div>`;
-                        });
-                        main += `</div>`;
-
-                        const uniqueAssigned = [...new Set(allAssignedWorkers)];
-                        const allTeamNames = window.teamMembers.map(m => m.name);
-                        const overallUnselected = allTeamNames.filter(name => !uniqueAssigned.includes(name));
-                        const overallUnselNames = overallUnselected.length > 0 ? overallUnselected.join(', ') : '없음';
-                        
-                        main += `<div style="margin-top:10px; padding-top:10px; border-top:1px dashed #eee; font-size:0.75rem; color:#bf2600; font-weight:bold;">💤 총 미투입 인원: ${overallUnselNames}</div>`;
-                    }
-                    const sLabel = { 'todo':'할 일', 'inprogress':'진행중', 'done':'완료', 'worklog':'당일작업', 'mat-request':'발주요청', 'mat-ordered':'발주완료', 'mat-delivered':'반입완료' }[t.status] || t.status;
-                    return `<div style="padding:12px; border-bottom:1px solid #eee; display:flex; flex-direction:column; gap:6px;">
-                        <div style="color:#333; font-size:0.95rem; word-break:break-all; line-height:1.4;">${main}</div>
-                        <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:#666; align-items:center;">
-                            <span style="background:#e6effc; color:#0052cc; padding:3px 8px; border-radius:12px; font-weight:bold; font-size:0.75rem;">${sLabel}</span>
-                            <span>${t.startDate || ''} ~ ${t.dueDate || ''}</span>
-                        </div>
-                    </div>`;
-                }).join('');
-            }
-
-            if(list.innerHTML === '') list.innerHTML = '<div style="padding:20px; text-align:center; color:#999; font-size:0.9rem;">등록된 일정 내역이 없습니다.</div>';
-            document.getElementById('task-modal').style.display = 'block';
-        }
-
-        window.toggleAckRecord = async (id) => {
-            if(!window.loggedInUser) return alert("상단에서 먼저 로그인 후 사용해주세요.");
-            const taskSnap = await getDoc(doc(db, "tasks", id));
-            if(!taskSnap.exists()) return;
-            const task = taskSnap.data();
-            
-            let acks = task.acks || {};
-            if(acks[window.loggedInUser]) {
-                delete acks[window.loggedInUser];
-            } else {
-                const now = new Date();
-                const timeStr = `${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-                acks[window.loggedInUser] = timeStr;
-            }
-            await updateDoc(doc(db, "tasks", id), { acks: acks });
         };
 
-        window.showDailyBriefing = () => {
-            const today = new Date();
-            const tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
-            const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth()+1).padStart(2,'0')}-${String(tomorrow.getDate()).padStart(2,'0')}`;
-
-            const tomorrowTasks = window.currentTasks.filter(t => 
-                (t.startDate === tomorrowStr || t.dueDate === tomorrowStr) && 
-                !t.status.startsWith('mat-') && t.status !== 'worklog'
-            );
-            const matRequests = window.currentTasks.filter(t => t.status === 'mat-request');
-            const matOrdereds = window.currentTasks.filter(t => t.status === 'mat-ordered');
-
-            const todoContainer = document.getElementById('brief-todo-list');
-            const reqContainer = document.getElementById('brief-mat-request-list');
-            const ordContainer = document.getElementById('brief-mat-ordered-list');
-
-            if(!todoContainer || !reqContainer || !ordContainer) return;
-
-            if(tomorrowTasks.length > 0) {
-                todoContainer.innerHTML = tomorrowTasks.map(t => `
-                    <div class="brief-item">
-                        <strong>${t.text || '제목없음'}</strong>
-                        <div class="brief-meta">담당자: ${t.assignee || '미지정'} | 기간: ${t.startDate || '-'} ~ ${t.dueDate || '-'}</div>
-                    </div>
-                `).join('');
-            } else {
-                todoContainer.innerHTML = '<div style="color:#aaa; text-align:center; padding:5px 0;">내일 예정된 항목이 없습니다.</div>';
-            }
-
-            if(matRequests.length > 0) {
-                reqContainer.innerHTML = matRequests.map(t => `
-                    <div class="brief-item">
-                        <strong>${t.text || '품명없음'}</strong>
-                        <div class="brief-meta">요청일: ${t.startDate || '-'} | 요청자: ${t.requester || '-'}</div>
-                    </div>
-                `).join('');
-            } else {
-                reqContainer.innerHTML = '<div style="color:#aaa; text-align:center; padding:5px 0;">발주 대기 중인 자재가 없습니다.</div>';
-            }
-
-            if(matOrdereds.length > 0) {
-                ordContainer.innerHTML = matOrdereds.map(t => `
-                    <div class="brief-item">
-                        <strong>${t.text || '품명없음'}</strong>
-                        <div class="brief-meta">반입예정: ${t.dueDate || '-'} | 발주자: ${t.orderer || '-'}</div>
-                    </div>
-                `).join('');
-            } else {
-                ordContainer.innerHTML = '<div style="color:#aaa; text-align:center; padding:5px 0;">반입 대기 중인 자재가 없습니다.</div>';
-            }
-
-            document.getElementById('briefing-modal').style.display = 'block';
-        };
-
-        window.orderMaterial = async (id) => {
-            if(!window.loggedInUser) return alert("상단에서 먼저 로그인 후 사용해주세요.");
-            const task = window.currentTasks.find(t => t.id === id);
-            const now = new Date();
-            const timeStr = `${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-            
-            if(task) window.sendLineNotificationProxy(`📦 [발주 완료 처리]\n품목: ${task.text || '품명없음'}\n발주자: ${window.loggedInUser}\n처리시간: ${timeStr}`);
-            await updateDoc(doc(db, "tasks", id), { status: 'mat-ordered', orderer: window.loggedInUser, orderTime: timeStr });
-        };
-
-        window.deliverMaterial = async (id) => {
-            if(!window.loggedInUser) return alert("상단에서 먼저 로그인 후 사용해주세요.");
-            const task = window.currentTasks.find(t => t.id === id);
-            const now = new Date();
-            const timeStr = `${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-            
-            if(task) window.sendLineNotificationProxy(`📦 [반입 완료 처리]\n품목: ${task.text || '품명없음'}\n반입확인자: ${window.loggedInUser}\n처리시간: ${timeStr}`);
-            await updateDoc(doc(db, "tasks", id), { status: 'mat-delivered', deliverer: window.loggedInUser, deliverTime: timeStr });
-        };
-
-        // ✨ 카드 공통 렌더링 함수
+        // --- 뷰, 렌더링, 집계 ---
         const renderCard = (t, s, currentMonthStr) => {
-            const isMat = s.startsWith('mat-');
+            const isMat = String(s || '').startsWith('mat-');
             let dropdownHtml = '';
-            let overallUnselNames = '없음'; 
-
+            
             let content = '';
-            if (s === 'worklog' && t.bundledTasks) {
+            if (s === 'worklog' && Array.isArray(t.bundledTasks)) {
                 content = `<div style="border-left:3px solid #673ab7; padding-left:8px; display:flex; flex-direction:column; gap:6px;">`;
-                let allAssignedWorkers = []; 
                 
                 t.bundledTasks.forEach((bt, i) => {
-                    const wCount = bt.workers ? bt.workers.length : 0;
+                    if(!bt) return;
+                    const wCount = Array.isArray(bt.workers) ? bt.workers.length : 0;
                     const wNames = wCount > 0 ? bt.workers.join(', ') : '없음';
-                    if (bt.workers) allAssignedWorkers.push(...bt.workers);
 
                     content += `<div style="margin-bottom:2px;">
-                        <span style="font-weight:bold; color:#673ab7;">[작업 ${i+1}]</span> <strong style="font-size:0.9rem;">${bt.detail}</strong>
+                        <span style="font-weight:bold; color:#673ab7;">[작업 ${i+1}]</span> <strong style="font-size:0.9rem;">${bt.detail||'내용없음'}</strong>
                         <div style="font-size:0.75rem; color:#444; margin-top:4px; background:#f4f5f7; padding:4px 6px; border-radius:4px; display:inline-block;">
                             🙋‍♂️ 투입 ${wCount}명 : <strong style="color:#0052cc;">${wNames}</strong>
                         </div>
                     </div>`;
                 });
                 content += `</div>`;
-
-                const uniqueAssigned = [...new Set(allAssignedWorkers)];
-                const allTeamNames = window.teamMembers.map(m => m.name);
-                const overallUnselected = allTeamNames.filter(name => !uniqueAssigned.includes(name));
-                overallUnselNames = overallUnselected.length > 0 ? overallUnselected.join(', ') : '없음';
-                
             } else {
                 content = t.workDetails ? `<strong style="color:var(--primary-color); white-space:pre-wrap;">${t.workDetails}</strong>` : `<strong>${t.text||'내용없음'}</strong>`;
             }
@@ -1194,19 +1490,21 @@
             } else {
                 dropdownHtml = `<div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                     <span style="font-size:0.75rem; color:#555;">등록자: <strong>${t.assignee||'-'}</strong></span>
-                    <span style="font-size:0.7rem; color:#bf2600; background:#ffebe6; padding:2px 6px; border-radius:10px; font-weight:bold;">💤 미투입: ${overallUnselNames}</span>
                 </div>`;
             }
 
             let ackDisplayHtml = '';
             let hasIHaveAcked = false; 
-            if(t.acks && Object.keys(t.acks).length > 0) {
-                ackDisplayHtml = `<div class="ack-box">`;
-                Object.keys(t.acks).forEach(name => {
-                    if(name === window.loggedInUser) hasIHaveAcked = true;
-                    ackDisplayHtml += `<div>✓ 확인: ${name} (${t.acks[name]})</div>`;
-                });
-                ackDisplayHtml += `</div>`;
+            if(t.acks && typeof t.acks === 'object' && !Array.isArray(t.acks)) {
+                const keys = Object.keys(t.acks);
+                if(keys.length > 0) {
+                    ackDisplayHtml = `<div class="ack-box">`;
+                    keys.forEach(name => {
+                        if(name === window.loggedInUser) hasIHaveAcked = true;
+                        ackDisplayHtml += `<div>✓ 확인: ${name} (${t.acks[name]})</div>`;
+                    });
+                    ackDisplayHtml += `</div>`;
+                }
             }
 
             let actionButtonsHtml = '';
@@ -1236,12 +1534,19 @@
                 actionButtonsHtml = `<button class="btn-edit" onclick="window.openEditModal('${t.id}')">수정</button>`;
             }
 
+            let checkBoxHtml = `<input type="checkbox" class="bulk-delete-cb" value="${t.id}" style="width:16px; height:16px; cursor:pointer; accent-color:#ff5630;" title="일괄 삭제 선택">`;
+            
+            const fallback = window.getFallbackDate(t.createdAt);
+
             return `<div class="card">
                 <div style="font-size:0.85rem; color:#333; line-height:1.4;">${content}</div>
                 ${ackDisplayHtml} 
                 <div style="font-size:0.75rem; color:#666; margin-top:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px;">
                     ${dropdownHtml}
-                    <span style="font-size:0.77rem; color:#888;">${t.startDate||''} ~ ${t.dueDate||''}</span>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-size:0.77rem; color:#888;">${t.startDate || fallback} ~ ${t.dueDate || fallback}</span>
+                        ${checkBoxHtml}
+                    </div>
                 </div>
                 <div class="card-actions">
                     ${actionButtonsHtml}
@@ -1265,210 +1570,265 @@
 
             const baseOptions = window.teamMembers.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
             
-            ['todo', 'inprogress', 'done'].forEach(s => { 
-                const el = document.getElementById(`${s}-assignee`); 
-                if(el) el.innerHTML = '<option value="">담당자</option>' + baseOptions; 
-            });
-            ['mat-request', 'mat-ordered', 'mat-delivered'].forEach(s => { 
-                const r = document.getElementById(`${s}-requester`); 
-                if(r) r.innerHTML = '<option value="">요청자</option>' + baseOptions;
-                const o = document.getElementById(`${s}-orderer`); 
-                if(o) o.innerHTML = '<option value="">발주자</option>' + baseOptions;
-            });
-
-            const expSpender = document.getElementById('exp-spender');
-            if(expSpender) { expSpender.innerHTML = '<option value="">지출자</option>' + baseOptions; }
+            try {
+                ['todo', 'inprogress', 'done'].forEach(s => { 
+                    const el = document.getElementById(`${s}-assignee`); 
+                    if(el) el.innerHTML = '<option value="">담당자</option>' + baseOptions; 
+                });
+                ['mat-request', 'mat-ordered', 'mat-delivered'].forEach(s => { 
+                    const r = document.getElementById(`${s}-requester`); 
+                    if(r) r.innerHTML = '<option value="">요청자</option>' + baseOptions;
+                    const o = document.getElementById(`${s}-orderer`); 
+                    if(o) o.innerHTML = '<option value="">발주자</option>' + baseOptions;
+                });
+                const expSpender = document.getElementById('exp-spender');
+                if(expSpender) { expSpender.innerHTML = '<option value="">지출자</option>' + baseOptions; }
+            } catch(e) { console.error("Dropdown Update Error", e); }
 
             const search = document.getElementById('main-search-input') ? document.getElementById('main-search-input').value.toLowerCase() : '';
-            window.currentTasks.forEach(t => {
-                let bundledText = '';
-                if(t.bundledTasks) {
-                    bundledText = t.bundledTasks.map(bt => bt.detail + (bt.workers ? bt.workers.join('') : '')).join(' ');
-                }
-                const fullText = (t.text || '') + ' ' + (t.workDetails || '') + ' ' + (t.assignee || '') + ' ' + (t.requester || '') + ' ' + (t.orderer || '') + ' ' + bundledText;
-                
-                if (search && !fullText.toLowerCase().includes(search)) return;
-                
-                // 완료건은 '당월'만, 미완료는 전체 다 표시 (worklog 제외)
-                if (!window.showOldDoneTasks && ['done', 'mat-delivered'].includes(t.status)) {
-                    const dateToCheck = t.dueDate || t.startDate || '';
-                    if (!dateToCheck.startsWith(currentMonthStr)) return; 
-                }
+            
+            const worklogDates = [];
+            const wlViewYm = (window.worklogViewDate || todayStr).substring(0, 7);
 
-                // 일보는 무조건 지정된 조회 날짜에 맞는 것만 표시
-                if (t.status === 'worklog' && t.startDate !== window.worklogViewDate) {
-                    return; 
+            try {
+                window.currentTasks.forEach(t => {
+                    if (t.status === 'deleted') return; 
+
+                    let bundledText = '';
+                    if(Array.isArray(t.bundledTasks)) {
+                        bundledText = t.bundledTasks.map(bt => (bt?.detail || '') + (Array.isArray(bt?.workers) ? bt.workers.join('') : '')).join(' ');
+                    }
+                    const fullText = String(t.text || '') + ' ' + String(t.workDetails || '') + ' ' + String(t.assignee || '') + ' ' + String(t.requester || '') + ' ' + String(t.orderer || '') + ' ' + bundledText;
+                    
+                    if (search && !fullText.toLowerCase().includes(search)) return;
+                    
+                    const fallback = window.getFallbackDate(t.createdAt);
+                    const dateToCheck = String(t.dueDate || t.startDate || fallback);
+
+                    const isCurrentMonth = dateToCheck.startsWith(currentMonthStr);
+                    const isDoneOrDelivered = ['done', 'mat-delivered'].includes(t.status);
+                    
+                    if (isDoneOrDelivered && !isCurrentMonth && !window.showOldDoneTasks) {
+                        return; 
+                    }
+
+                    const sDate = String(t.startDate || fallback);
+                    
+                    if (t.status === 'worklog' && sDate && sDate.startsWith(wlViewYm)) {
+                        const dNum = parseInt(sDate.split('-')[2]);
+                        if (!isNaN(dNum) && !worklogDates.includes(dNum)) worklogDates.push(dNum);
+                    }
+
+                    if (t.status === 'worklog' && sDate !== window.worklogViewDate) {
+                        return; 
+                    }
+
+                    if (lists[t.status]) lists[t.status].push(t);
+                });
+            } catch(e) { console.error("Task filter Error", e); }
+
+            try {
+                worklogDates.sort((a,b) => a - b);
+                const wlDatesEl = document.getElementById('worklog-recorded-dates');
+                if (wlDatesEl) {
+                    if (worklogDates.length > 0) {
+                        wlDatesEl.innerText = `✨ ${wlViewYm.split('-')[1]}월 작성일: ${worklogDates.map(d=>d+'일').join(', ')}`;
+                    } else {
+                        wlDatesEl.innerText = '작성된 기록 없음';
+                    }
                 }
+            } catch(e) { console.error("Worklog dates display Error", e); }
 
-                if (lists[t.status]) lists[t.status].push(t);
-            });
-
-            // ✨ 리스트 월별 아코디언 렌더링 (7일 초과 완료건 자동 접힘 포함)
             const todayDateObj = new Date(todayStr.split('-')[0], todayStr.split('-')[1]-1, todayStr.split('-')[2]);
 
-            statuses.forEach(s => {
-                const el = document.getElementById(`${s}-list`);
-                const countEl = document.getElementById(`${s}-count`);
-                if(countEl) countEl.innerText = lists[s].length;
-                if(!el) return;
+            try {
+                statuses.forEach(s => {
+                    const el = document.getElementById(`${s}-list`);
+                    const countEl = document.getElementById(`${s}-count`);
+                    if(countEl) countEl.innerText = lists[s].length;
+                    if(!el) return;
 
-                if (lists[s].length === 0) {
-                    el.innerHTML = '';
-                    return;
-                }
+                    if (lists[s].length === 0) {
+                        el.innerHTML = '';
+                        return;
+                    }
 
-                // 작업일보는 날짜 1개만 조회하므로 아코디언 묶음 제외
-                if (s === 'worklog') {
-                    el.innerHTML = lists[s].map(t => renderCard(t, s, currentMonthStr)).join('');
-                } else {
-                    const grouped = {};
-                    lists[s].forEach(t => {
-                        let refDate = t.dueDate || t.startDate || '';
-                        let yyyy_mm = refDate ? refDate.substring(0, 7) : '미지정';
-                        let groupKey = yyyy_mm;
+                    if (s === 'worklog') {
+                        el.innerHTML = lists[s].map(t => renderCard(t, s, currentMonthStr)).join('');
+                    } else {
+                        const grouped = {};
+                        lists[s].forEach(t => {
+                            const fallback = window.getFallbackDate(t.createdAt);
+                            let refDate = String(t.dueDate || t.startDate || fallback);
+                            let yyyy_mm = refDate && refDate !== 'undefined' ? refDate.substring(0, 7) : '미지정';
+                            let groupKey = yyyy_mm;
+                            
+                            if (yyyy_mm === currentMonthStr && refDate && (t.status === 'done' || t.status === 'mat-delivered')) {
+                                let rDateObj = new Date(refDate.split('-')[0], refDate.split('-')[1]-1, refDate.split('-')[2]);
+                                let diffDays = (todayDateObj - rDateObj) / (1000 * 60 * 60 * 24);
+                                if (diffDays >= 7) {
+                                    groupKey = yyyy_mm + '-old';
+                                }
+                            }
+                            
+                            if(!grouped[groupKey]) grouped[groupKey] = [];
+                            grouped[groupKey].push(t);
+                        });
                         
-                        // 당월이면서 '완료' 또는 '반입완료'인 항목 중 7일 이상 경과한 항목은 별도 그룹으로 분리
-                        if (yyyy_mm === currentMonthStr && refDate && (t.status === 'done' || t.status === 'mat-delivered')) {
-                            let rDateObj = new Date(refDate.split('-')[0], refDate.split('-')[1]-1, refDate.split('-')[2]);
-                            let diffDays = (todayDateObj - rDateObj) / (1000 * 60 * 60 * 24);
-                            if (diffDays >= 7) {
-                                groupKey = yyyy_mm + '-old';
+                        const sortedMonths = Object.keys(grouped).sort((a,b) => {
+                            const aBase = a.replace('-old', '');
+                            const bBase = b.replace('-old', '');
+                            if (aBase !== bBase) return bBase.localeCompare(aBase);
+                            if (a.includes('-old') && !b.includes('-old')) return 1;
+                            if (!a.includes('-old') && b.includes('-old')) return -1;
+                            return 0;
+                        });
+                        
+                        let finalHtml = '';
+                        sortedMonths.forEach(month => {
+                            const isActiveStatus = ['todo', 'inprogress', 'mat-request', 'mat-ordered'].includes(s);
+                            const isCurrent = (month === currentMonthStr || month === '미지정') || window.showOldDoneTasks || isActiveStatus;
+                            
+                            const displayStyle = isCurrent ? 'flex' : 'none'; 
+                            const icon = isCurrent ? '▼' : '▶';
+                            let label = '일자 미지정';
+                            
+                            if(month !== '미지정') {
+                                const parts = month.replace('-old','').split('-');
+                                label = `${parts[0]}년 ${parseInt(parts[1])}월`;
+                                if(month.includes('-old')) {
+                                    label += ' (7일 경과)';
+                                }
+                            }
+
+                            finalHtml += `
+                                <div style="background:#d9e2ec; padding:6px 10px; margin-top:5px; margin-bottom:5px; border-radius:4px; font-weight:bold; font-size:0.8rem; cursor:pointer; display:flex; justify-content:space-between; align-items:center; color:#172b4d;"
+                                     onclick="const content = this.nextElementSibling; const ic = this.querySelector('.fold-icon'); if(content.style.display==='none'){content.style.display='flex'; ic.innerText='▼';}else{content.style.display='none'; ic.innerText='▶';}">
+                                    ${label} <span class="fold-icon" style="font-size:0.7rem; color:#6b778c;">${icon}</span>
+                                </div>
+                                <div style="display:${displayStyle}; flex-direction:column; gap:5px; margin-bottom:10px;">
+                                    ${grouped[month].map(t => renderCard(t, s, currentMonthStr)).join('')}
+                                </div>
+                            `;
+                        });
+                        el.innerHTML = finalHtml;
+                    }
+                });
+            } catch(e) { console.error("Render Board Error", e); }
+            
+            try {
+                const assignees = {};      
+                const taskDates = {};      
+                const overdueTasks = [];   
+                const mats = {};           
+                const matDates = {};       
+                const delayedMats = [];    
+
+                window.currentTasks.forEach(t => {
+                    if (t.status === 'deleted') return; 
+
+                    const statusStr = String(t.status || '');
+                    const isMat = statusStr.startsWith('mat-');
+                    const isDone = ['done', 'worklog'].includes(t.status);
+                    const isDelivered = t.status === 'mat-delivered';
+                    
+                    const fallback = window.getFallbackDate(t.createdAt);
+                    
+                    const dateToCheck = String(t.dueDate || t.startDate || fallback);
+                    const isCurrentMonth = dateToCheck.startsWith(currentMonthStr);
+
+                    if ((isDone || isDelivered) && !isCurrentMonth && !window.showOldDoneTasks) return;
+
+                    if (!isMat) {
+                        if (t.assignee) {
+                            if(!assignees[t.assignee]) assignees[t.assignee] = {todo:0, inprogress:0, done:0};
+                            if(t.status === 'todo') assignees[t.assignee].todo++;
+                            else if(t.status === 'inprogress') assignees[t.assignee].inprogress++;
+                            else if(isDone) assignees[t.assignee].done++;
+                        }
+                        
+                        const dueDateOnly = String(t.dueDate || ''); 
+                        
+                        if (dueDateOnly && dueDateOnly !== 'undefined' && t.status !== 'worklog') {
+                            if(dueDateOnly >= todayStr && dueDateOnly <= nextWeekStr) {
+                                if(!taskDates[dueDateOnly]) taskDates[dueDateOnly] = {wait:0, done:0};
+                                if(t.status === 'done') taskDates[dueDateOnly].done++;
+                                else taskDates[dueDateOnly].wait++;
+                            }
+                            if (dueDateOnly < todayStr && t.status !== 'done') {
+                                overdueTasks.push({ id: t.id, name: t.text || t.workDetails || '제목없음', date: dueDateOnly });
+                            }
+                        }
+                    } else {
+                        if (t.requester) {
+                            if(!mats[t.requester]) mats[t.requester] = {req:0, ord:0, del:0};
+                            if(t.status === 'mat-request') mats[t.requester].req++;
+                            else if(t.status === 'mat-ordered') mats[t.requester].ord++;
+                            else if(isDelivered) mats[t.requester].del++;
+                        }
+                        
+                        const matDueDateOnly = String(t.dueDate || '');
+                        if (matDueDateOnly && matDueDateOnly !== 'undefined') {
+                            if(matDueDateOnly >= todayStr && matDueDateOnly <= nextWeekStr) {
+                                if(!matDates[matDueDateOnly]) matDates[matDueDateOnly] = {wait:0, done:0};
+                                if(t.status === 'mat-delivered') matDates[matDueDateOnly].done++;
+                                else matDates[matDueDateOnly].wait++;
                             }
                         }
                         
-                        if(!grouped[groupKey]) grouped[groupKey] = [];
-                        grouped[groupKey].push(t);
-                    });
-                    
-                    const sortedMonths = Object.keys(grouped).sort((a,b) => {
-                        const aBase = a.replace('-old', '');
-                        const bBase = b.replace('-old', '');
-                        if (aBase !== bBase) return bBase.localeCompare(aBase);
-                        if (a.includes('-old') && !b.includes('-old')) return 1;
-                        if (!a.includes('-old') && b.includes('-old')) return -1;
-                        return 0;
-                    });
-                    
-                    let finalHtml = '';
-                    sortedMonths.forEach(month => {
-                        // 당월(경과안된것)과 미지정만 펼치고, 나머지는 모두 접음 (과거 달 & 7일경과 모두 접힘)
-                        const isCurrent = (month === currentMonthStr || month === '미지정');
-                        const displayStyle = isCurrent ? 'flex' : 'none'; 
-                        const icon = isCurrent ? '▼' : '▶';
-                        let label = '일자 미지정';
-                        
-                        if(month !== '미지정') {
-                            const parts = month.replace('-old','').split('-');
-                            label = `${parts[0]}년 ${parseInt(parts[1])}월`;
-                            if(month.includes('-old')) {
-                                label += ' (7일 경과)';
-                            }
-                        }
-
-                        finalHtml += `
-                            <div style="background:#d9e2ec; padding:6px 10px; margin-top:5px; margin-bottom:5px; border-radius:4px; font-weight:bold; font-size:0.8rem; cursor:pointer; display:flex; justify-content:space-between; align-items:center; color:#172b4d;"
-                                 onclick="const content = this.nextElementSibling; const ic = this.querySelector('.fold-icon'); if(content.style.display==='none'){content.style.display='flex'; ic.innerText='▼';}else{content.style.display='none'; ic.innerText='▶';}">
-                                ${label} <span class="fold-icon" style="font-size:0.7rem; color:#6b778c;">${icon}</span>
-                            </div>
-                            <div style="display:${displayStyle}; flex-direction:column; gap:5px; margin-bottom:10px;">
-                                ${grouped[month].map(t => renderCard(t, s, currentMonthStr)).join('')}
-                            </div>
-                        `;
-                    });
-                    el.innerHTML = finalHtml;
-                }
-            });
-            
-            const assignees = {};      
-            const taskDates = {};      
-            const overdueTasks = [];   
-            const mats = {};           
-            const matDates = {};       
-            const delayedMats = [];    
-
-            window.currentTasks.forEach(t => {
-                const isMat = t.status.startsWith('mat-');
-                const isDone = ['done', 'worklog'].includes(t.status);
-                const isDelivered = t.status === 'mat-delivered';
-                const dateToCheck = t.dueDate || t.startDate || '';
-                const isCurrentMonth = dateToCheck.startsWith(currentMonthStr);
-
-                if ((isDone || isDelivered) && !isCurrentMonth) return;
-
-                if (!isMat) {
-                    if (t.assignee) {
-                        if(!assignees[t.assignee]) assignees[t.assignee] = {todo:0, inprogress:0, done:0};
-                        if(t.status === 'todo') assignees[t.assignee].todo++;
-                        else if(t.status === 'inprogress') assignees[t.assignee].inprogress++;
-                        else if(isDone) assignees[t.assignee].done++;
-                    }
-                    if (t.dueDate && t.status !== 'worklog') {
-                        if(t.dueDate >= todayStr && t.dueDate <= nextWeekStr) {
-                            if(!taskDates[t.dueDate]) taskDates[t.dueDate] = {wait:0, done:0};
-                            if(t.status === 'done') taskDates[t.dueDate].done++;
-                            else taskDates[t.dueDate].wait++;
-                        }
-                        if (t.dueDate < todayStr && t.status !== 'done') {
-                            overdueTasks.push({ id: t.id, name: t.text || t.workDetails || '제목없음', date: t.dueDate });
+                        const matStartDateOnly = String(t.startDate || '');
+                        if (t.status === 'mat-request' && matStartDateOnly && matStartDateOnly !== 'undefined' && matStartDateOnly < todayStr) {
+                            delayedMats.push({ id: t.id, name: t.text || '제목없음', date: matStartDateOnly });
                         }
                     }
-                } else {
-                    if (t.requester) {
-                        if(!mats[t.requester]) mats[t.requester] = {req:0, ord:0, del:0};
-                        if(t.status === 'mat-request') mats[t.requester].req++;
-                        else if(t.status === 'mat-ordered') mats[t.requester].ord++;
-                        else if(isDelivered) mats[t.requester].del++;
-                    }
-                    if (t.dueDate) {
-                        if(t.dueDate >= todayStr && t.dueDate <= nextWeekStr) {
-                            if(!matDates[t.dueDate]) matDates[t.dueDate] = {wait:0, done:0};
-                            if(t.status === 'mat-delivered') matDates[t.dueDate].done++;
-                            else matDates[t.dueDate].wait++;
-                        }
-                    }
-                    if (t.status === 'mat-request' && t.startDate < todayStr) {
-                        delayedMats.push({ id: t.id, name: t.text || '제목없음', date: t.startDate });
-                    }
-                }
-            });
+                });
 
-            document.getElementById('assignee-table').querySelector('tbody').innerHTML = Object.keys(assignees).map(k => 
-                `<tr><td>${k}</td><td><a class="clickable" onclick="window.showTaskModal('assignee','${k}','todo')">${assignees[k].todo}</a></td><td><a class="clickable" onclick="window.showTaskModal('assignee','${k}','inprogress')">${assignees[k].inprogress}</a></td><td><a class="clickable" onclick="window.showTaskModal('assignee','${k}','done')">${assignees[k].done}</a></td></tr>`).join('');
-            
-            const sortedTaskDates = Object.keys(taskDates).sort();
-            document.getElementById('task-date-table').querySelector('tbody').innerHTML = sortedTaskDates.map(k => 
-                `<tr><td>${k.substring(5)}</td><td><a class="clickable" onclick="window.showTaskModal('dueDate','${k}','wait')">${taskDates[k].wait}</a></td><td><a class="clickable" onclick="window.showTaskModal('dueDate','${k}','done')">${taskDates[k].done}</a></td></tr>`).join('');
-            
-            document.getElementById('overdue-table').querySelector('tbody').innerHTML = overdueTasks.map(t => 
-                `<tr><td style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70px;" title="${t.name}"><a class="clickable" onclick="window.showTaskModal('single','${t.id}','')">${t.name}</a></td><td>${t.date.substring(5)}</td></tr>`).join('');
-            
-            document.getElementById('material-table').querySelector('tbody').innerHTML = Object.keys(mats).map(k => 
-                `<tr><td>${k}</td><td><a class="clickable" onclick="window.showTaskModal('requester','${k}','req')">${mats[k].req}</a></td><td><a class="clickable" onclick="window.showTaskModal('requester','${k}','ord')">${mats[k].ord}</a></td><td><a class="clickable" onclick="window.showTaskModal('requester','${k}','del')">${mats[k].del}</a></td></tr>`).join('');
-            
-            const sortedMatDates = Object.keys(matDates).sort();
-            document.getElementById('mat-date-table').querySelector('tbody').innerHTML = sortedMatDates.map(k => 
-                `<tr><td>${k.substring(5)}</td><td><a class="clickable" onclick="window.showTaskModal('dueDate-mat','${k}','wait')">${matDates[k].wait}</a></td><td><a class="clickable" onclick="window.showTaskModal('dueDate-mat','${k}','done')">${matDates[k].done}</a></td></tr>`).join('');
-            
-            document.getElementById('un-ordered-table').querySelector('tbody').innerHTML = delayedMats.map(t => 
-                `<tr><td style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70px;" title="${t.name}"><a class="clickable" onclick="window.showTaskModal('single','${t.id}','')">${t.name}</a></td><td>${t.date.substring(5)}</td></tr>`).join('');
-
-            const eqStats = {};
-            window.currentEquips.forEach(eq => {
-                const b = eq.borrower || '미상';
-                const isReturned = eq.status === '반납완료';
-                const refDate = eq.returnDate || eq.borrowDate || '';
-                const isCurrentMonth = refDate.startsWith(currentMonthStr);
+                document.getElementById('assignee-table').querySelector('tbody').innerHTML = Object.keys(assignees).map(k => 
+                    `<tr><td>${k}</td><td><a class="clickable" onclick="window.showTaskModal('assignee','${k}','todo')">${assignees[k].todo}</a></td><td><a class="clickable" onclick="window.showTaskModal('assignee','${k}','inprogress')">${assignees[k].inprogress}</a></td><td><a class="clickable" onclick="window.showTaskModal('assignee','${k}','done')">${assignees[k].done}</a></td></tr>`).join('');
                 
-                if (isReturned && !isCurrentMonth) return;
+                const sortedTaskDates = Object.keys(taskDates).sort();
+                document.getElementById('task-date-table').querySelector('tbody').innerHTML = sortedTaskDates.map(k => 
+                    `<tr><td>${k.substring(5)}</td><td><a class="clickable" onclick="window.showTaskModal('dueDate','${k}','wait')">${taskDates[k].wait}</a></td><td><a class="clickable" onclick="window.showTaskModal('dueDate','${k}','done')">${taskDates[k].done}</a></td></tr>`).join('');
+                
+                document.getElementById('overdue-table').querySelector('tbody').innerHTML = overdueTasks.map(t => 
+                    `<tr><td style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70px;" title="${t.name}"><a class="clickable" onclick="window.showTaskModal('single','${t.id}','')">${t.name}</a></td><td>${t.date.substring(5)}</td></tr>`).join('');
+                
+                document.getElementById('material-table').querySelector('tbody').innerHTML = Object.keys(mats).map(k => 
+                    `<tr><td>${k}</td><td><a class="clickable" onclick="window.showTaskModal('requester','${k}','req')">${mats[k].req}</a></td><td><a class="clickable" onclick="window.showTaskModal('requester','${k}','ord')">${mats[k].ord}</a></td><td><a class="clickable" onclick="window.showTaskModal('requester','${k}','del')">${mats[k].del}</a></td></tr>`).join('');
+                
+                const sortedMatDates = Object.keys(matDates).sort();
+                document.getElementById('mat-date-table').querySelector('tbody').innerHTML = sortedMatDates.map(k => 
+                    `<tr><td>${k.substring(5)}</td><td><a class="clickable" onclick="window.showTaskModal('dueDate-mat','${k}','wait')">${matDates[k].wait}</a></td><td><a class="clickable" onclick="window.showTaskModal('dueDate-mat','${k}','done')">${matDates[k].done}</a></td></tr>`).join('');
+                
+                document.getElementById('un-ordered-table').querySelector('tbody').innerHTML = delayedMats.map(t => 
+                    `<tr><td style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70px;" title="${t.name}"><a class="clickable" onclick="window.showTaskModal('single','${t.id}','')">${t.name}</a></td><td>${t.date.substring(5)}</td></tr>`).join('');
 
-                if(!eqStats[b]) eqStats[b] = { renting: 0, returned: 0 };
-                if(!isReturned) eqStats[b].renting++;
-                else eqStats[b].returned++;
-            });
-            document.getElementById('equip-table').querySelector('tbody').innerHTML = Object.keys(eqStats).map(k => 
-                `<tr><td>${k}</td><td><a class="clickable" style="color:var(--warning-color);" onclick="window.showTaskModal('equip','${k}','대여중')">${eqStats[k].renting}</a></td><td><a class="clickable" onclick="window.showTaskModal('equip','${k}','반납완료')">${eqStats[k].returned}</a></td></tr>`).join('');
+                const eqStats = {};
+                window.currentEquips.forEach(eq => {
+                    const b = eq.borrower || '미상';
+                    const isReturned = eq.status === '반납완료';
+                    const fallback = window.getFallbackDate(eq.createdAt);
+                    const refDate = String(eq.returnDate || eq.borrowDate || fallback);
+                    const isCurrentMonth = refDate.startsWith(currentMonthStr);
+                    
+                    if (isReturned && !isCurrentMonth && !window.showOldDoneTasks) return;
 
-            window.renderCalendar();
+                    if(!eqStats[b]) eqStats[b] = { renting: 0, returned: 0 };
+                    if(!isReturned) eqStats[b].renting++;
+                    else eqStats[b].returned++;
+                });
+                document.getElementById('equip-table').querySelector('tbody').innerHTML = Object.keys(eqStats).map(k => 
+                    `<tr><td>${k}</td><td><a class="clickable" style="color:var(--warning-color);" onclick="window.showTaskModal('equip','${k}','대여중')">${eqStats[k].renting}</a></td><td><a class="clickable" onclick="window.showTaskModal('equip','${k}','반납완료')">${eqStats[k].returned}</a></td></tr>`).join('');
+
+            } catch (globalUIError) {
+                console.error("UI Table updates Error:", globalUIError);
+            }
+
+            try {
+                window.renderCalendar();
+            } catch (calError) {
+                console.error("Calendar Rendering Error:", calError);
+            }
         };
 
         window.renderCalendar = () => {
@@ -1485,11 +1845,15 @@
             for(let d=1; d<=lastDate; d++) {
                 const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
                 
-                const tasksToday = window.currentTasks.filter(t => (t.startDate === dateStr || t.dueDate === dateStr) && !t.status.startsWith('mat-') && t.status !== 'worklog');
+                const tasksToday = window.currentTasks.filter(t => t.status !== 'deleted' && ((t.startDate || window.getFallbackDate(t.createdAt)) === dateStr || (t.dueDate || window.getFallbackDate(t.createdAt)) === dateStr) && !(t.status || '').startsWith('mat-') && t.status !== 'worklog');
                 const badgeHtml = tasksToday.length > 0 ? `<div class="calendar-num-badge">${tasksToday.length}</div>` : '';
                 
+                const hasWorklog = window.currentTasks.some(t => t.status === 'worklog' && (t.startDate || window.getFallbackDate(t.createdAt)) === dateStr && t.status !== 'deleted');
                 const isToday = d === new Date().getDate() && m === new Date().getMonth() && y === new Date().getFullYear();
-                grid.innerHTML += `<div class="calendar-day-cell" onclick="window.showTaskModal('calendar-click', '${dateStr}', '')">
+                
+                const bgStyle = hasWorklog ? 'background: #ede7f6; border: 1px solid #d1c4e9;' : '';
+
+                grid.innerHTML += `<div class="calendar-day-cell" style="${bgStyle}" onclick="window.showTaskModal('calendar-click', '${dateStr}', '')">
                     <span style="${isToday ? 'background:var(--warning-color);color:white;border-radius:50%;width:18px;height:18px;line-height:18px;display:inline-block;' : ''}">${d}</span>
                     ${badgeHtml}
                 </div>`;
@@ -1498,18 +1862,42 @@
 
         window.openWorkerModal = (id) => {
             window.currentWorkerEntryId = id;
-            const hiddenInput = document.getElementById(`wl-workers-hidden-${id}`);
+            const hiddenInput = document.getElementById(id.includes('edit') ? `wl-workers-hidden-${id}` : `wl-workers-hidden-${id}`);
             const selected = hiddenInput && hiddenInput.value ? hiddenInput.value.split(',') : [];
             
-            const allPeople = [...new Set(window.teamMembers.map(m=>m.name))].filter(Boolean);
             const listEl = document.getElementById('worker-modal-list');
-            listEl.innerHTML = allPeople.map(name => {
-                const isChecked = selected.includes(name) ? 'checked' : '';
-                return `<label style="cursor:pointer; display:flex; align-items:center; background:#fff; padding:10px; border:1px solid #ddd; border-radius:6px; font-weight:bold; font-size:0.9rem;">
-                            <input type="checkbox" value="${name}" ${isChecked} style="margin-right:8px; transform:scale(1.3);"> ${name}
-                        </label>`;
-            }).join('');
-            
+            if(window.currentContacts.length === 0) {
+                listEl.innerHTML = '<div style="color:#999; font-size:0.8rem; text-align:center;">상단의 [📞 연락처] 메뉴에서<br>먼저 작업자를 등록해주세요.</div>';
+            } else {
+                const groupedContacts = {};
+                window.currentContacts.forEach(c => {
+                    const g = c.group || '미지정';
+                    if(!groupedContacts[g]) groupedContacts[g] = [];
+                    groupedContacts[g].push(c.name);
+                });
+                
+                const sortedGroups = Object.keys(groupedContacts).sort();
+                let html = '';
+                
+                sortedGroups.forEach(g => {
+                    html += `<div style="font-weight:bold; color:#009688; font-size:0.75rem; margin-top:10px; margin-bottom:5px; border-bottom:1px solid #eee; padding-bottom:3px; cursor:pointer; display:flex; justify-content:space-between;"
+                             onclick="const content = this.nextElementSibling; const ic = this.querySelector('span'); if(content.style.display==='none'){content.style.display='grid'; ic.innerText='▼';}else{content.style.display='none'; ic.innerText='▶';}">
+                        <span>📁 ${g}</span> <span>▼</span>
+                    </div>
+                    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(100px, 1fr)); gap:8px;">`;
+                    
+                    const uniqueNames = [...new Set(groupedContacts[g])].sort();
+                    uniqueNames.forEach(name => {
+                        const isChecked = selected.includes(name) ? 'checked' : '';
+                        html += `<label style="cursor:pointer; display:flex; align-items:center; background:#fff; padding:8px; border:1px solid #ddd; border-radius:4px; font-weight:bold; font-size:0.85rem;">
+                                    <input type="checkbox" value="${name}" ${isChecked} style="margin-right:6px; transform:scale(1.2);"> ${name}
+                                </label>`;
+                    });
+                    html += `</div>`;
+                });
+                
+                listEl.innerHTML = html;
+            }
             document.getElementById('worker-modal').style.display = 'block';
         };
 
@@ -1519,10 +1907,10 @@
             const checkboxes = document.querySelectorAll('#worker-modal-list input[type="checkbox"]:checked');
             const selected = Array.from(checkboxes).map(cb => cb.value);
             
-            const targetHidden = document.getElementById(`wl-workers-hidden-${id}`);
+            const targetHidden = document.getElementById(id.includes('edit') ? `wl-workers-hidden-${id}` : `wl-workers-hidden-${id}`);
             if (targetHidden) targetHidden.value = selected.join(',');
             
-            const displayEl = document.getElementById(`wl-workers-display-${id}`);
+            const displayEl = document.getElementById(id.includes('edit') ? `wl-workers-display-${id}` : `wl-workers-display-${id}`);
             if(displayEl) {
                 if(selected.length > 0) {
                     displayEl.innerHTML = `투입 ${selected.length}명 : <strong style="color:#0052cc;">${selected.join(', ')}</strong>`;
@@ -1580,7 +1968,7 @@
             }
             
             if(newBundledTasks.length > 0) {
-                const existingLog = window.currentTasks.find(t => t.status === 'worklog' && t.startDate === startDate);
+                const existingLog = window.currentTasks.find(t => t.status === 'worklog' && (t.startDate || window.getFallbackDate(t.createdAt)) === startDate && t.status !== 'deleted');
 
                 if (existingLog) {
                     const updatedBundledTasks = (existingLog.bundledTasks || []).concat(newBundledTasks);
@@ -1610,8 +1998,8 @@
             } else {
                 document.getElementById('edit-id').value = id; 
                 document.getElementById('edit-text').value = task.workDetails || task.text || '';
-                document.getElementById('edit-start-date').value = task.startDate || '';
-                document.getElementById('edit-due-date').value = task.dueDate || '';
+                document.getElementById('edit-start-date').value = task.startDate || window.getFallbackDate(task.createdAt) || '';
+                document.getElementById('edit-due-date').value = task.dueDate || window.getFallbackDate(task.createdAt) || '';
                 document.getElementById('edit-modal').style.display = 'block';
             }
         };
@@ -1620,14 +2008,15 @@
             document.getElementById('edit-wl-id').value = task.id;
             const container = document.getElementById('edit-wl-container');
             
-            if (task.bundledTasks && task.bundledTasks.length > 0) {
+            if (Array.isArray(task.bundledTasks) && task.bundledTasks.length > 0) {
                 container.innerHTML = task.bundledTasks.map((bt, i) => {
-                    const workersStr = bt.workers ? bt.workers.join(',') : '';
-                    const workersDisp = bt.workers && bt.workers.length > 0 ? `투입 ${bt.workers.length}명 : <strong style="color:#0052cc;">${bt.workers.join(', ')}</strong>` : '<span style="color:#aaa;">선택없음</span>';
+                    if(!bt) return '';
+                    const workersStr = Array.isArray(bt.workers) ? bt.workers.join(',') : '';
+                    const workersDisp = Array.isArray(bt.workers) && bt.workers.length > 0 ? `투입 ${bt.workers.length}명 : <strong style="color:#0052cc;">${bt.workers.join(', ')}</strong>` : '<span style="color:#aaa;">선택없음</span>';
                     return `
                     <div style="border:1px solid #ddd; padding:10px; border-radius:6px; background:#fafbfc; display:flex; gap:8px; align-items:flex-start;">
                         <div style="font-size:0.8rem; font-weight:bold; color:#673ab7; margin-top:5px;">[작업 ${i+1}]</div>
-                        <textarea id="edit-wl-detail-${i}" style="flex:1; box-sizing:border-box; height:45px; border:1px solid #ccc; border-radius:4px; padding:6px; font-size:0.85rem; resize:vertical;">${bt.detail}</textarea>
+                        <textarea id="edit-wl-detail-${i}" style="flex:1; box-sizing:border-box; height:45px; border:1px solid #ccc; border-radius:4px; padding:6px; font-size:0.85rem; resize:vertical;">${bt.detail||''}</textarea>
                         
                         <div style="display:flex; flex-direction:column; gap:4px; width:130px; padding-left:10px; border-left:1px solid #eee;">
                             <button type="button" onclick="window.openWorkerModal('edit-${i}')" style="background:#e6effc; border:1px solid #0052cc; color:#0052cc; padding:4px 8px; border-radius:4px; font-size:0.75rem; cursor:pointer;">🙋‍♂️ 인원 수정</button>
@@ -1652,7 +2041,9 @@
             if (task.bundledTasks) {
                 let newBundled = [];
                 task.bundledTasks.forEach((bt, i) => {
-                    const detail = document.getElementById(`edit-wl-detail-${i}`).value.trim();
+                    const detailEl = document.getElementById(`edit-wl-detail-${i}`);
+                    if(!detailEl) return;
+                    const detail = detailEl.value.trim();
                     const workersStr = document.getElementById(`wl-workers-hidden-edit-${i}`).value;
                     const workers = workersStr ? workersStr.split(',') : [];
                     if (detail) newBundled.push({ detail, workers });
@@ -1692,28 +2083,6 @@
         window.toggleMainSection = (id, headerEl) => { const el = document.getElementById(id); const icon = headerEl.querySelector('.section-icon'); if (el.style.display === 'none') { el.style.display = 'block'; icon.innerText = '▼'; } else { el.style.display = 'none'; icon.innerText = '▶'; } };
         window.toggleColumn = (id) => { const list = document.getElementById(`${id}-list`); list.style.display = list.style.display === 'none' ? 'block' : 'none'; };
 
-        window.loginUser = () => {
-            const userSelect = document.getElementById('login-user-select').value;
-            if(!userSelect) { alert('본인의 이름을 선택해주세요.'); return; }
-            window.loggedInUser = userSelect; localStorage.setItem('site_user', userSelect);
-            document.getElementById('login-overlay').style.display = 'none';
-            document.getElementById('header-user-name').innerText = window.loggedInUser + ' 님';
-            window.updateUI(); 
-            setTimeout(() => { window.showDailyBriefing(); }, 300);
-        };
-
-        window.registerAndLogin = async () => {
-            const name = document.getElementById('login-new-user').value.trim();
-            if(!name) return alert("등록할 이름을 입력하세요.");
-            if(window.teamMembers.find(m => m.name === name)) return alert("이미 목록에 존재하는 이름입니다.");
-            await addDoc(collection(db, "team"), { name, createdAt: Date.now() });
-            window.loggedInUser = name; localStorage.setItem('site_user', name);
-            document.getElementById('login-overlay').style.display = 'none';
-            document.getElementById('header-user-name').innerText = window.loggedInUser + ' 님';
-            window.updateUI();
-            setTimeout(() => { window.showDailyBriefing(); }, 300);
-        };
-
         window.addCard = async (col) => { 
             const startDate = document.getElementById(`${col}-start`).value; const dueDate = document.getElementById(`${col}-due`).value;
             let text = ''; let req='', ord='', asg='';
@@ -1742,89 +2111,110 @@
             await updateDoc(doc(db, "tasks", id), { status: newStatus }); 
         };
 
-        window.deleteTask = async (id) => { 
-            if(confirm("정말 삭제하시겠습니까?")) {
-                const task = window.currentTasks.find(t => t.id === id);
-                if(task) window.sendLineNotificationProxy(`🗑️ [항목 삭제]\n삭제자: ${window.loggedInUser}\n내용: ${task.text || task.workDetails || '내용없음'}`);
-                await deleteDoc(doc(db, "tasks", id)); 
-            }
-        };
+        // --- Firebase Listener 연동 ---
+        try {
+            onSnapshot(collection(db, "team"), (s) => { 
+                try {
+                    window.teamMembers = s.docs.map(d => ({ id: d.id, ...d.data() })); 
+                    window.teamMembers.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
 
-        const initApp = () => {
-            window.resetDates();
-            window.fetchWeather();
-            window.updateClock();
-            setInterval(window.updateClock, 1000); 
+                    const loginSelect = document.getElementById('login-user-select');
+                    if(loginSelect) { loginSelect.innerHTML = '<option value="">이름 선택 (팀원 관리에서 추가 가능)</option>' + window.teamMembers.map(m => `<option value="${m.name}">${m.name}</option>`).join(''); }
+                    if(window.loggedInUser && window.teamMembers.find(m => m.name === window.loggedInUser)) {
+                        document.getElementById('login-overlay').style.display = 'none';
+                        document.getElementById('header-user-name').innerText = window.loggedInUser + ' 님';
+                    }
+                    window.renderTeam();
+                    window.updateUI();
+                } catch(e) { console.error("팀 로딩 에러:", e); }
+            });
 
-            setTimeout(() => { 
-                window.resetDates(); 
-                for(let i=0; i<3; i++) { window.addWorklogEntry(); } 
-                
-                if (window.innerWidth <= 767) {
-                    ['worklog-wrap', 'schedule-wrap', 'material-wrap'].forEach(id => {
-                        const el = document.getElementById(id);
-                        if (el) {
-                            el.style.display = 'none';
-                            const header = el.previousElementSibling;
-                            if(header) {
-                                const icon = header.querySelector('.section-icon');
-                                if(icon) icon.innerText = '▶';
-                            }
-                        }
-                    });
-                }
-            }, 300);
-        };
+            onSnapshot(collection(db, "tasks"), (s) => { 
+                try {
+                    window.currentTasks = s.docs.map(d => ({ id: d.id, ...d.data() })); 
+                    window.currentTasks.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initApp);
-        } else {
-            initApp();
-        }
+                    window.updateUI(); 
+                    if(document.getElementById('trash-modal').style.display === 'block') window.renderTrash();
+                    
+                    if (!window.hasShownAlert && window.loggedInUser) {
+                        try {
+                            window.showDailyBriefing();
+                        } catch(bErr) { console.error(bErr); }
+                        window.hasShownAlert = true;
+                    }
+                } catch(e) { console.error("작업 내역 로딩 에러:", e); }
+            });
 
-        onSnapshot(query(collection(db, "expenses")), (s) => { 
-            window.currentExpenses = s.docs.map(d => ({ id: d.id, ...d.data() })); 
-            if(document.getElementById('expense-modal').style.display === 'block') window.renderExpenses(); 
-        });
+            onSnapshot(collection(db, "expenses"), (s) => { 
+                window.currentExpenses = s.docs.map(d => ({ id: d.id, ...d.data() })); 
+                window.currentExpenses.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                if(document.getElementById('expense-modal').style.display === 'block') window.renderExpenses(); 
+            });
 
-        onSnapshot(query(collection(db, "expense_limits")), (s) => { 
-            window.expenseLimits = {};
-            s.docs.forEach(d => { window.expenseLimits[d.id] = d.data().limit; });
-            if(document.getElementById('expense-modal').style.display === 'block') window.renderExpenses();
-        });
+            onSnapshot(collection(db, "expense_limits"), (s) => { 
+                window.expenseLimits = {};
+                s.docs.forEach(d => { window.expenseLimits[d.id] = d.data().limit; });
+                if(document.getElementById('expense-modal').style.display === 'block') window.renderExpenses();
+            });
 
-        onSnapshot(query(collection(db, "notices"), orderBy("createdAt", "desc")), (s) => {
-            window.currentNotices = s.docs.map(d => ({ id: d.id, ...d.data() }));
-            window.renderNotices();
-        });
-
-        onSnapshot(query(collection(db, "team")), (s) => { 
-            window.teamMembers = s.docs.map(d => ({ id: d.id, name: d.data().name })); 
-            const loginSelect = document.getElementById('login-user-select');
-            if(loginSelect) { loginSelect.innerHTML = '<option value="">이름 선택</option>' + window.teamMembers.map(m => `<option value="${m.name}">${m.name}</option>`).join(''); }
-            if(window.loggedInUser && window.teamMembers.find(m => m.name === window.loggedInUser)) {
-                document.getElementById('login-overlay').style.display = 'none';
-                document.getElementById('header-user-name').innerText = window.loggedInUser + ' 님';
-            }
-            window.renderTeam();
-            window.updateUI();
-        });
-        
-        onSnapshot(query(collection(db, "tasks"), orderBy("createdAt", "desc")), (s) => { 
-            window.currentTasks = s.docs.map(d => ({ id: d.id, ...d.data() })); 
-            window.updateUI(); 
+            onSnapshot(collection(db, "notices"), (s) => {
+                window.currentNotices = s.docs.map(d => ({ id: d.id, ...d.data() }));
+                window.currentNotices.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                window.renderNotices();
+            });
             
-            if (!window.hasShownAlert && window.loggedInUser) {
-                window.showDailyBriefing();
-                window.hasShownAlert = true;
-            }
-        });
-        
-        onSnapshot(query(collection(db, "equipments")), (s) => { 
-            window.currentEquips = s.docs.map(d => ({ id: d.id, ...d.data() })); 
-            window.renderEquips();
-            window.updateUI(); 
-        });
+            onSnapshot(collection(db, "contactGroups"), (s) => {
+                window.currentContactGroups = s.docs.map(d => ({ id: d.id, ...d.data() }));
+                window.currentContactGroups.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+                window.renderContactGroups();
+                window.renderSidePanels(); 
+            });
+
+            onSnapshot(collection(db, "siteGroups"), (s) => {
+                window.currentSiteGroups = s.docs.map(d => ({ id: d.id, ...d.data() }));
+                window.currentSiteGroups.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+                window.renderSiteGroups();
+                window.renderSidePanels(); 
+            });
+
+            onSnapshot(collection(db, "contacts"), (s) => {
+                window.currentContacts = s.docs.map(d => ({ id: d.id, ...d.data() }));
+                window.currentContacts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                if(document.getElementById('contact-modal').style.display === 'block') window.renderContacts();
+                window.renderSidePanels(); 
+            });
+            
+            onSnapshot(collection(db, "sites"), (s) => {
+                window.currentSites = s.docs.map(d => ({ id: d.id, ...d.data() }));
+                window.currentSites.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                if(document.getElementById('site-modal').style.display === 'block') window.renderSites();
+                window.renderSidePanels(); 
+            });
+
+            onSnapshot(collection(db, "otherCompanyGroups"), (s) => {
+                window.currentOtherCoGroups = s.docs.map(d => ({ id: d.id, ...d.data() }));
+                window.currentOtherCoGroups.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+                window.renderOtherCoGroups();
+                window.renderSidePanels(); 
+            });
+
+            onSnapshot(collection(db, "otherCompanies"), (s) => {
+                window.currentOtherCos = s.docs.map(d => ({ id: d.id, ...d.data() }));
+                window.currentOtherCos.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                if(document.getElementById('otherco-modal').style.display === 'block') window.renderOtherCos();
+                window.renderSidePanels(); 
+            });
+            
+            onSnapshot(collection(db, "equipments"), (s) => { 
+                window.currentEquips = s.docs.map(d => ({ id: d.id, ...d.data() })); 
+                window.currentEquips.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                window.renderEquips();
+                window.updateUI(); 
+            });
+        } catch(globalErr) {
+            console.error("Firebase Listener Initialization Error:", globalErr);
+        }
     </script>
 </body>
 </html>
