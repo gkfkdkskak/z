@@ -236,7 +236,8 @@
                 <span>📅 일정 관리 (할 일)</span> <span class="section-icon">▼</span>
             </h3>
             <div id="schedule-wrap" style="display: block;">
-                <div class="board" style="flex-direction: row; align-items: flex-start;">
+                <!-- 여기서 style 속성을 제거하여 CSS의 기본 속성(모바일에서는 column)을 따라가도록 수정 -->
+                <div class="board">
                     <div class="column" id="col-todo"><h2 onclick="window.toggleColumn('todo')">할 일 <span id="todo-count">0</span></h2>
                         <div class="add-card-form">
                             <input type="text" id="todo-input" placeholder="새 일정...">
@@ -265,7 +266,8 @@
                 <span>📦 자재 발주 관리</span> <span class="section-icon">▼</span>
             </h3>
             <div id="material-wrap" style="display: block;">
-                <div class="board" style="flex-direction: row; align-items: flex-start;">
+                <!-- 여기서 style 속성을 제거하여 CSS의 기본 속성(모바일에서는 column)을 따라가도록 수정 -->
+                <div class="board">
                     <div class="column" id="col-mat-request"><h2 onclick="window.toggleColumn('mat-request')">발주요청 <span id="mat-request-count">0</span></h2>
                         <div class="add-card-form">
                             <div class="form-row"><input type="text" id="mat-request-item" placeholder="품명" style="flex:2.5;"><input type="text" id="mat-request-spec" placeholder="규격" style="flex:1;"><input type="number" id="mat-request-qty" placeholder="수량" style="flex:0.8;"></div>
@@ -395,6 +397,18 @@
             </div>
             <div id="non-workers-list" style="max-height: 400px; overflow-y: auto; display:flex; flex-direction:column; gap:10px;"></div>
             <button onclick="document.getElementById('non-workers-modal').style.display='none'" style="width:100%; margin-top:15px; padding:10px; background:#e0e0e0; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">닫기</button>
+        </div>
+    </div>
+    
+    <!-- 미작성일 현황 팝업 모달 추가 -->
+    <div id="missing-dates-modal" class="modal" onclick="this.style.display='none'">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
+                <h3 id="missing-dates-title" style="margin:0; color:var(--warning-color);">⚠️ 미작성일 현황</h3>
+                <button onclick="document.getElementById('missing-dates-modal').style.display='none'" style="background:none; border:none; font-size:1.5rem; color:#999; cursor:pointer; line-height:1;">×</button>
+            </div>
+            <div id="missing-dates-list" style="max-height: 400px; overflow-y: auto; display:flex; flex-wrap:wrap; gap:8px;"></div>
+            <button onclick="document.getElementById('missing-dates-modal').style.display='none'" style="width:100%; margin-top:15px; padding:10px; background:#e0e0e0; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">닫기</button>
         </div>
     </div>
 
@@ -549,6 +563,36 @@
             } catch(e){}
             const modal = document.getElementById('expense-modal');
             if(modal) modal.style.display = 'block';
+        };
+
+        // 미작성일 목록 모달 열기 함수
+        window.showMissingDatesModal = function(dates, month, year) {
+            document.getElementById('missing-dates-title').innerText = `⚠️ ${year}년 ${month}월 미작성일`;
+            const listEl = document.getElementById('missing-dates-list');
+            
+            listEl.innerHTML = dates.map(d => {
+                const formattedDate = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                return `<div onclick="window.selectMissingDate('${formattedDate}')" style="background:#fff0f3; border:1px solid #ffbdad; padding:6px 12px; border-radius:4px; font-size:0.9rem; color:#bf2600; font-weight:bold; cursor:pointer; transition:background 0.2s;" onmouseover="this.style.background='#ffd8d0'" onmouseout="this.style.background='#fff0f3'">${d}일</div>`;
+            }).join('');
+            
+            document.getElementById('missing-dates-modal').style.display = 'block';
+        };
+
+        // 팝업에서 특정 미작성일 클릭 시 동작하는 함수
+        window.selectMissingDate = function(dateStr) {
+            // 1. 모달 닫기
+            document.getElementById('missing-dates-modal').style.display = 'none';
+            
+            // 2. 조회 날짜 변경
+            const viewInput = document.getElementById('worklog-view-date');
+            if (viewInput) viewInput.value = dateStr;
+            
+            // 3. (편의를 위해) 일보 추가 기준일도 해당 날짜로 맞춰줌
+            const startInput = document.getElementById('worklog-start');
+            if (startInput) startInput.value = dateStr; 
+
+            // 4. 화면 갱신 실행
+            window.changeWorklogViewDate(dateStr);
         };
 
         // 미투입 인원 상세 모달 띄우기
@@ -1186,10 +1230,10 @@
                             maxDay = todayNow.getDate();
                         }
                         
-                        // 미작성일 계산 (일요일 제외)
+                        // 미작성일 계산 (일요일 제외 로직 유지)
                         for (let d = 1; d <= maxDay; d++) {
                             const checkDate = new Date(viewYear, viewMonth - 1, d);
-                            if (checkDate.getDay() === 0) continue; // 0은 일요일이므로 제외
+                            if (checkDate.getDay() === 0) continue; 
 
                             if (!worklogDates.includes(d)) {
                                 missingDates.push(d);
@@ -1199,12 +1243,17 @@
                         if (maxDay === 0) {
                             wlDatesEl.innerText = '미래의 날짜입니다';
                             wlDatesEl.style.color = '#666';
+                            wlDatesEl.style.cursor = 'default';
+                            wlDatesEl.onclick = null;
                         } else if (missingDates.length > 0) { 
-                            wlDatesEl.innerText = `⚠️ ${viewMonth}월 미작성일: ${missingDates.map(function(d){ return d+'일'; }).join(', ')}`; 
-                            wlDatesEl.style.color = '#bf2600'; // 빨간색 강조
+                            wlDatesEl.innerHTML = `<span style="text-decoration:underline; cursor:pointer;">⚠️ ${viewMonth}월 미작성일 보기 (${missingDates.length}일)</span>`; 
+                            wlDatesEl.style.color = '#bf2600'; 
+                            wlDatesEl.onclick = function() { window.showMissingDatesModal(missingDates, viewMonth, viewYear); };
                         } else { 
-                            wlDatesEl.innerText = `✨ ${viewMonth}월 모두 작성됨`; 
-                            wlDatesEl.style.color = '#00875a'; // 성공 초록색
+                            wlDatesEl.innerText = `✨ ${viewMonth}월 모두 작성됨 (일요일 제외)`; 
+                            wlDatesEl.style.color = '#00875a'; 
+                            wlDatesEl.style.cursor = 'default';
+                            wlDatesEl.onclick = null;
                         } 
                     } 
                 } catch(e) { console.error(e); } 
@@ -1829,6 +1878,49 @@
                 for(let i=0; i<trashItems.length; i++) { await window.db.collection("tasks").doc(trashItems[i].id).delete(); } 
                 alert("휴지통이 비워졌습니다."); if(document.getElementById('trash-modal').style.display === 'block') window.renderTrash(); 
             } 
+        };
+
+        // --- 휴지통 렌더링 함수 추가 ---
+        window.renderTrash = function() {
+            const list = document.getElementById('trash-list');
+            if (!list) return;
+
+            const trashItems = window.currentTasks.filter(t => t.status === 'deleted');
+            
+            if (trashItems.length === 0) {
+                list.innerHTML = '<div style="text-align:center; padding:20px; color:#999; font-size:0.9rem;">휴지통이 비어있습니다.</div>';
+                return;
+            }
+
+            let html = '';
+            trashItems.forEach(t => {
+                let contentText = t.text || t.workDetails || '내용없음';
+                if (t.prevStatus === 'worklog' && Array.isArray(t.bundledTasks) && t.bundledTasks.length > 0) {
+                    contentText = `[작업일보] ${t.bundledTasks[0].detail || ''} 등 ${t.bundledTasks.length}건`;
+                }
+                
+                const delDate = t.deletedAt || '알수없음';
+                const sMap = { 'todo':'할일', 'inprogress':'진행중', 'done':'완료', 'mat-request':'발주요청', 'mat-ordered':'발주완료', 'mat-delivered':'반입완료', 'worklog':'작업일보' };
+                const prevStatusName = sMap[t.prevStatus] || t.prevStatus || '알수없음';
+
+                html += `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee; background:#fff; border-radius:4px; margin-bottom:4px; border-left:3px solid #6b778c;">
+                    <div style="flex:1; overflow:hidden; padding-right:10px;">
+                        <div style="font-size:0.75rem; color:#888; margin-bottom:3px;">
+                            <span style="background:#eee; padding:2px 4px; border-radius:3px; color:#333;">${prevStatusName}</span> 
+                            | 삭제일: ${delDate}
+                        </div>
+                        <div style="font-size:0.9rem; color:#333; font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                            ${contentText}
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:5px; flex-shrink:0;">
+                        <button onclick="window.restoreTask('${t.id}', '${t.prevStatus}')" style="background:#e3fcef; color:#00875a; border:1px solid #00875a; padding:4px 8px; border-radius:4px; font-size:0.75rem; cursor:pointer; font-weight:bold;">복구</button>
+                        <button onclick="window.permanentDelete('${t.id}')" style="background:#ffebe6; color:#bf2600; border:1px solid #ff5630; padding:4px 8px; border-radius:4px; font-size:0.75rem; cursor:pointer; font-weight:bold;">영구삭제</button>
+                    </div>
+                </div>`;
+            });
+            list.innerHTML = html;
         };
 
         // 토글 및 엑셀/백업 유틸 함수들
