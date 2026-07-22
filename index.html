@@ -529,7 +529,7 @@
             } 
         };
 
-        // 작업 기록 조회 날짜 변경 함수 추가
+        // 작업 기록 조회 날짜 변경 함수
         window.changeWorklogViewDate = function(dateStr) {
             if (!dateStr) {
                 window.worklogViewDate = window.getLocalDateString(); 
@@ -1020,6 +1020,24 @@
                 </div>`; 
             } 
             grid.innerHTML = html; 
+        };
+
+        window.openEditModal = function(id) {
+            const task = window.currentTasks.find(t => t.id === id);
+            if(!task) return;
+            
+            // 일보인 경우 별도 모달로 분기
+            if(task.status === 'worklog') {
+                window.openWorklogEditModal(task);
+                return;
+            }
+
+            document.getElementById('edit-id').value = id;
+            document.getElementById('edit-text').value = task.text || task.workDetails || '';
+            document.getElementById('edit-start-date').value = task.startDate || '';
+            document.getElementById('edit-due-date').value = task.dueDate || '';
+            
+            document.getElementById('edit-modal').style.display = 'block';
         };
 
         window.renderCard = function(t, s, currentMonthStr) { 
@@ -1663,6 +1681,58 @@
                 await window.db.collection("tasks").doc(id).update({ workDetails: detail }); 
             } 
             document.getElementById('edit-worklog-modal').style.display = 'none'; 
+        };
+
+        window.saveAllWorklogs = async function() {
+            if(!window.loggedInUser) return alert("로그인 후 이용해주세요.");
+            const baseDate = document.getElementById('worklog-start').value;
+            if(!baseDate) return alert("기준일을 선택해주세요.");
+            
+            const entries = document.querySelectorAll('.worklog-entry');
+            if(entries.length === 0) return alert("저장할 작업 내역이 없습니다.");
+
+            let bundledTasks = [];
+            entries.forEach(function(entry) {
+                const detailEl = entry.querySelector('.wl-detail');
+                const workersEl = entry.querySelector('.wl-workers-hidden');
+                if(detailEl) {
+                    const detail = detailEl.value.trim();
+                    const workersStr = workersEl ? workersEl.value : '';
+                    const workers = workersStr ? workersStr.split(',') : [];
+                    if(detail) {
+                        bundledTasks.push({ detail: detail, workers: workers });
+                    }
+                }
+            });
+
+            if(bundledTasks.length === 0) return alert("작업 내용을 하나 이상 입력해주세요.");
+
+            await window.db.collection("tasks").add({
+                status: "worklog",
+                startDate: baseDate,
+                dueDate: baseDate,
+                assignee: window.loggedInUser,
+                bundledTasks: bundledTasks,
+                acks: {},
+                createdAt: Date.now()
+            });
+
+            // 입력 폼 초기화
+            const container = document.getElementById('worklog-entries');
+            if (container) container.innerHTML = '';
+            window.worklogEntryCount = 0;
+            for(let i=0; i<3; i++) window.addWorklogEntry();
+            
+            alert("일보가 성공적으로 저장되었습니다.");
+            window.sendLineNotificationProxy(`📝 [당일 작업 일보 저장]\n작성자: ${window.loggedInUser}\n기준일: ${baseDate}\n총 ${bundledTasks.length}건 등록 완료.`);
+        };
+
+        window.sendReportLine = function() {
+            const text = document.getElementById('report-text').value;
+            if(!text.trim()) return alert("보고할 내용이 없습니다.");
+            window.sendLineNotificationProxy(text);
+            alert("라인으로 보고 내용을 전송 요청했습니다.");
+            document.getElementById('report-modal').style.display = 'none';
         };
 
         window.addCard = async function(col) {  
