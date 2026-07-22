@@ -1186,8 +1186,11 @@
                             maxDay = todayNow.getDate();
                         }
                         
-                        // 미작성일 계산
+                        // 미작성일 계산 (일요일 제외)
                         for (let d = 1; d <= maxDay; d++) {
+                            const checkDate = new Date(viewYear, viewMonth - 1, d);
+                            if (checkDate.getDay() === 0) continue; // 0은 일요일이므로 제외
+
                             if (!worklogDates.includes(d)) {
                                 missingDates.push(d);
                             }
