@@ -224,7 +224,7 @@
                             <span style="font-size: 0.85rem; font-weight: bold; color: #333;">📋 저장된 작업 기록</span>
                             <span style="font-size: 0.75rem; font-weight: normal; color: #555; text-align: right;">
                                 <div>조회: <input type="date" id="worklog-view-date" onchange="window.changeWorklogViewDate(this.value)" style="padding:2px 4px; border:1px solid #ccc; border-radius:4px; font-size:0.75rem; color:#333; margin-left:4px;"></div>
-                                <div id="worklog-recorded-dates" style="margin-top: 4px; font-size: 0.7rem; color: #673ab7; font-weight: bold;"></div>
+                                <div id="worklog-recorded-dates" style="margin-top: 4px; font-size: 0.7rem; font-weight: bold;"></div>
                             </span>
                         </div>
                         <div id="worklog-list"></div>
@@ -316,8 +316,65 @@
     <div id="site-modal" class="modal" onclick="this.style.display='none'"><div class="modal-content" onclick="event.stopPropagation()"><h3 style="margin:0 0 15px 0; color:#607d8b;">🔗 주요 사이트 관리 <button onclick="document.getElementById('site-modal').style.display='none'" style="float:right; background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button></h3><div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:10px; align-items:center;"><select id="site-group-select" style="flex:1; min-width:100px; padding:8px; border:1px solid #ddd; border-radius:4px;"><option value="">그룹 미지정</option></select><button onclick="document.getElementById('site-group-modal').style.display='block'" style="padding:8px; background:#e0e0e0; border:none; border-radius:4px; cursor:pointer; font-weight:bold; color:#333;">⚙️ 관리</button></div><div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:10px;"><input type="text" id="site-name" placeholder="사이트명" style="flex:1; min-width:120px; padding:8px; border:1px solid #ddd; border-radius:4px;"></div><div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:15px;"><input type="text" id="site-url" placeholder="URL 주소 (http://...)" style="flex:3; min-width:200px; padding:8px; border:1px solid #ddd; border-radius:4px;"><button id="site-submit-btn" onclick="window.addSite()" style="background:#607d8b; color:white; padding:8px 15px; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">등록</button></div><div style="margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid #eee;"><select id="site-group-filter" onchange="window.renderSites()" style="width:100%; padding:8px; border:1px solid #607d8b; border-radius:4px; color:#607d8b; font-weight:bold; outline:none;"><option value="">📂 전체 그룹 보기</option></select></div><div id="site-list" style="display:flex; flex-direction:column; gap:8px; max-height:300px; overflow-y:auto; padding-right:5px;"></div></div></div>
     <div id="otherco-modal" class="modal" onclick="this.style.display='none'"><div class="modal-content" onclick="event.stopPropagation()"><h3 style="margin:0 0 15px 0; color:#d35400;">🏢 타업체 관리 <button onclick="document.getElementById('otherco-modal').style.display='none'" style="float:right; background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button></h3><div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:10px; align-items:center;"><select id="otherco-group-select" style="flex:1; min-width:100px; padding:8px; border:1px solid #ddd; border-radius:4px;"><option value="">그룹 미지정</option></select><button onclick="document.getElementById('otherco-group-modal').style.display='block'" style="padding:8px; background:#e0e0e0; border:none; border-radius:4px; cursor:pointer; font-weight:bold; color:#333;">⚙️ 관리</button></div><div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:10px;"><input type="text" id="otherco-name" placeholder="업체명" style="flex:1; min-width:120px; padding:8px; border:1px solid #ddd; border-radius:4px;"><input type="text" id="otherco-phone" placeholder="연락처/담당자" style="flex:1.5; min-width:150px; padding:8px; border:1px solid #ddd; border-radius:4px;"></div><div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:15px;"><input type="text" id="otherco-note" placeholder="주요업무 / 비고" style="flex:3; min-width:150px; padding:8px; border:1px solid #ddd; border-radius:4px;"><button id="otherco-submit-btn" onclick="window.addOtherCo()" style="background:#d35400; color:white; padding:8px 15px; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">등록</button></div><div style="margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid #eee;"><select id="otherco-group-filter" onchange="window.renderOtherCos()" style="width:100%; padding:8px; border:1px solid #d35400; border-radius:4px; color:#d35400; font-weight:bold; outline:none;"><option value="">📂 전체 그룹 보기</option></select></div><div id="otherco-list" style="display:flex; flex-direction:column; gap:8px; max-height:300px; overflow-y:auto; padding-right:5px;"></div></div></div>
     <div id="trash-modal" class="modal" onclick="this.style.display='none'"><div class="modal-content" style="max-width:600px;" onclick="event.stopPropagation()"><h3 style="margin:0 0 15px 0; color:#42526e;">🗑️ 휴지통 <button onclick="document.getElementById('trash-modal').style.display='none'" style="float:right; background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button></h3><div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;"><span style="font-size:0.85rem; color:#666;">삭제된 항목 복구 및 영구 삭제</span><button onclick="window.emptyTrash()" style="background:#bf2600; color:white; border:none; padding:6px 12px; border-radius:4px; font-weight:bold; cursor:pointer;">휴지통 비우기</button></div><div id="trash-list" style="display:flex; flex-direction:column; gap:8px; max-height:400px; overflow-y:auto; padding-right:5px;"></div></div></div>
-    <div id="expense-modal" class="modal" onclick="this.style.display='none'"><div class="modal-content" style="max-width:600px;" onclick="event.stopPropagation()"><h3 style="margin:0 0 15px 0; color:#e91e63;">💳 현장 지출 내역 <button onclick="document.getElementById('expense-modal').style.display='none'" style="float:right; background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button></h3><div style="display:flex; justify-content:space-between; align-items:center; background:#f9f9fa; padding:10px; border-radius:6px; margin-bottom:15px; border:1px solid #eee; flex-wrap:wrap; gap:10px;"><div style="display:flex; align-items:center; gap:10px;"><button onclick="window.changeExpenseMonth(-1)" style="padding:4px 8px; border:1px solid #ccc; background:#fff; border-radius:4px; cursor:pointer;">◀</button><strong id="exp-month-label" style="font-size:0.9rem; color:#e91e63;">로딩중..</strong><button onclick="window.changeExpenseMonth(1)" style="padding:4px 8px; border:1px solid #ccc; background:#fff; border-radius:4px; cursor:pointer;">▶</button></div><div style="display:flex; align-items:center; gap:5px; font-size:0.85rem; font-weight:bold;"><span>한도:</span><input type="number" id="exp-limit-input" placeholder="금액 입력" oninput="window.saveExpenseLimit()" style="width:110px; padding:6px; border:1px solid #ddd; border-radius:4px; font-weight:bold; text-align:right;"><span>원</span></div></div><div style="display:flex; justify-content:space-between; margin-bottom:15px; font-size:0.95rem; font-weight:bold; background:#e6effc; padding:12px; border-radius:6px;"><div style="color:#0052cc;">총 사용: <span id="exp-total-used">0</span>원</div><div style="color:#00875a;">잔액: <span id="exp-balance">0</span>원</div></div><div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:15px; border-top:1px dashed #ccc; padding-top:15px;"><input type="date" id="exp-date" style="flex:1; min-width:100px; padding:8px; border:1px solid #ddd; border-radius:4px;" title="지출일"><select id="exp-spender" style="flex:1; min-width:100px; padding:8px; border:1px solid #ddd; border-radius:4px;" title="지출자"></select><input type="text" id="exp-desc" placeholder="지출 내역" style="flex:2; min-width:150px; padding:8px; border:1px solid #ddd; border-radius:4px;"><input type="number" id="exp-amount" placeholder="금액(원)" style="flex:1; min-width:80px; padding:8px; border:1px solid #ddd; border-radius:4px;"><button id="exp-submit-btn" onclick="window.addExpense()" style="background:#e91e63; color:white; border:none; padding:8px 15px; border-radius:4px; font-weight:bold; cursor:pointer;">등록</button></div><div id="expense-list" style="display:flex; flex-direction:column; gap:8px; max-height:350px; overflow-y:auto; padding-right:5px;"></div></div></div>
-    <div id="team-modal" class="modal" onclick="this.style.display='none'"><div class="modal-content" onclick="event.stopPropagation()"><h3 style="margin:0 0 15px 0;">👥 팀원 관리 <button onclick="document.getElementById('team-modal').style.display='none'" style="float:right; background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button></h3><div class="form-row" style="margin-bottom:15px;"><input type="text" id="new-member-name" placeholder="새 팀원 이름" style="padding:8px;"><button onclick="window.addTeamMember()" style="padding:8px 15px; background:#0052cc; color:white; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">추가</button></div><div style="border-top:1px solid #eee; margin-bottom:10px;"></div><div id="team-list" style="display:flex; flex-direction:column; gap:5px; max-height:300px; overflow-y:auto; padding-right:5px;"></div></div></div>
+    
+    <!-- 지출 모달 -->
+    <div id="expense-modal" class="modal" onclick="this.style.display='none'">
+        <div class="modal-content" style="max-width:600px;" onclick="event.stopPropagation()">
+            <h3 style="margin:0 0 15px 0; color:#e91e63;">💳 현장 지출 내역 <button onclick="document.getElementById('expense-modal').style.display='none'" style="float:right; background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button></h3>
+            <div style="background:#f9f9fa; padding:10px; border-radius:6px; margin-bottom:15px; border:1px solid #eee;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px;">
+                    <div style="display:flex; align-items:center; gap:10px; margin-top:5px;">
+                        <button onclick="window.changeExpenseMonth(-1)" style="padding:4px 8px; border:1px solid #ccc; background:#fff; border-radius:4px; cursor:pointer;">◀</button>
+                        <strong id="exp-month-label" style="font-size:0.9rem; color:#e91e63;">로딩중..</strong>
+                        <button onclick="window.changeExpenseMonth(1)" style="padding:4px 8px; border:1px solid #ccc; background:#fff; border-radius:4px; cursor:pointer;">▶</button>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
+                        <div style="display:flex; align-items:center; gap:5px; font-size:0.85rem; font-weight:bold;">
+                            <span>현재 한도:</span>
+                            <input type="number" id="exp-limit-input" placeholder="금액" onchange="window.saveExpenseLimit()" style="width:100px; padding:6px; border:1px solid #ddd; border-radius:4px; font-weight:bold; text-align:right;">
+                            <span>원</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:5px; font-size:0.8rem;">
+                            <input type="number" id="exp-adjust-input" placeholder="증/감액 (+,-)" style="width:100px; padding:4px; border:1px solid #ddd; border-radius:4px; text-align:right;">
+                            <button onclick="window.adjustExpenseLimit()" style="background:#42526e; color:white; border:none; padding:5px 8px; border-radius:4px; font-weight:bold; cursor:pointer;">한도 조정</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- 월 갱신 기준일 설정 -->
+                <div style="margin-top:10px; padding-top:10px; border-top:1px dashed #ccc; display:flex; align-items:center; gap:5px; font-size:0.8rem; color:#666;">
+                    <span>🔄 월 갱신 기준일: 매월</span>
+                    <input type="number" id="exp-cutoff-input" min="1" max="31" style="width:50px; padding:4px; border:1px solid #ddd; border-radius:4px; text-align:right;" onchange="window.saveExpenseCutoff()">
+                    <span>일</span>
+                </div>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:15px; font-size:0.95rem; font-weight:bold; background:#e6effc; padding:12px; border-radius:6px;">
+                <div style="color:#0052cc;">총 사용: <span id="exp-total-used">0</span>원</div>
+                <div style="color:#00875a;">잔액: <span id="exp-balance">0</span>원</div>
+            </div>
+            <div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:15px; border-top:1px dashed #ccc; padding-top:15px;">
+                <input type="date" id="exp-date" style="flex:1; min-width:100px; padding:8px; border:1px solid #ddd; border-radius:4px;" title="지출일">
+                <select id="exp-spender" style="flex:1; min-width:100px; padding:8px; border:1px solid #ddd; border-radius:4px;" title="지출자"></select>
+                <input type="text" id="exp-desc" placeholder="지출 내역" style="flex:2; min-width:150px; padding:8px; border:1px solid #ddd; border-radius:4px;">
+                <input type="number" id="exp-amount" placeholder="금액(원)" style="flex:1; min-width:80px; padding:8px; border:1px solid #ddd; border-radius:4px;">
+                <button id="exp-submit-btn" onclick="window.addExpense()" style="background:#e91e63; color:white; border:none; padding:8px 15px; border-radius:4px; font-weight:bold; cursor:pointer;">등록</button>
+            </div>
+            <div id="expense-list" style="display:flex; flex-direction:column; gap:8px; max-height:350px; overflow-y:auto; padding-right:5px;"></div>
+        </div>
+    </div>
+
+    <!-- 팀원 관리 모달 (이 부분 내부에 리스트 출력) -->
+    <div id="team-modal" class="modal" onclick="this.style.display='none'">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h3 style="margin:0 0 15px 0;">👥 팀원 관리 <button onclick="document.getElementById('team-modal').style.display='none'" style="float:right; background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button></h3>
+            <div class="form-row" style="margin-bottom:15px;">
+                <input type="text" id="new-member-name" placeholder="새 팀원 이름" style="padding:8px;">
+                <button onclick="window.addTeamMember()" style="padding:8px 15px; background:#0052cc; color:white; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">추가</button>
+            </div>
+            <div style="border-top:1px solid #eee; margin-bottom:10px;"></div>
+            <div id="team-list" style="display:flex; flex-direction:column; gap:5px; max-height:300px; overflow-y:auto; padding-right:5px;"></div>
+        </div>
+    </div>
+
     <div id="init-modal" class="modal" onclick="this.style.display='none'"><div class="modal-content" onclick="event.stopPropagation()"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom: 2px solid #eee; padding-bottom: 10px;"><h3 style="margin:0; color:#bf2600;">💣 시스템 전체 데이터 초기화</h3><button onclick="document.getElementById('init-modal').style.display='none'" style="background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button></div><div style="background:#fff4f4; padding:15px; border-radius:6px; border:1px solid #ffebe6; margin-bottom:15px;"><p style="font-size:0.9rem; color:#333; line-height:1.5; margin-top:0;">모든 데이터가 <strong>영구적으로 삭제</strong>됩니다.<br>오작동 방지를 위해 <strong style="color:#bf2600;">[초기화 승인]</strong> 이라고 입력해주세요.</p><input type="text" id="init-confirm-text" placeholder="초기화 승인" style="width:100%; box-sizing:border-box; padding:12px; border:2px solid #bf2600; border-radius:6px; font-weight:bold; font-size:1rem; text-align:center;"></div><div style="display:flex; gap:5px;"><button onclick="window.executeInit()" style="flex:2; padding:12px; background:#bf2600; color:white; border:none; border-radius:6px; font-weight:bold; font-size:1rem; cursor:pointer;">🔥 삭제 실행</button><button onclick="document.getElementById('init-modal').style.display='none'" style="flex:1; padding:12px; background:#e0e0e0; color:#333; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">취소</button></div></div></div>
     <div id="backup-modal" class="modal" onclick="this.style.display='none'"><div class="modal-content" onclick="event.stopPropagation()"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;"><h3 style="margin:0; color:#34495e;">💾 데이터 백업 및 복구</h3><button onclick="document.getElementById('backup-modal').style.display='none'" style="background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button></div><div style="background:#f9f9fa; padding:15px; border-radius:6px; margin-bottom:15px; border:1px solid #eee;"><h4 style="margin:0 0 10px 0; color:#0052cc;">📥 데이터 백업 (다운로드)</h4><button onclick="window.backupData()" style="width:100%; background:#0052cc; color:white; border:none; padding:10px; border-radius:4px; font-weight:bold; cursor:pointer;">데이터 백업 (.json)</button></div><div style="background:#fff4f4; padding:15px; border-radius:6px; border:1px solid #ffebe6;"><h4 style="margin:0 0 10px 0; color:#bf2600;">📤 데이터 복구 (업로드)</h4><label style="display:block; width:100%; background:#bf2600; color:white; border:none; padding:10px; border-radius:4px; font-weight:bold; cursor:pointer; text-align:center; box-sizing:border-box;">파일 선택 및 복구<input type="file" style="display:none;" accept=".json" onchange="window.restoreData(event)"></label></div></div></div>
     <div id="briefing-modal" class="modal" onclick="this.style.display='none'"><div class="modal-content" onclick="event.stopPropagation()"><div style="text-align: center; margin-bottom: 15px;"><h2 style="margin: 0; font-size: 1.25rem; color: #172b4d; display: flex; align-items: center; justify-content: center; gap: 6px;">🔔 일일 현황 브리핑</h2></div><div class="brief-section-title" style="color: #0052cc;">📅 내일 예정(시작/마감) 항목</div><div id="brief-todo-list" class="brief-list-container">데이터 로딩 중...</div><div class="brief-section-title" style="color: #ff9f43;">📦 발주 대기 중인 자재 (미발주)</div><div id="brief-mat-request-list" class="brief-list-container">데이터 로딩 중...</div><div class="brief-section-title" style="color: #00875a;">🚚 반입 대기 중인 자재 (발주완료)</div><div id="brief-mat-ordered-list" class="brief-list-container">데이터 로딩 중...</div><button onclick="document.getElementById('briefing-modal').style.display='none'" style="width:100%; margin-top:20px; padding:12px; background:#f4f5f7; border:1px solid #dfe1e6; border-radius:6px; font-weight:bold; font-size:0.95rem; cursor:pointer; color:#333;">닫기</button></div></div>
@@ -329,7 +386,19 @@
     <div id="equip-modal" class="modal" onclick="this.style.display='none'"><div class="modal-content" onclick="event.stopPropagation()"><h3 style="margin:0 0 15px 0; color:#795548;">🧰 공구 및 장비 관리 <button onclick="document.getElementById('equip-modal').style.display='none'" style="float:right; background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button></h3><div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:15px;"><input type="text" id="eq-name" placeholder="장비/공구명" style="flex:2; padding:8px;"><input type="text" id="eq-borrower" placeholder="빌려간 사람" style="flex:1.5; padding:8px;"><input type="date" id="eq-due" style="flex:1; padding:8px;"><button onclick="window.addEquip()" style="background:#795548; color:white; padding:8px 15px; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">등록</button></div><div id="equip-list" style="display:flex; flex-direction:column; gap:8px; max-height:350px; overflow-y:auto; padding-right:5px;"></div></div></div>
     <div id="notice-modal" class="modal" onclick="this.style.display='none'"><div class="modal-content" onclick="event.stopPropagation()"><h3 style="margin:0 0 15px 0; color:var(--warning-color);">📢 공지 발송 및 기록 <button onclick="document.getElementById('notice-modal').style.display='none'" style="float:right; background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button></h3><textarea id="notice-text" style="height:80px; width:100%; box-sizing:border-box; margin-bottom:10px; padding:8px; border:1px solid #ddd; border-radius:4px;" placeholder="공지 내용 입력..."></textarea><button onclick="window.sendNotice()" style="width:100%; padding:10px; background:var(--warning-color); color:white; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">전송 및 저장</button><div style="border-top:2px solid #eee; margin-top:15px; padding-top:15px;"><h4 style="margin:0 0 10px 0; font-size:0.85rem; color:#333;">기존 공지 내역</h4><div id="notice-list" style="max-height: 250px; overflow-y: auto; display:flex; flex-direction:column; gap:8px;"></div></div></div></div>
 
-    <!-- 스크립트 에러 원천 차단 (함수 전체 명시적 선언) -->
+    <!-- 미투입 인원 확인 모달 -->
+    <div id="non-workers-modal" class="modal" onclick="this.style.display='none'">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
+                <h3 style="margin:0; color:var(--primary-color);">😴 미투입 인원 현황</h3>
+                <button onclick="document.getElementById('non-workers-modal').style.display='none'" style="background:none; border:none; font-size:1.5rem; color:#999; cursor:pointer; line-height:1;">×</button>
+            </div>
+            <div id="non-workers-list" style="max-height: 400px; overflow-y: auto; display:flex; flex-direction:column; gap:10px;"></div>
+            <button onclick="document.getElementById('non-workers-modal').style.display='none'" style="width:100%; margin-top:15px; padding:10px; background:#e0e0e0; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">닫기</button>
+        </div>
+    </div>
+
+    <!-- 전체 스크립트 로직 -->
     <script>
         // 전역 상태 변수
         window.currentTasks = []; 
@@ -338,6 +407,7 @@
         window.currentExpenses = []; 
         window.expenseLimits = {}; 
         window.expenseViewCycle = null;
+        window.expenseCutoffDate = 25; // 지출 기준일 기본값 25일
         window.currentNotices = []; 
         window.editExpenseId = null;
         window.currentContacts = []; 
@@ -356,7 +426,7 @@
         window.showOldDoneTasks = false; 
         window.worklogViewDate = '';
 
-        // 파이어베이스 초기화 (가장 먼저 실행)
+        // 파이어베이스 초기화
         try {
             const firebaseConfig = { 
                 apiKey: "AIzaSyDSERFM9_UmjfPt5x3HTsL0flekVb-p6HA", 
@@ -444,52 +514,140 @@
             } 
         };
 
-        // 4. 모달 열기 함수 (버튼에 연결됨) - 에러방지를 위해 무조건 존재하도록 설정
-        window.openTrashModal = function() {
-            try { window.renderTrash(); } catch(e){}
-            document.getElementById('trash-modal').style.display = 'block';
+        // 작업 기록 조회 날짜 변경 함수 추가
+        window.changeWorklogViewDate = function(dateStr) {
+            if (!dateStr) {
+                window.worklogViewDate = window.getLocalDateString(); 
+            } else {
+                window.worklogViewDate = dateStr; 
+            }
+            window.updateUI(); 
         };
-        window.openOtherCoModal = function() {
-            try { window.renderOtherCos(); } catch(e){}
-            document.getElementById('otherco-modal').style.display = 'block';
-        };
-        window.openContactModal = function() {
-            try { window.renderContacts(); } catch(e){}
-            document.getElementById('contact-modal').style.display = 'block';
-        };
-        window.openSiteModal = function() {
-            try { window.renderSites(); } catch(e){}
-            document.getElementById('site-modal').style.display = 'block';
-        };
-        window.openEquipModal = function() {
-            try { window.renderEquips(); } catch(e){}
-            document.getElementById('equip-modal').style.display = 'block';
-        };
-        window.openTeamModal = function() {
-            try { window.renderTeam(); } catch(e){}
-            document.getElementById('team-modal').style.display = 'block';
-        };
-        window.openNoticeModal = function() {
-            try { window.renderNotices(); } catch(e){}
-            document.getElementById('notice-modal').style.display = 'block';
-        };
-        window.openInitModal = function() {
-            document.getElementById('init-modal').style.display = 'block';
-        };
-        window.openBackupModal = function() {
-            document.getElementById('backup-modal').style.display = 'block';
-        };
+
+        // 모달 열기 함수들
+        window.openTrashModal = function() { try { window.renderTrash(); } catch(e){} document.getElementById('trash-modal').style.display = 'block'; };
+        window.openOtherCoModal = function() { try { window.renderOtherCos(); } catch(e){} document.getElementById('otherco-modal').style.display = 'block'; };
+        window.openContactModal = function() { try { window.renderContacts(); } catch(e){} document.getElementById('contact-modal').style.display = 'block'; };
+        window.openSiteModal = function() { try { window.renderSites(); } catch(e){} document.getElementById('site-modal').style.display = 'block'; };
+        window.openEquipModal = function() { try { window.renderEquips(); } catch(e){} document.getElementById('equip-modal').style.display = 'block'; };
+        window.openTeamModal = function() { try { window.renderTeam(); } catch(e){} document.getElementById('team-modal').style.display = 'block'; };
+        window.openNoticeModal = function() { try { window.renderNotices(); } catch(e){} document.getElementById('notice-modal').style.display = 'block'; };
+        window.openInitModal = function() { document.getElementById('init-modal').style.display = 'block'; };
+        window.openBackupModal = function() { document.getElementById('backup-modal').style.display = 'block'; };
+        
         window.openExpenseModal = function() {
             if(window.loggedInUser) {
                 const spenderEl = document.getElementById('exp-spender');
                 if(spenderEl) spenderEl.value = window.loggedInUser;
             }
-            try { window.expenseViewCycle = window.getExpensePeriod(new Date()); window.renderExpenses(); } catch(e){}
+            try { 
+                let cutoffEl = document.getElementById('exp-cutoff-input');
+                if(cutoffEl) cutoffEl.value = window.expenseCutoffDate;
+                window.expenseViewCycle = window.getExpensePeriod(new Date()); 
+                window.renderExpenses(); 
+            } catch(e){}
             const modal = document.getElementById('expense-modal');
             if(modal) modal.style.display = 'block';
         };
 
-        // 5. 로그인 관리
+        // 미투입 인원 상세 모달 띄우기
+        window.showNonWorkersModal = function(taskId) {
+            const task = window.currentTasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            // 투입된 전체 인원 수집
+            let allWorkers = [];
+            if (Array.isArray(task.bundledTasks)) {
+                task.bundledTasks.forEach(bt => {
+                    if (bt && Array.isArray(bt.workers)) allWorkers = allWorkers.concat(bt.workers);
+                });
+            } else if (Array.isArray(task.workers)) {
+                allWorkers = allWorkers.concat(task.workers);
+            }
+            allWorkers = [...new Set(allWorkers)];
+
+            // 미투입 인원 그룹화
+            let groupedNonWorkers = {};
+            window.currentContacts.forEach(c => {
+                if (!allWorkers.includes(c.name)) {
+                    let g = c.group || '미지정';
+                    if (!groupedNonWorkers[g]) groupedNonWorkers[g] = [];
+                    groupedNonWorkers[g].push(c.name);
+                }
+            });
+
+            const listEl = document.getElementById('non-workers-list');
+            if (Object.keys(groupedNonWorkers).length === 0) {
+                listEl.innerHTML = '<div style="text-align:center; color:#999; padding:20px;">모든 인원이 투입되었습니다.</div>';
+            } else {
+                let html = '';
+                Object.keys(groupedNonWorkers).sort().forEach(g => {
+                    html += `<div style="font-weight:bold; color:#0052cc; font-size:0.85rem; margin-top:10px; border-bottom:1px solid #eee; padding-bottom:3px;">📁 ${g} (${groupedNonWorkers[g].length}명)</div>`;
+                    html += `<div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; margin-bottom:10px;">`;
+                    groupedNonWorkers[g].forEach(name => {
+                        html += `<div style="background:#fff0f3; border:1px solid #ffbdad; padding:4px 8px; border-radius:4px; font-size:0.8rem; color:#bf2600; font-weight:bold;">${name}</div>`;
+                    });
+                    html += `</div>`;
+                });
+                listEl.innerHTML = html;
+            }
+            document.getElementById('non-workers-modal').style.display = 'block';
+        };
+
+        // 팀원 관리 추가 함수들
+        window.renderTeam = function() {
+            const list = document.getElementById('team-list');
+            if(!list) return;
+            if(!window.teamMembers || window.teamMembers.length === 0) {
+                list.innerHTML = '<div style="color:#999; font-size:0.8rem; text-align:center; padding:10px;">등록된 팀원이 없습니다.</div>';
+                return;
+            }
+            let html = '';
+            window.teamMembers.forEach(function(m) {
+                html += `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:8px; border:1px solid #ddd; border-radius:4px; background:#fff;">
+                    <span style="font-weight:bold; font-size:0.9rem; color:#172b4d;">${m.name}</span>
+                    <div style="display:flex; gap:4px;">
+                        <button onclick="window.editTeamMember('${m.id}', '${m.name}')" style="background:#e6effc; color:#0052cc; border:none; padding:4px 8px; border-radius:4px; font-size:0.75rem; cursor:pointer; font-weight:bold;">수정</button>
+                        <button onclick="window.deleteTeamMember('${m.id}')" style="background:#ffebe6; color:#bf2600; border:none; padding:4px 8px; border-radius:4px; font-size:0.75rem; cursor:pointer; font-weight:bold;">삭제</button>
+                    </div>
+                </div>`;
+            });
+            list.innerHTML = html;
+        };
+
+        window.addTeamMember = async function() {
+            const nameInput = document.getElementById('new-member-name');
+            const name = nameInput.value.trim();
+            if(!name) return alert('추가할 팀원 이름을 입력해주세요.');
+            if(window.teamMembers.some(m => m.name === name)) return alert('이미 등록된 이름입니다.');
+            
+            await window.db.collection("team").add({ name: name, createdAt: Date.now() });
+            nameInput.value = '';
+        };
+
+        window.editTeamMember = async function(id, currentName) {
+            const newName = prompt('수정할 이름을 입력하세요:', currentName);
+            if(!newName || newName.trim() === '' || newName.trim() === currentName) return;
+            if(window.teamMembers.some(m => m.name === newName.trim())) return alert('이미 존재하는 이름입니다.');
+            
+            await window.db.collection("team").doc(id).update({ name: newName.trim() });
+            
+            // 로그인되어 있는 본인의 이름을 바꿨을 경우 상태 갱신
+            if(currentName === window.loggedInUser) {
+                window.setLocalUser(newName.trim());
+                window.loggedInUser = newName.trim();
+                document.getElementById('header-user-name').innerText = window.loggedInUser + ' 님';
+            }
+        };
+
+        window.deleteTeamMember = async function(id) {
+            if(confirm('해당 팀원을 삭제하시겠습니까?\n(기존에 등록된 작업 내역의 이름은 그대로 유지됩니다)')) {
+                await window.db.collection("team").doc(id).delete();
+            }
+        };
+
+        // 로그인 관리
         window.loginUser = function() { 
             var select = document.getElementById('login-user-select'); 
             if (select && select.value) { 
@@ -521,7 +679,7 @@
             document.getElementById('login-overlay').style.display = 'flex'; 
         };
 
-        // 6. 공지사항 함수
+        // 공지사항 함수
         window.sendNotice = async function() {
             const text = document.getElementById('notice-text').value.trim();
             if(!text) return alert("공지 내용을 입력하세요.");
@@ -554,12 +712,13 @@
             if(confirm("이 공지를 삭제하시겠습니까?")) await window.db.collection("notices").doc(id).delete();
         };
 
-        // 7. 지출 모달 기능
+        // 지출 모달 기능
         window.getExpensePeriod = function(dateObj) {
+            let cutoff = window.expenseCutoffDate || 25;
             let y = dateObj.getFullYear(); 
             let m = dateObj.getMonth(); 
             let d = dateObj.getDate();
-            if (d >= 25) m++; 
+            if (cutoff > 1 && d >= cutoff) m++; 
             let cycleDate = new Date(y, m, 1);
             return { year: cycleDate.getFullYear(), month: cycleDate.getMonth() + 1 };
         };
@@ -574,10 +733,19 @@
 
         window.renderExpenses = function() {
             if(!window.expenseViewCycle) return;
+            let cutoff = window.expenseCutoffDate || 25;
             let y = window.expenseViewCycle.year; 
             let m = window.expenseViewCycle.month; 
-            let startDate = new Date(y, m - 2, 25); 
-            let endDate = new Date(y, m - 1, 24); 
+            
+            let startDate, endDate;
+            if (cutoff === 1) {
+                startDate = new Date(y, m - 1, 1);
+                endDate = new Date(y, m, 0); 
+            } else {
+                startDate = new Date(y, m - 2, cutoff);
+                endDate = new Date(y, m - 1, cutoff - 1);
+            }
+            
             let startStr = window.getLocalDateString(startDate);
             let endStr = window.getLocalDateString(endDate);
             document.getElementById('exp-month-label').innerText = `${y}년 ${m}월 (${startDate.getMonth()+1}.${startDate.getDate()} ~ ${endDate.getMonth()+1}.${endDate.getDate()})`;
@@ -625,6 +793,27 @@
             window.renderExpenses(); 
         };
 
+        window.adjustExpenseLimit = async function() {
+            if(!window.expenseViewCycle) return;
+            let adjustVal = Number(document.getElementById('exp-adjust-input').value);
+            if(!adjustVal && adjustVal !== 0) return alert('증감할 금액(숫자)을 입력하세요. (감액은 앞에 - 붙임)');
+            
+            let cycleKey = `${window.expenseViewCycle.year}-${String(window.expenseViewCycle.month).padStart(2,'0')}`;
+            let currentLimit = window.expenseLimits[cycleKey] || 0;
+            let newLimit = currentLimit + adjustVal;
+            
+            await window.db.collection("expense_limits").doc(cycleKey).set({ limit: newLimit });
+            window.expenseLimits[cycleKey] = newLimit; 
+            document.getElementById('exp-adjust-input').value = '';
+            window.renderExpenses(); 
+        };
+
+        window.saveExpenseCutoff = async function() {
+            let val = Number(document.getElementById('exp-cutoff-input').value);
+            if(!val || val < 1 || val > 31) return alert("1~31 사이의 올바른 날짜를 입력해주세요.");
+            await window.db.collection("settings").doc("expense").set({ cutoffDate: val }, { merge: true });
+        };
+
         window.editExpense = function(id) {
             const e = window.currentExpenses.find(function(x) { return x.id === id; }); 
             if(!e) return;
@@ -668,7 +857,7 @@
             }
         };
 
-        // 8. 작업 일보 생성 및 인원 모달
+        // 작업 일보 입력 관리
         window.addWorklogEntry = function() { 
             window.worklogEntryCount++; 
             const id = window.worklogEntryCount; 
@@ -743,7 +932,7 @@
             document.getElementById('worker-modal').style.display = 'none'; 
         };
 
-        // 10. UI 조작 및 데이터 렌더링 함수들
+        // UI 렌더링 및 달력
         window.renderCalendar = function() { 
             const grid = document.getElementById('calendar-grid'); 
             const title = document.getElementById('calendar-title'); 
@@ -783,16 +972,50 @@
             const isMat = String(s || '').startsWith('mat-'); 
             let dropdownHtml = ''; 
             let content = ''; 
+            let nonWorkersHtml = ''; 
             
-            if (s === 'worklog' && Array.isArray(t.bundledTasks)) { 
+            if (s === 'worklog') { 
                 content = `<div style="border-left:3px solid #673ab7; padding-left:8px; display:flex; flex-direction:column; gap:6px;">`; 
-                t.bundledTasks.forEach(function(bt, i) { 
-                    if(!bt) return; 
-                    const wCount = Array.isArray(bt.workers) ? bt.workers.length : 0; 
-                    const wNames = wCount > 0 ? bt.workers.join(', ') : '없음'; 
-                    content += `<div style="margin-bottom:2px;"><span style="font-weight:bold; color:#673ab7;">[작업 ${i+1}]</span> <strong style="font-size:0.9rem;">${bt.detail||'내용없음'}</strong><div style="font-size:0.75rem; color:#444; margin-top:4px; background:#f4f5f7; padding:4px 6px; border-radius:4px; display:inline-block;">🙋‍♂️ 투입 ${wCount}명 : <strong style="color:#0052cc;">${wNames}</strong></div></div>`; 
-                }); 
+                let allWorkers = []; 
+                
+                if (Array.isArray(t.bundledTasks)) {
+                    t.bundledTasks.forEach(function(bt, i) { 
+                        if(!bt) return; 
+                        const wCount = Array.isArray(bt.workers) ? bt.workers.length : 0; 
+                        const wNames = wCount > 0 ? bt.workers.join(', ') : '없음'; 
+                        if(wCount > 0) allWorkers = allWorkers.concat(bt.workers);
+                        content += `<div style="margin-bottom:2px;"><span style="font-weight:bold; color:#673ab7;">[작업 ${i+1}]</span> <strong style="font-size:0.9rem;">${bt.detail||'내용없음'}</strong><div style="font-size:0.75rem; color:#444; margin-top:4px; background:#f4f5f7; padding:4px 6px; border-radius:4px; display:inline-block;">🙋‍♂️ 투입 ${wCount}명 : <strong style="color:#0052cc;">${wNames}</strong></div></div>`; 
+                    }); 
+                } else if (Array.isArray(t.workers)) {
+                    allWorkers = allWorkers.concat(t.workers);
+                }
                 content += `</div>`; 
+
+                // 미투입 인원 계산
+                allWorkers = [...new Set(allWorkers)];
+                let nonWorkerGroups = {};
+                let totalNonWorkers = 0;
+                window.currentContacts.forEach(function(c) {
+                    if (!allWorkers.includes(c.name)) {
+                        let g = c.group || '미지정';
+                        if (!nonWorkerGroups[g]) nonWorkerGroups[g] = [];
+                        nonWorkerGroups[g].push(c.name);
+                        totalNonWorkers++;
+                    }
+                });
+
+                let summaryParts = [];
+                Object.keys(nonWorkerGroups).sort().forEach(function(g) {
+                    let count = nonWorkerGroups[g].length;
+                    summaryParts.push(`<a class="clickable" style="margin-right:6px;" onclick="window.showNonWorkersModal('${t.id}')">${g} ${count}명</a>`);
+                });
+                
+                if (totalNonWorkers > 0) {
+                    nonWorkersHtml = `<span style="color:#ddd; margin:0 6px;">|</span> <span style="font-size:0.75rem; color:#e91e63; font-weight:bold;">미투입: </span><span style="font-size:0.75rem;">${summaryParts.join('')}</span>`;
+                } else {
+                    nonWorkersHtml = `<span style="color:#ddd; margin:0 6px;">|</span> <span style="font-size:0.75rem; color:#00875a; font-weight:bold;">전원 투입 완료</span>`;
+                }
+
             } else { 
                 content = t.workDetails ? `<strong style="color:var(--primary-color); white-space:pre-wrap;">${t.workDetails}</strong>` : `<strong>${t.text||'내용없음'}</strong>`; 
             } 
@@ -806,9 +1029,11 @@
                 let delivererText = ''; 
                 if (s === 'mat-delivered' && t.deliverTime) delivererText = ` <span style="color:#ddd;">|</span> <span>반입: <strong>${t.deliverer||'-'} <span style="font-size:0.65rem; color:#0052cc; font-weight:normal;">(${t.deliverTime})</span></strong></span>`; 
                 dropdownHtml = `<div style="font-size:0.75rem; color:#555; display:flex; gap:5px; align-items:center; flex-wrap:wrap;"><span>요청: <strong>${t.requester||'-'}</strong></span> <span style="color:#ddd;">|</span> <span>발주: <strong>${ordererText}</strong></span>${delivererText}</div>`; 
-            } else { 
+            } else if (s === 'worklog') { 
+                dropdownHtml = `<div style="display:flex; align-items:center; flex-wrap:wrap;"><span style="font-size:0.75rem; color:#555;">등록자: <strong>${t.assignee||'-'}</strong></span>${nonWorkersHtml}</div>`; 
+            } else {
                 dropdownHtml = `<div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;"><span style="font-size:0.75rem; color:#555;">등록자: <strong>${t.assignee||'-'}</strong></span></div>`; 
-            } 
+            }
 
             let ackDisplayHtml = ''; 
             let hasIHaveAcked = false; 
@@ -849,7 +1074,38 @@
             let checkBoxHtml = `<input type="checkbox" class="bulk-delete-cb" value="${t.id}" style="width:16px; height:16px; cursor:pointer; accent-color:#ff5630;" title="일괄 삭제 선택">`; 
             const fallback = window.getFallbackDate(t.createdAt); 
 
-            return `<div class="card"><div style="font-size:0.85rem; color:#333; line-height:1.4;">${content}</div>${ackDisplayHtml}<div style="font-size:0.75rem; color:#666; margin-top:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px;">${dropdownHtml}<div style="display:flex; align-items:center; gap:8px;"><span style="font-size:0.77rem; color:#888;">${t.startDate || fallback} ~ ${t.dueDate || fallback}</span>${checkBoxHtml}</div></div><div class="card-actions">${actionButtonsHtml}<button class="btn-del" onclick="window.deleteTask('${t.id}')">삭제</button></div></div>`; 
+            // 등록 시간 생성
+            let regTimeStr = '';
+            if (t.createdAt) {
+                let d = new Date(t.createdAt);
+                if (!isNaN(d.getTime())) {
+                    let yyyy = d.getFullYear();
+                    let mm = String(d.getMonth()+1).padStart(2,'0');
+                    let dd = String(d.getDate()).padStart(2,'0');
+                    let h = String(d.getHours()).padStart(2,'0');
+                    let min = String(d.getMinutes()).padStart(2,'0');
+                    regTimeStr = `${yyyy}-${mm}-${dd} ${h}:${min}`;
+                }
+            }
+            let regTimeHtml = regTimeStr ? `<div style="font-size:0.65rem; color:#a0aabf; font-weight:500; display:flex; align-items:center;">⏱️ ${regTimeStr}</div>` : `<div></div>`;
+
+            return `<div class="card">
+                <div style="font-size:0.85rem; color:#333; line-height:1.4;">${content}</div>
+                ${ackDisplayHtml}
+                <div style="font-size:0.75rem; color:#666; margin-top:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px;">
+                    ${dropdownHtml}
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-size:0.77rem; color:#888;">${t.startDate || fallback} ~ ${t.dueDate || fallback}</span>
+                        ${checkBoxHtml}
+                    </div>
+                </div>
+                <div class="card-actions" style="justify-content: space-between;">
+                    ${regTimeHtml}
+                    <div style="display:flex; gap:4px; align-items:center; flex-wrap:wrap;">
+                        ${actionButtonsHtml}<button class="btn-del" onclick="window.deleteTask('${t.id}')">삭제</button>
+                    </div>
+                </div>
+            </div>`; 
         };
 
         window.updateUI = function() { 
@@ -905,10 +1161,37 @@
                     worklogDates.sort(function(a,b){ return a - b; }); 
                     const wlDatesEl = document.getElementById('worklog-recorded-dates'); 
                     if (wlDatesEl) { 
-                        if (worklogDates.length > 0) { 
-                            wlDatesEl.innerText = `✨ ${wlViewYm.split('-')[1]}월 작성일: ${worklogDates.map(function(d){ return d+'일'; }).join(', ')}`; 
+                        const missingDates = [];
+                        const viewYear = parseInt(wlViewYm.split('-')[0]);
+                        const viewMonth = parseInt(wlViewYm.split('-')[1]);
+                        const todayNow = new Date();
+                        const currentYmStr = todayNow.getFullYear() + '-' + String(todayNow.getMonth() + 1).padStart(2, '0');
+                        
+                        let maxDay = 0;
+                        if (wlViewYm < currentYmStr) {
+                            // 과거 달을 조회하는 경우: 그 달의 마지막 날짜까지 모두 검사
+                            maxDay = new Date(viewYear, viewMonth, 0).getDate();
+                        } else if (wlViewYm === currentYmStr) {
+                            // 현재 달을 조회하는 경우: 오늘 날짜까지만 검사
+                            maxDay = todayNow.getDate();
+                        }
+                        
+                        // 미작성일 계산
+                        for (let d = 1; d <= maxDay; d++) {
+                            if (!worklogDates.includes(d)) {
+                                missingDates.push(d);
+                            }
+                        }
+                        
+                        if (maxDay === 0) {
+                            wlDatesEl.innerText = '미래의 날짜입니다';
+                            wlDatesEl.style.color = '#666';
+                        } else if (missingDates.length > 0) { 
+                            wlDatesEl.innerText = `⚠️ ${viewMonth}월 미작성일: ${missingDates.map(function(d){ return d+'일'; }).join(', ')}`; 
+                            wlDatesEl.style.color = '#bf2600'; // 빨간색 강조
                         } else { 
-                            wlDatesEl.innerText = '작성된 기록 없음'; 
+                            wlDatesEl.innerText = `✨ ${viewMonth}월 모두 작성됨`; 
+                            wlDatesEl.style.color = '#00875a'; // 성공 초록색
                         } 
                     } 
                 } catch(e) { console.error(e); } 
@@ -1250,7 +1533,7 @@
             } catch (err) { alert("일보를 생성하는 중 오류가 발생했습니다."); } 
         };
 
-        // Firebase 데이터베이스 조작 함수들
+        // 데이터베이스 조작 및 유틸 메서드
         window.saveWorklogEdit = async function() { 
             const id = document.getElementById('edit-wl-id').value; 
             const task = window.currentTasks.find(function(t){ return t.id === id; }); 
@@ -1409,7 +1692,7 @@
             document.getElementById('edit-modal').style.display = 'none'; 
         };
 
-        // 연락처, 장비, 휴지통, 등 
+        // 연락처 및 부가 모달 관리
         window.addContact = async function() { 
             const group = document.getElementById('contact-group-select').value; 
             const name = document.getElementById('contact-name').value.trim(); 
@@ -1490,100 +1773,7 @@
             } 
         };
 
-        // Firebase 실시간 리스너 
-        window.initFirebaseListeners = function() {
-            try {
-                window.db.collection("team").onSnapshot(function(s) { 
-                    window.teamMembers = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); }); 
-                    window.teamMembers.sort(function(a, b){ return (a.createdAt || 0) - (b.createdAt || 0); }); 
-                    const loginSelect = document.getElementById('login-user-select'); 
-                    if(loginSelect) { loginSelect.innerHTML = '<option value="">이름 선택 (팀원이 없다면 직접 등록하세요)</option>' + window.teamMembers.map(function(m){ return `<option value="${m.name}">${m.name}</option>`; }).join(''); } 
-                    if(window.loggedInUser && window.teamMembers.find(function(m){ return m.name === window.loggedInUser; })) { 
-                        document.getElementById('login-overlay').style.display = 'none'; 
-                        document.getElementById('header-user-name').innerText = window.loggedInUser + ' 님'; 
-                    } 
-                    window.renderTeam(); window.updateUI(); 
-                });
-
-                window.db.collection("tasks").onSnapshot(function(s) { 
-                    window.currentTasks = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); }); 
-                    window.currentTasks.sort(function(a, b){ return (b.createdAt || 0) - (a.createdAt || 0); }); 
-                    window.updateUI(); 
-                    if(document.getElementById('trash-modal').style.display === 'block') window.renderTrash(); 
-                });
-
-                window.db.collection("expenses").onSnapshot(function(s) { 
-                    window.currentExpenses = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); }); 
-                    window.currentExpenses.sort(function(a, b){ return (b.createdAt || 0) - (a.createdAt || 0); }); 
-                    if(document.getElementById('expense-modal').style.display === 'block') window.renderExpenses(); 
-                });
-
-                window.db.collection("expense_limits").onSnapshot(function(s) { 
-                    window.expenseLimits = {}; 
-                    s.docs.forEach(function(d){ window.expenseLimits[d.id] = d.data().limit; }); 
-                    if(document.getElementById('expense-modal').style.display === 'block') window.renderExpenses(); 
-                });
-
-                window.db.collection("notices").onSnapshot(function(s) { 
-                    window.currentNotices = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); }); 
-                    window.currentNotices.sort(function(a, b){ return (b.createdAt || 0) - (a.createdAt || 0); }); 
-                    window.renderNotices(); 
-                });
-                
-                window.db.collection("contactGroups").onSnapshot(function(s) { 
-                    window.currentContactGroups = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); }); 
-                    window.currentContactGroups.sort(function(a, b){ return (a.createdAt || 0) - (b.createdAt || 0); }); 
-                    window.renderContactGroups(); window.renderSidePanels(); 
-                });
-
-                window.db.collection("siteGroups").onSnapshot(function(s) { 
-                    window.currentSiteGroups = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); }); 
-                    window.currentSiteGroups.sort(function(a, b){ return (a.createdAt || 0) - (b.createdAt || 0); }); 
-                    window.renderSiteGroups(); window.renderSidePanels(); 
-                });
-
-                window.db.collection("contacts").onSnapshot(function(s) { 
-                    window.currentContacts = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); }); 
-                    window.currentContacts.sort(function(a, b){ return (b.createdAt || 0) - (a.createdAt || 0); }); 
-                    if(document.getElementById('contact-modal').style.display === 'block') window.renderContacts(); 
-                    window.renderSidePanels(); 
-                });
-                
-                window.db.collection("sites").onSnapshot(function(s) { 
-                    window.currentSites = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); }); 
-                    window.currentSites.sort(function(a, b){ return (b.createdAt || 0) - (a.createdAt || 0); }); 
-                    if(document.getElementById('site-modal').style.display === 'block') window.renderSites(); 
-                    window.renderSidePanels(); 
-                });
-
-                window.db.collection("otherCompanyGroups").onSnapshot(function(s) { 
-                    window.currentOtherCoGroups = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); }); 
-                    window.currentOtherCoGroups.sort(function(a, b){ return (a.createdAt || 0) - (b.createdAt || 0); }); 
-                    window.renderOtherCoGroups(); window.renderSidePanels(); 
-                });
-
-                window.db.collection("otherCompanies").onSnapshot(function(s) { 
-                    window.currentOtherCos = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); }); 
-                    window.currentOtherCos.sort(function(a, b){ return (b.createdAt || 0) - (a.createdAt || 0); }); 
-                    if(document.getElementById('otherco-modal').style.display === 'block') window.renderOtherCos(); 
-                    window.renderSidePanels(); 
-                });
-                
-                window.db.collection("equipments").onSnapshot(function(s) { 
-                    window.currentEquips = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); }); 
-                    window.currentEquips.sort(function(a, b){ return (b.createdAt || 0) - (a.createdAt || 0); }); 
-                    window.renderEquips(); window.updateUI(); 
-                });
-            } catch(err) {
-                console.error("Firebase Listeners Init Error:", err);
-            }
-        };
-
-        // ---------------------------------------------------------
-        // 추가된 기능 함수들 시작 (UI 토글, 달력, 데이터 백업 등)
-        // ---------------------------------------------------------
-
-        // 메인 섹션(작업일보, 일정관리, 자재관리) 접기/펴기
+        // 토글 및 엑셀/백업 유틸 함수들
         window.toggleMainSection = function(wrapId, headerEl) {
             const wrap = document.getElementById(wrapId);
             const icon = headerEl.querySelector('.section-icon');
@@ -1596,7 +1786,6 @@
             }
         };
 
-        // 보드 내의 개별 컬럼(할일, 진행중 등) 입력 폼 접기/펴기
         window.toggleColumn = function(colPrefix) {
             const form = document.querySelector(`#col-${colPrefix} .add-card-form`);
             const list = document.querySelector(`#col-${colPrefix} #${colPrefix}-list`);
@@ -1605,13 +1794,11 @@
             if(list) list.style.display = isHidden ? 'block' : 'none';
         };
 
-        // 달력 월 변경 로직
         window.changeMonth = function(offset) {
             window.currentDate.setMonth(window.currentDate.getMonth() + offset);
             window.renderCalendar();
         };
 
-        // 완료 내역(과거 데이터) 토글
         window.toggleOldTasks = function() {
             window.showOldDoneTasks = !window.showOldDoneTasks;
             const btn = document.getElementById('toggle-old-btn');
@@ -1619,7 +1806,6 @@
             window.updateUI();
         };
 
-        // 시작일 선택 시 마감일을 자동으로 동기화 (마감일이 비어있거나 시작일보다 빠를 경우)
         window.syncDueDate = function(prefix) {
             const start = document.getElementById(`${prefix}-start`).value;
             const dueEl = document.getElementById(`${prefix}-due`);
@@ -1628,40 +1814,94 @@
             }
         };
 
-        // 엑셀 다운로드 (XLSX 라이브러리 연동)
+        // 섹션별 엑셀 다운로드 (개선됨)
         window.downloadExcel = function() {
             if(typeof XLSX === 'undefined') return alert('엑셀 라이브러리를 로드하지 못했습니다.');
             
             const wb = XLSX.utils.book_new();
+            const sMap = { 'todo':'할일', 'inprogress':'진행중', 'done':'완료', 'mat-request':'자재_발주요청', 'mat-ordered':'자재_발주완료', 'mat-delivered':'자재_반입완료', 'worklog':'작업일보' }; 
 
-            // 1. 작업 및 자재, 일정 시트
-            const taskData = window.currentTasks
-                .filter(t => t.status !== 'deleted')
-                .map(t => ({
-                    '구분': String(t.status).startsWith('mat-') ? '자재' : (t.status === 'worklog' ? '일보' : '일정'),
-                    '상태': t.status,
-                    '내용': t.text || t.workDetails || (t.bundledTasks ? `다중작업(${t.bundledTasks.length}건)` : '내용없음'),
-                    '시작일/요청일': t.startDate || '',
-                    '마감일/반입일': t.dueDate || '',
-                    '담당자/요청자': t.assignee || t.requester || '',
-                    '발주자/반입자': t.orderer || t.deliverer || '',
-                    '등록일시': window.getFallbackDate(t.createdAt)
-                }));
-            const wsTasks = XLSX.utils.json_to_sheet(taskData);
-            XLSX.utils.book_append_sheet(wb, wsTasks, "전체_일정_자재_일보");
+            const taskCategories = ['worklog', 'todo', 'inprogress', 'done', 'mat-request', 'mat-ordered', 'mat-delivered'];
 
-            // 2. 지출 내역 시트
+            taskCategories.forEach(statusKey => {
+                const filteredTasks = window.currentTasks.filter(t => t.status === statusKey);
+                if (filteredTasks.length > 0) {
+                    const sheetData = filteredTasks.map(t => {
+                        let contentText = t.text || t.workDetails || '';
+                        
+                        if (t.status === 'worklog' && Array.isArray(t.bundledTasks) && t.bundledTasks.length > 0) {
+                            contentText = t.bundledTasks.map((bt, i) => {
+                                let wNames = (Array.isArray(bt.workers) && bt.workers.length > 0) ? ` (투입: ${bt.workers.join(', ')})` : '';
+                                return `[작업 ${i+1}] ${bt.detail || ''}${wNames}`;
+                            }).join('\n');
+                        }
+
+                        return {
+                            '상태': sMap[t.status] || t.status,
+                            '내용': contentText || '내용없음',
+                            '시작일/요청일': t.startDate || '',
+                            '마감일/반입일': t.dueDate || '',
+                            '담당자/요청자': t.assignee || t.requester || '',
+                            '발주자/반입자': t.orderer || t.deliverer || '',
+                            '등록일시': window.getFallbackDate(t.createdAt)
+                        };
+                    });
+                    const ws = XLSX.utils.json_to_sheet(sheetData);
+                    XLSX.utils.book_append_sheet(wb, ws, sMap[statusKey]);
+                }
+            });
+
+            // 지출 내역 시트
             const expenseData = window.currentExpenses.map(e => ({
                 '지출일자': e.date,
                 '지출자': e.spender,
                 '지출내용': e.desc,
                 '지출금액': e.amount
             }));
-            const wsExpenses = XLSX.utils.json_to_sheet(expenseData);
-            XLSX.utils.book_append_sheet(wb, wsExpenses, "지출내역");
+            if(expenseData.length > 0) {
+                const wsExpenses = XLSX.utils.json_to_sheet(expenseData);
+                XLSX.utils.book_append_sheet(wb, wsExpenses, "지출내역");
+            }
 
-            // 엑셀 파일 생성 및 다운로드
-            XLSX.writeFile(wb, `현장관리보드_추출_${window.getLocalDateString()}.xlsx`);
+            // 연락처 시트
+            if (window.currentContacts && window.currentContacts.length > 0) {
+                const contactData = window.currentContacts.map(c => ({
+                    '그룹': c.group || '미지정',
+                    '이름/업체명': c.name || '',
+                    '연락처': c.phone || '',
+                    '비고': c.note || ''
+                }));
+                const wsContacts = XLSX.utils.json_to_sheet(contactData);
+                XLSX.utils.book_append_sheet(wb, wsContacts, "비상연락망");
+            }
+
+            // 타업체 시트
+            if (window.currentOtherCos && window.currentOtherCos.length > 0) {
+                const otherCoData = window.currentOtherCos.map(o => ({
+                    '그룹': o.group || '미지정',
+                    '업체명': o.name || '',
+                    '연락처/담당자': o.phone || '',
+                    '비고': o.note || ''
+                }));
+                const wsOtherCos = XLSX.utils.json_to_sheet(otherCoData);
+                XLSX.utils.book_append_sheet(wb, wsOtherCos, "타업체관리");
+            }
+
+            // 장비 대여 시트
+            if (window.currentEquips && window.currentEquips.length > 0) {
+                const equipData = window.currentEquips.map(eq => ({
+                    '상태': eq.status || '',
+                    '장비/공구명': eq.name || '',
+                    '대여자': eq.borrower || '',
+                    '대여일자': eq.borrowDate || '',
+                    '반납예정일': eq.due || '',
+                    '반납확인일': eq.returnDate || ''
+                }));
+                const wsEquips = XLSX.utils.json_to_sheet(equipData);
+                XLSX.utils.book_append_sheet(wb, wsEquips, "장비대여");
+            }
+
+            XLSX.writeFile(wb, `현장관리보드_전체추출_${window.getLocalDateString()}.xlsx`);
         };
 
         window.backupData = function() {
@@ -1672,8 +1912,7 @@
                 notices: window.currentNotices,
                 contacts: window.currentContacts,
                 sites: window.currentSites,
-                equipments: window.currentEquips,
-                otherCompanies: window.currentOtherCos
+                equipments: window.currentOtherCos
             };
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fullData));
             const a = document.createElement('a');
@@ -1691,11 +1930,10 @@
             reader.onload = async function(e) {
                 try {
                     const data = JSON.parse(e.target.result);
-                    if(!confirm("⚠️ 경고: 현재 데이터 베이스에 복구 데이터를 덮어씌웁니다.\n진행하시겠습니까? (기존 데이터가 꼬일 수 있으니 빈 프로젝트에서 권장합니다)")) return;
+                    if(!confirm("⚠️ 경고: 현재 데이터 베이스에 복구 데이터를 덮어씌웁니다.\n진행하시겠습니까?")) return;
                     
-                    alert("데이터를 복구 중입니다. 창을 닫지 마세요...");
+                    alert("데이터를 복구 중입니다...");
                     const collections = ['tasks', 'team', 'expenses', 'notices', 'contacts', 'sites', 'equipments', 'otherCompanies'];
-                    
                     const promises = [];
                     collections.forEach(col => {
                         if(data[col] && Array.isArray(data[col])) {
@@ -1708,123 +1946,25 @@
                         }
                     });
                     await Promise.all(promises);
-                    alert("데이터 복구가 성공적으로 완료되었습니다. 페이지를 새로고침합니다.");
+                    alert("데이터 복구가 완료되었습니다.");
                     location.reload();
                 } catch(err) {
                     console.error(err);
-                    alert("복구 중 오류가 발생했습니다. 올바른 백업 파일(JSON)인지 확인하세요.");
+                    alert("복구 중 오류가 발생했습니다.");
                 }
             };
             reader.readAsText(file);
-        };
-
-        window.saveAllWorklogs = async function() {
-            const date = document.getElementById('worklog-start').value;
-            if(!date) return alert('기준일을 선택하세요.');
-            
-            const entries = document.querySelectorAll('.worklog-entry');
-            let bundled = [];
-            
-            entries.forEach(el => {
-                const detail = el.querySelector('.wl-detail').value.trim();
-                const workersInput = el.querySelector('.wl-workers-hidden');
-                const workers = workersInput && workersInput.value ? workersInput.value.split(',') : [];
-                if(detail) bundled.push({ detail: detail, workers: workers });
-            });
-            
-            if(bundled.length === 0) return alert('작업 내용을 하나 이상 입력하세요.');
-            
-            await window.db.collection("tasks").add({
-                status: 'worklog',
-                bundledTasks: bundled,
-                startDate: date,
-                dueDate: date,
-                assignee: window.loggedInUser || '미상',
-                createdAt: Date.now()
-            });
-            
-            window.sendLineNotificationProxy(`📝 [다중 작업 일보 등록]\n작성자: ${window.loggedInUser}\n일자: ${date}\n내역: 총 ${bundled.length}건 등록됨`);
-            
-            alert('작업 내역이 묶어서 저장되었습니다.');
-            const container = document.getElementById('worklog-entries');
-            if(container) container.innerHTML = '';
-            window.worklogEntryCount = 0;
-            for(let i=0; i<3; i++) window.addWorklogEntry();
-        };
-
-        window.changeWorklogViewDate = function(val) {
-            window.worklogViewDate = val;
-            window.updateUI();
-        };
-
-        window.sendReportLine = function() {
-            const text = document.getElementById('report-text').value;
-            if(!text) return;
-            window.sendLineNotificationProxy(text);
-            alert("작업 일보가 라인(LINE)으로 전송되었습니다.");
-            document.getElementById('report-modal').style.display = 'none';
-        };
-
-        window.renderTrash = function() {
-            const list = document.getElementById('trash-list');
-            if(!list) return;
-            const deleted = window.currentTasks.filter(t => t.status === 'deleted');
-            if(deleted.length === 0) {
-                list.innerHTML = '<div style="text-align:center; padding:15px; color:#999;">휴지통이 비어있습니다.</div>';
-                return;
-            }
-            list.innerHTML = deleted.map(t => `
-                <div style="padding:10px; border:1px solid #ddd; margin-bottom:5px; border-radius:4px; background:#f9f9fa;">
-                    <div style="margin-bottom:5px; font-size:0.85rem; color:#333;"><strong>${t.text || t.workDetails || '내용없음'}</strong> <span style="font-size:0.7rem; color:#888;">(삭제일: ${t.deletedAt || '-'})</span></div>
-                    <div style="display:flex; justify-content:flex-end; gap:5px;">
-                        <button onclick="window.restoreTask('${t.id}', '${t.prevStatus || 'todo'}')" style="padding:4px 8px; border:1px solid #ccc; border-radius:3px; cursor:pointer; font-size:0.75rem;">복구</button>
-                        <button onclick="window.permanentDelete('${t.id}')" style="padding:4px 8px; cursor:pointer; background:#bf2600; color:white; border:none; border-radius:3px; font-size:0.75rem;">영구삭제</button>
-                    </div>
-                </div>
-            `).join('');
-        };
-
-        window.renderTeam = function() {
-            const list = document.getElementById('team-list');
-            if(!list) return;
-            list.innerHTML = window.teamMembers.map(m => `
-                <div style="display:flex; justify-content:space-between; align-items:center; padding:8px; border-bottom:1px solid #eee;">
-                    <span style="font-size:0.9rem;">🧑‍💻 <strong>${m.name}</strong></span>
-                    <button onclick="window.deleteTeamMember('${m.id}')" style="background:none; border:none; color:#bf2600; font-weight:bold; cursor:pointer; font-size:0.75rem;">삭제</button>
-                </div>
-            `).join('');
-        };
-
-        window.addTeamMember = async function() {
-            const name = document.getElementById('new-member-name').value.trim();
-            if(!name) return alert("이름을 입력하세요.");
-            await window.db.collection('team').add({ name: name, createdAt: Date.now() });
-            document.getElementById('new-member-name').value = '';
-        };
-
-        window.deleteTeamMember = async function(id) {
-            if(confirm("팀원을 명단에서 삭제하시겠습니까?")) await window.db.collection('team').doc(id).delete();
-        };
-
-        window.openEditModal = function(id) {
-            const t = window.currentTasks.find(x => x.id === id);
-            if(!t) return;
-            document.getElementById('edit-id').value = id;
-            document.getElementById('edit-text').value = t.text || t.workDetails || '';
-            document.getElementById('edit-start-date').value = t.startDate || '';
-            document.getElementById('edit-due-date').value = t.dueDate || '';
-            document.getElementById('edit-modal').style.display = 'block';
         };
 
         window.executeInit = async function() {
             const text = document.getElementById('init-confirm-text').value.trim();
             if (text !== '초기화 승인') return alert("안전을 위해 정확히 '초기화 승인'이라고 입력해주세요.");
             
-            if(confirm("정말로 모든 업무, 자재, 일보 데이터를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.")) {
-                alert("데이터 삭제를 시작합니다. 창을 닫지 마세요...");
+            if(confirm("정말로 모든 데이터를 삭제하시겠습니까?")) {
+                alert("데이터 삭제 중...");
                 const promises = window.currentTasks.map(t => window.db.collection('tasks').doc(t.id).delete());
                 await Promise.all(promises);
-                alert("모든 데이터가 초기화되었습니다.");
+                alert("초기화되었습니다.");
                 document.getElementById('init-confirm-text').value = '';
                 document.getElementById('init-modal').style.display = 'none';
             }
@@ -1942,6 +2082,111 @@
             </div>
         `);
 
+        // Firebase 실시간 리스너 동기화
+        window.initFirebaseListeners = function() {
+            try {
+                window.db.collection("team").onSnapshot(function(s) { 
+                    window.teamMembers = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); }); 
+                    window.teamMembers.sort(function(a, b){ return (a.createdAt || 0) - (b.createdAt || 0); }); 
+                    const loginSelect = document.getElementById('login-user-select'); 
+                    if(loginSelect) { loginSelect.innerHTML = '<option value="">이름 선택 (팀원이 없다면 직접 등록하세요)</option>' + window.teamMembers.map(function(m){ return `<option value="${m.name}">${m.name}</option>`; }).join(''); } 
+                    if(window.loggedInUser && window.teamMembers.find(function(m){ return m.name === window.loggedInUser; })) { 
+                        document.getElementById('login-overlay').style.display = 'none'; 
+                        document.getElementById('header-user-name').innerText = window.loggedInUser + ' 님'; 
+                    } 
+                    window.renderTeam(); window.updateUI(); 
+                });
+
+                window.db.collection("tasks").onSnapshot(function(s) { 
+                    window.currentTasks = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); }); 
+                    window.currentTasks.sort(function(a, b){ return (b.createdAt || 0) - (a.createdAt || 0); }); 
+                    window.updateUI(); 
+                    if(document.getElementById('trash-modal').style.display === 'block') window.renderTrash(); 
+                });
+
+                window.db.collection("expenses").onSnapshot(function(s) { 
+                    window.currentExpenses = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); }); 
+                    window.currentExpenses.sort(function(a, b){ return (b.createdAt || 0) - (a.createdAt || 0); }); 
+                    if(document.getElementById('expense-modal').style.display === 'block') window.renderExpenses(); 
+                });
+
+                window.db.collection("expense_limits").onSnapshot(function(s) { 
+                    window.expenseLimits = {}; 
+                    s.docs.forEach(function(d){ window.expenseLimits[d.id] = d.data().limit; }); 
+                    if(document.getElementById('expense-modal').style.display === 'block') window.renderExpenses(); 
+                });
+
+                // 지출 기준일 설정 실시간 동기화
+                window.db.collection("settings").doc("expense").onSnapshot(function(doc) { 
+                    if(doc.exists && doc.data().cutoffDate) {
+                        window.expenseCutoffDate = doc.data().cutoffDate;
+                    } else {
+                        window.expenseCutoffDate = 25; 
+                    }
+                    let cutoffEl = document.getElementById('exp-cutoff-input');
+                    if(cutoffEl) cutoffEl.value = window.expenseCutoffDate;
+                    
+                    if(document.getElementById('expense-modal').style.display === 'block') {
+                        window.expenseViewCycle = window.getExpensePeriod(new Date());
+                        window.renderExpenses();
+                    }
+                });
+
+                window.db.collection("notices").onSnapshot(function(s) { 
+                    window.currentNotices = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); }); 
+                    window.currentNotices.sort(function(a, b){ return (b.createdAt || 0) - (a.createdAt || 0); }); 
+                    window.renderNotices(); 
+                });
+                
+                window.db.collection("contactGroups").onSnapshot(function(s) { 
+                    window.currentContactGroups = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); }); 
+                    window.currentContactGroups.sort(function(a, b){ return (a.createdAt || 0) - (b.createdAt || 0); }); 
+                    window.renderContactGroups(); window.renderSidePanels(); 
+                });
+
+                window.db.collection("siteGroups").onSnapshot(function(s) { 
+                    window.currentSiteGroups = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); }); 
+                    window.currentSiteGroups.sort(function(a, b){ return (a.createdAt || 0) - (b.createdAt || 0); }); 
+                    window.renderSiteGroups(); window.renderSidePanels(); 
+                });
+
+                window.db.collection("contacts").onSnapshot(function(s) { 
+                    window.currentContacts = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); }); 
+                    window.currentContacts.sort(function(a, b){ return (b.createdAt || 0) - (a.createdAt || 0); }); 
+                    if(document.getElementById('contact-modal').style.display === 'block') window.renderContacts(); 
+                    window.renderSidePanels(); 
+                });
+                
+                window.db.collection("sites").onSnapshot(function(s) { 
+                    window.currentSites = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); }); 
+                    window.currentSites.sort(function(a, b){ return (b.createdAt || 0) - (a.createdAt || 0); }); 
+                    if(document.getElementById('site-modal').style.display === 'block') window.renderSites(); 
+                    window.renderSidePanels(); 
+                });
+
+                window.db.collection("otherCompanyGroups").onSnapshot(function(s) { 
+                    window.currentOtherCoGroups = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); }); 
+                    window.currentOtherCoGroups.sort(function(a, b){ return (a.createdAt || 0) - (b.createdAt || 0); }); 
+                    window.renderOtherCoGroups(); window.renderSidePanels(); 
+                });
+
+                window.db.collection("otherCompanies").onSnapshot(function(s) { 
+                    window.currentOtherCos = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); }); 
+                    window.currentOtherCos.sort(function(a, b){ return (b.createdAt || 0) - (a.createdAt || 0); }); 
+                    if(document.getElementById('otherco-modal').style.display === 'block') window.renderOtherCos(); 
+                    window.renderSidePanels(); 
+                });
+                
+                window.db.collection("equipments").onSnapshot(function(s) { 
+                    window.currentEquips = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); }); 
+                    window.currentEquips.sort(function(a, b){ return (b.createdAt || 0) - (a.createdAt || 0); }); 
+                    window.renderEquips(); window.updateUI(); 
+                });
+            } catch(err) {
+                console.error("Firebase Listeners Init Error:", err);
+            }
+        };
+
         // 초기 시작점
         window.initApp = function() { 
             window.fetchWeather(); 
@@ -1955,14 +2200,12 @@
             for(let i=0; i<3; i++) { 
                 window.addWorklogEntry(); 
             } 
-            
             window.initFirebaseListeners();
         };
 
         window.addEventListener('DOMContentLoaded', function() { 
             window.initApp(); 
         });
-
     </script>
 </body>
 </html>
