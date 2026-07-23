@@ -755,7 +755,7 @@
             }
         };
 
-        // 로그인 관리 (수정: 로그인 후 브리핑창 즉시 팝업되도록 변경)
+        // 로그인 관리
         window.loginUser = function() { 
             var select = document.getElementById('login-user-select'); 
             if (select && select.value) { 
@@ -2298,7 +2298,7 @@
                         if (t.status === 'worklog' && Array.isArray(t.bundledTasks) && t.bundledTasks.length > 0) {
                             contentText = t.bundledTasks.map((bt, i) => {
                                 let wNames = (Array.isArray(bt.workers) && bt.workers.length > 0) ? ` (투입: ${bt.workers.join(', ')})` : '';
-                                let detailText = (bt.location !== undefined && bt.content !== undefined) ? `[${bt.location}] ${bt.content}` : (bt.detail || '');
+                                let detailText = (bt.location !== undefined || bt.content !== undefined) ? `[${bt.location||'위치없음'}] ${bt.content||''}` : (bt.detail || '');
                                 return `[작업 ${i+1}] ${detailText}${wNames}`;
                             }).join('\n');
                         }
