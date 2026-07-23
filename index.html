@@ -5,19 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>현장 관리 보드</title>
     
-    <!-- 엑셀 업로드 -->
+    <!-- 엑셀 업로드/다운로드 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-    <!-- 파이어베이스 라이브러리 (바탕화면 더블클릭 환경 호환) -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-
-    <!-- PWA 모바일 앱 설치를 위한 설정 -->
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#0052cc">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/7325/7325103.png">
+    <!-- 파이어베이스 라이브러리 (바탕화면 file:// 실행에 가장 안정적인 버전 8 사용) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
     <style>
         :root { --bg-color: #f4f5f7; --column-bg: #ebecf0; --card-bg: #ffffff; --text-color: #172b4d; --primary-color: #0052cc; --warning-color: #ff5630; --d1-color: #ff9f43; }
@@ -137,6 +130,7 @@
             <span id="header-user-name" style="font-size:0.8rem; font-weight:bold; color:var(--primary-color); margin-right:3px;"></span>
             <button class="btn-team" style="background:#888; padding: 4px 6px; font-size: 0.65rem;" onclick="window.logoutUser()">로그아웃</button>
             <div style="width:1px; height:15px; background:#ccc; margin:0 3px;"></div>
+            <button class="btn-team" style="background:#2ecc71; color:#fff;" onclick="window.openWarehouseModal()">🏢 창고</button>
             <button class="btn-team" style="background:#d35400; color:#fff;" onclick="window.openOtherCoModal()">🏢 타업체</button>
             <button class="btn-team" style="background:#009688; color:#fff;" onclick="window.openContactModal()">📞 연락처</button>
             <button class="btn-team" style="background:#607d8b; color:#fff;" onclick="window.openSiteModal()">🔗 사이트</button>
@@ -244,7 +238,6 @@
                 <span>📅 일정 관리 (할 일)</span> <span class="section-icon">▼</span>
             </h3>
             <div id="schedule-wrap" style="display: block;">
-                <!-- 여기서 style 속성을 제거하여 CSS의 기본 속성(모바일에서는 column)을 따라가도록 수정 -->
                 <div class="board">
                     <div class="column" id="col-todo"><h2 onclick="window.toggleColumn('todo')">할 일 <span id="todo-count">0</span></h2>
                         <div class="add-card-form">
@@ -282,7 +275,6 @@
                 <span>📦 자재 발주 관리</span> <span class="section-icon">▼</span>
             </h3>
             <div id="material-wrap" style="display: block;">
-                <!-- 여기서 style 속성을 제거하여 CSS의 기본 속성(모바일에서는 column)을 따라가도록 수정 -->
                 <div class="board">
                     <div class="column" id="col-mat-request"><h2 onclick="window.toggleColumn('mat-request')">발주요청 <span id="mat-request-count">0</span></h2>
                         <div class="add-card-form">
@@ -326,7 +318,66 @@
         </aside>
     </div>
 
-    <!-- 각종 모달창 영역 -->
+    <!-- 창고 자재 관리 모달 추가 -->
+    <div id="warehouse-modal" class="modal" onclick="this.style.display='none'">
+        <div class="modal-content" style="max-width:600px;" onclick="event.stopPropagation()">
+            <h3 style="margin:0 0 15px 0; color:#2ecc71; display:flex; justify-content:space-between; align-items:center;">
+                <span>🏢 창고 자재 관리</span>
+                <button onclick="document.getElementById('warehouse-modal').style.display='none'" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:#666;">×</button>
+            </h3>
+            
+            <!-- 엑셀 다운/업로드 버튼 그룹 -->
+            <div style="display:flex; justify-content:flex-end; gap:5px; margin-bottom:10px;">
+                <button onclick="window.downloadWarehouseTemplate()" style="background:#34495e; color:white; padding:6px 12px; border:none; border-radius:4px; font-size:0.8rem; font-weight:bold; cursor:pointer;">📥 양식 다운</button>
+                <label style="background:#217346; color:white; padding:6px 12px; border-radius:4px; font-size:0.8rem; font-weight:bold; cursor:pointer; margin:0;">
+                    📊 엑셀 덮어쓰기
+                    <input type="file" style="display:none;" accept=".xlsx, .xls" onchange="window.uploadWarehouseExcel(event)">
+                </label>
+            </div>
+
+            <div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:10px; align-items:center;">
+                <select id="wh-location-select" style="flex:1; min-width:100px; padding:8px; border:1px solid #ddd; border-radius:4px;">
+                    <option value="">창고 선택</option>
+                </select>
+                <button onclick="document.getElementById('warehouse-group-modal').style.display='block'" style="padding:8px; background:#e0e0e0; border:none; border-radius:4px; cursor:pointer; font-weight:bold; color:#333;">⚙️ 관리</button>
+            </div>
+            <div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:10px;">
+                <input type="text" id="wh-item" placeholder="품명" style="flex:2; min-width:120px; padding:8px; border:1px solid #ddd; border-radius:4px;">
+                <input type="text" id="wh-spec" placeholder="규격" style="flex:1.5; min-width:80px; padding:8px; border:1px solid #ddd; border-radius:4px;">
+            </div>
+            <div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:15px;">
+                <input type="text" id="wh-unit" placeholder="단위 (EA, m 등)" style="flex:1; min-width:60px; padding:8px; border:1px solid #ddd; border-radius:4px;">
+                <input type="number" id="wh-qty" placeholder="수량" style="flex:1; min-width:60px; padding:8px; border:1px solid #ddd; border-radius:4px;">
+                <input type="text" id="wh-note" placeholder="비고" style="flex:2; min-width:100px; padding:8px; border:1px solid #ddd; border-radius:4px;">
+                <button id="wh-submit-btn" onclick="window.addWarehouseItem()" style="background:#2ecc71; color:white; border:none; padding:8px 15px; border-radius:4px; font-weight:bold; cursor:pointer;">등록</button>
+            </div>
+            
+            <!-- 실시간 검색창 및 다중 삭제 버튼 영역 -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:10px; flex-wrap:wrap;">
+                <input type="text" id="wh-search-input" placeholder="🔍 품명, 규격, 위치 검색..." onkeyup="window.renderWarehouse()" style="flex:1; min-width:150px; box-sizing:border-box; padding:8px; border:1px solid #ddd; border-radius:4px; font-size:0.85rem;">
+                <div style="display:flex; gap:5px;">
+                    <button onclick="window.deleteSelectedWarehouseItems()" style="background:#ff5630; color:white; border:none; padding:6px 10px; border-radius:4px; font-size:0.75rem; font-weight:bold; cursor:pointer; white-space:nowrap;">☑️ 선택 삭제</button>
+                    <button onclick="window.deleteAllWarehouseItems()" style="background:#bf2600; color:white; border:none; padding:6px 10px; border-radius:4px; font-size:0.75rem; font-weight:bold; cursor:pointer; white-space:nowrap;">🗑️ 전체 삭제</button>
+                </div>
+            </div>
+            
+            <div id="warehouse-list" style="display:flex; flex-direction:column; gap:8px; max-height:350px; overflow-y:auto; padding-right:5px;"></div>
+        </div>
+    </div>
+    
+    <!-- 창고 그룹 관리 모달 -->
+    <div id="warehouse-group-modal" class="modal modal-sub" onclick="this.style.display='none'">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h3 style="margin:0 0 15px 0; color:#2ecc71;">⚙️ 창고명(위치) 관리 <button onclick="document.getElementById('warehouse-group-modal').style.display='none'" style="float:right; background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button></h3>
+            <div style="display:flex; gap:5px; margin-bottom:15px;">
+                <input type="text" id="new-warehouse-group" placeholder="새 창고/위치명 (예: 컨테이너, A구역)" style="flex:1; padding:8px; border:1px solid #ddd; border-radius:4px;">
+                <button onclick="window.addWarehouseGroup()" style="background:#2ecc71; color:white; border:none; padding:8px 15px; border-radius:4px; font-weight:bold; cursor:pointer;">추가</button>
+            </div>
+            <div id="warehouse-group-list" style="max-height:200px; overflow-y:auto; display:flex; flex-direction:column; gap:5px;"></div>
+        </div>
+    </div>
+
+    <!-- 기타 모달들 유지 -->
     <div id="contact-group-modal" class="modal modal-sub" onclick="this.style.display='none'"><div class="modal-content" onclick="event.stopPropagation()"><h3 style="margin:0 0 15px 0; color:#009688;">⚙️ 연락처 그룹 관리 <button onclick="document.getElementById('contact-group-modal').style.display='none'" style="float:right; background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button></h3><div style="display:flex; gap:5px; margin-bottom:15px;"><input type="text" id="new-contact-group" placeholder="새 그룹명 (예: 본사, 협력업체)" style="flex:1; padding:8px; border:1px solid #ddd; border-radius:4px;"><button onclick="window.addContactGroup()" style="background:#009688; color:white; border:none; padding:8px 15px; border-radius:4px; font-weight:bold; cursor:pointer;">추가</button></div><div id="contact-group-list" style="max-height:200px; overflow-y:auto; display:flex; flex-direction:column; gap:5px;"></div></div></div>
     <div id="site-group-modal" class="modal modal-sub" onclick="this.style.display='none'"><div class="modal-content" onclick="event.stopPropagation()"><h3 style="margin:0 0 15px 0; color:#607d8b;">⚙️ 사이트 그룹 관리 <button onclick="document.getElementById('site-group-modal').style.display='none'" style="float:right; background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button></h3><div style="display:flex; gap:5px; margin-bottom:15px;"><input type="text" id="new-site-group" placeholder="새 그룹명 (예: 도면, 포털)" style="flex:1; padding:8px; border:1px solid #ddd; border-radius:4px;"><button onclick="window.addSiteGroup()" style="background:#607d8b; color:white; border:none; padding:8px 15px; border-radius:4px; font-weight:bold; cursor:pointer;">추가</button></div><div id="site-group-list" style="max-height:200px; overflow-y:auto; display:flex; flex-direction:column; gap:5px;"></div></div></div>
     <div id="otherco-group-modal" class="modal modal-sub" onclick="this.style.display='none'"><div class="modal-content" onclick="event.stopPropagation()"><h3 style="margin:0 0 15px 0; color:#d35400;">⚙️ 타업체 그룹 관리 <button onclick="document.getElementById('otherco-group-modal').style.display='none'" style="float:right; background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button></h3><div style="display:flex; gap:5px; margin-bottom:15px;"><input type="text" id="new-otherco-group" placeholder="새 그룹명 (예: 철근, 장비)" style="flex:1; padding:8px; border:1px solid #ddd; border-radius:4px;"><button onclick="window.addOtherCoGroup()" style="background:#d35400; color:white; border:none; padding:8px 15px; border-radius:4px; font-weight:bold; cursor:pointer;">추가</button></div><div id="otherco-group-list" style="max-height:200px; overflow-y:auto; display:flex; flex-direction:column; gap:5px;"></div></div></div>
@@ -395,7 +446,28 @@
 
     <div id="init-modal" class="modal" onclick="this.style.display='none'"><div class="modal-content" onclick="event.stopPropagation()"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom: 2px solid #eee; padding-bottom: 10px;"><h3 style="margin:0; color:#bf2600;">💣 시스템 전체 데이터 초기화</h3><button onclick="document.getElementById('init-modal').style.display='none'" style="background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button></div><div style="background:#fff4f4; padding:15px; border-radius:6px; border:1px solid #ffebe6; margin-bottom:15px;"><p style="font-size:0.9rem; color:#333; line-height:1.5; margin-top:0;">모든 데이터가 <strong>영구적으로 삭제</strong>됩니다.<br>오작동 방지를 위해 <strong style="color:#bf2600;">[초기화 승인]</strong> 이라고 입력해주세요.</p><input type="text" id="init-confirm-text" placeholder="초기화 승인" style="width:100%; box-sizing:border-box; padding:12px; border:2px solid #bf2600; border-radius:6px; font-weight:bold; font-size:1rem; text-align:center;"></div><div style="display:flex; gap:5px;"><button onclick="window.executeInit()" style="flex:2; padding:12px; background:#bf2600; color:white; border:none; border-radius:6px; font-weight:bold; font-size:1rem; cursor:pointer;">🔥 삭제 실행</button><button onclick="document.getElementById('init-modal').style.display='none'" style="flex:1; padding:12px; background:#e0e0e0; color:#333; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">취소</button></div></div></div>
     <div id="backup-modal" class="modal" onclick="this.style.display='none'"><div class="modal-content" onclick="event.stopPropagation()"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;"><h3 style="margin:0; color:#34495e;">💾 데이터 백업 및 복구</h3><button onclick="document.getElementById('backup-modal').style.display='none'" style="background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button></div><div style="background:#f9f9fa; padding:15px; border-radius:6px; margin-bottom:15px; border:1px solid #eee;"><h4 style="margin:0 0 10px 0; color:#0052cc;">📥 데이터 백업 (다운로드)</h4><button onclick="window.backupData()" style="width:100%; background:#0052cc; color:white; border:none; padding:10px; border-radius:4px; font-weight:bold; cursor:pointer;">데이터 백업 (.json)</button></div><div style="background:#fff4f4; padding:15px; border-radius:6px; border:1px solid #ffebe6;"><h4 style="margin:0 0 10px 0; color:#bf2600;">📤 데이터 복구 (업로드)</h4><label style="display:block; width:100%; background:#bf2600; color:white; border:none; padding:10px; border-radius:4px; font-weight:bold; cursor:pointer; text-align:center; box-sizing:border-box;">파일 선택 및 복구<input type="file" style="display:none;" accept=".json" onchange="window.restoreData(event)"></label></div></div></div>
-    <div id="briefing-modal" class="modal" onclick="this.style.display='none'"><div class="modal-content" onclick="event.stopPropagation()"><div style="text-align: center; margin-bottom: 15px;"><h2 style="margin: 0; font-size: 1.25rem; color: #172b4d; display: flex; align-items: center; justify-content: center; gap: 6px;">🔔 일일 현황 브리핑</h2></div><div class="brief-section-title" style="color: #e91e63;">👀 인원별 미확인 항목 (할일/자재)</div><div id="brief-unacked-list" class="brief-list-container" style="margin-bottom:15px;">데이터 로딩 중...</div><div class="brief-section-title" style="color: #0052cc;">📅 내일 예정(시작/마감) 항목</div><div id="brief-todo-list" class="brief-list-container">데이터 로딩 중...</div><div class="brief-section-title" style="color: #ff9f43;">📦 발주 대기 중인 자재 (미발주)</div><div id="brief-mat-request-list" class="brief-list-container">데이터 로딩 중...</div><div class="brief-section-title" style="color: #00875a;">🚚 반입 대기 중인 자재 (발주완료)</div><div id="brief-mat-ordered-list" class="brief-list-container">데이터 로딩 중...</div><button onclick="document.getElementById('briefing-modal').style.display='none'" style="width:100%; margin-top:20px; padding:12px; background:#f4f5f7; border:1px solid #dfe1e6; border-radius:6px; font-weight:bold; font-size:0.95rem; cursor:pointer; color:#333;">닫기</button></div></div>
+    
+    <div id="briefing-modal" class="modal" onclick="this.style.display='none'">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div style="text-align: center; margin-bottom: 15px;"><h2 style="margin: 0; font-size: 1.25rem; color: #172b4d; display: flex; align-items: center; justify-content: center; gap: 6px;">🔔 일일 현황 브리핑</h2></div>
+            <div class="brief-section-title" style="color: #e91e63;">👀 인원별 미확인 항목 (할일/자재)</div>
+            <div id="brief-unacked-list" class="brief-list-container" style="margin-bottom:15px;">데이터 로딩 중...</div>
+            
+            <div class="brief-section-title" style="color: #673ab7;">🏃 현재 진행 중인 할 일</div>
+            <div id="brief-inprogress-list" class="brief-list-container" style="margin-bottom:15px;">데이터 로딩 중...</div>
+
+            <div class="brief-section-title" style="color: #0052cc;">📅 내일 예정(시작/마감) 항목</div>
+            <div id="brief-todo-list" class="brief-list-container" style="margin-bottom:15px;">데이터 로딩 중...</div>
+            
+            <div class="brief-section-title" style="color: #ff9f43;">📦 발주 대기 중인 자재 (미발주)</div>
+            <div id="brief-mat-request-list" class="brief-list-container" style="margin-bottom:15px;">데이터 로딩 중...</div>
+            
+            <div class="brief-section-title" style="color: #00875a;">🚚 반입 대기 중인 자재 (발주완료)</div>
+            <div id="brief-mat-ordered-list" class="brief-list-container">데이터 로딩 중...</div>
+            <button onclick="document.getElementById('briefing-modal').style.display='none'" style="width:100%; margin-top:20px; padding:12px; background:#f4f5f7; border:1px solid #dfe1e6; border-radius:6px; font-weight:bold; font-size:0.95rem; cursor:pointer; color:#333;">닫기</button>
+        </div>
+    </div>
+    
     <div id="task-modal" class="modal" onclick="this.style.display='none'"><div class="modal-content" onclick="event.stopPropagation()"><div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #eee; padding-bottom:10px; margin-bottom:10px;"><h3 id="modal-title" style="margin:0; color:var(--primary-color);">상세 보기</h3><button onclick="document.getElementById('task-modal').style.display='none'" style="background:none; border:none; font-size:1.5rem; color:#999; cursor:pointer; line-height:1;">×</button></div><div id="modal-list" style="max-height: 50vh; overflow-y: auto;"></div><button onclick="document.getElementById('task-modal').style.display='none'" style="width:100%; margin-top:15px; padding:10px; background:#e0e0e0; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">닫기</button></div></div>
     
     <!-- 일정/자재 수정 모달 (반복 설정 추가) -->
@@ -462,20 +534,8 @@
             <button onclick="document.getElementById('missing-dates-modal').style.display='none'" style="width:100%; margin-top:15px; padding:10px; background:#e0e0e0; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">닫기</button>
         </div>
     </div>
-
-    <!-- 전체 스크립트 로직 -->
+<!-- 전체 스크립트 로직 -->
     <script>
-        // PWA 서비스 워커 등록
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
-                navigator.serviceWorker.register('sw.js').then(function(registration) {
-                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
-                }, function(err) {
-                    console.log('ServiceWorker registration failed: ', err);
-                });
-            });
-        }
-
         // 전역 상태 변수
         window.currentTasks = []; 
         window.teamMembers = []; 
@@ -492,6 +552,9 @@
         window.currentContactGroups = []; 
         window.currentSiteGroups = []; 
         window.currentOtherCoGroups = [];
+        window.currentWarehouseGroups = []; // 창고 그룹 배열
+        window.currentWarehouseItems = [];  // 창고 자재 배열
+        window.editWarehouseId = null;
         window.editingContactId = null; 
         window.editingSiteId = null; 
         window.editingOtherCoId = null;
@@ -503,7 +566,7 @@
         window.showOldDoneTasks = false; 
         window.worklogViewDate = '';
 
-        // 파이어베이스 초기화
+        // 파이어베이스 초기화 (실제 서비스 시 본인의 Firebase 키로 변경 필요)
         try {
             const firebaseConfig = { 
                 apiKey: "AIzaSyDSERFM9_UmjfPt5x3HTsL0flekVb-p6HA", 
@@ -514,6 +577,10 @@
                 firebase.initializeApp(firebaseConfig); 
             }
             window.db = firebase.firestore();
+            
+            // 🚨 브라우저 file:// iframe 보안 차단 회피 옵션 추가
+            window.db.settings({ experimentalForceLongPolling: true });
+
         } catch (e) {
             console.error("Firebase Init Error:", e);
         }
@@ -609,6 +676,224 @@
                 window.worklogViewDate = dateStr; 
             }
             window.updateUI(); 
+        };
+
+        // 창고 양식 다운로드 로직 추가
+        window.downloadWarehouseTemplate = function() {
+            if(typeof XLSX === 'undefined') return alert('엑셀 라이브러리를 로드하지 못했습니다.');
+            const wb = XLSX.utils.book_new();
+            const templateData = [{
+                '위치/창고': 'A창고 (또는 그룹명)',
+                '품명': '철근',
+                '규격': '10mm',
+                '단위': 'EA',
+                '수량': 100,
+                '비고': '추가 설명 작성 가능'
+            }];
+            const ws = XLSX.utils.json_to_sheet(templateData);
+            
+            // 컬럼 너비 조정
+            ws['!cols'] = [{wch: 15}, {wch: 20}, {wch: 15}, {wch: 10}, {wch: 10}, {wch: 25}];
+
+            XLSX.utils.book_append_sheet(wb, ws, "창고자재_업로드양식");
+            XLSX.writeFile(wb, `창고자재_업로드양식.xlsx`);
+        };
+
+        // 창고 엑셀 업로드 로직 (덮어쓰기)
+        window.uploadWarehouseExcel = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const json = XLSX.utils.sheet_to_json(worksheet);
+
+                    if(json.length === 0) return alert("엑셀 데이터가 없습니다.");
+                    if(!confirm(`⚠️ 주의: 기존 창고 데이터가 모두 삭제되고 엑셀 데이터(${json.length}개)로 덮어쓰기 됩니다.\n계속 진행하시겠습니까?`)) {
+                        event.target.value = '';
+                        return;
+                    }
+
+                    alert("기존 데이터를 삭제하고 업로드를 시작합니다. 잠시만 기다려주세요...");
+                    
+                    // 기존 데이터 모두 삭제
+                    const deletePromises = window.currentWarehouseItems.map(w => window.db.collection("warehouse").doc(w.id).delete());
+                    await Promise.all(deletePromises);
+
+                    // 새 데이터 추가
+                    let count = 0;
+                    const addPromises = json.map(async (row) => {
+                        const loc = row['위치'] || row['창고'] || row['위치/창고'] || row['그룹'] || '미지정';
+                        const item = row['품명'] || row['이름'] || row['자재명'] || '';
+                        const spec = row['규격'] || row['스펙'] || '';
+                        const unit = row['단위'] || '';
+                        const qty = Number(row['수량']) || 0;
+                        const note = row['비고'] || row['설명'] || '';
+
+                        if(item) {
+                            count++;
+                            return window.db.collection("warehouse").add({
+                                location: loc, item: item, spec: spec, unit: unit, qty: qty, note: note, createdAt: Date.now()
+                            });
+                        }
+                    });
+
+                    await Promise.all(addPromises);
+                    alert(`✅ 총 ${count}개의 자재 데이터가 성공적으로 덮어쓰기 되었습니다!`);
+                    
+                    // 파일 선택 초기화
+                    event.target.value = '';
+                } catch(err) {
+                    console.error("Excel Upload Error:", err);
+                    alert("엑셀 업로드 중 오류가 발생했습니다. 파일 형식을 확인해주세요.");
+                    event.target.value = '';
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        };
+
+        // 창고 모달 관련 함수
+        window.openWarehouseModal = function() { 
+            const searchInput = document.getElementById('wh-search-input');
+            if(searchInput) searchInput.value = '';
+            try { window.renderWarehouse(); } catch(e){} 
+            document.getElementById('warehouse-modal').style.display = 'block'; 
+        };
+
+        window.addWarehouseItem = async function() {
+            const loc = document.getElementById('wh-location-select').value;
+            const item = document.getElementById('wh-item').value.trim();
+            const spec = document.getElementById('wh-spec').value.trim();
+            const unit = document.getElementById('wh-unit').value.trim();
+            const qty = document.getElementById('wh-qty').value.trim();
+            const note = document.getElementById('wh-note').value.trim();
+
+            if(!loc) return alert("창고(위치)를 선택해주세요.");
+            if(!item) return alert("품명을 입력해주세요.");
+
+            if (window.editWarehouseId) {
+                await window.db.collection("warehouse").doc(window.editWarehouseId).update({
+                    location: loc, item: item, spec: spec, unit: unit, qty: Number(qty)||0, note: note
+                });
+                window.editWarehouseId = null;
+                const btn = document.getElementById('wh-submit-btn');
+                btn.innerText = "등록"; btn.style.background = "#2ecc71";
+            } else {
+                await window.db.collection("warehouse").add({
+                    location: loc, item: item, spec: spec, unit: unit, qty: Number(qty)||0, note: note, createdAt: Date.now()
+                });
+            }
+            document.getElementById('wh-item').value = '';
+            document.getElementById('wh-spec').value = '';
+            document.getElementById('wh-unit').value = '';
+            document.getElementById('wh-qty').value = '';
+            document.getElementById('wh-note').value = '';
+        };
+
+        window.editWarehouseItem = function(id) {
+            const w = window.currentWarehouseItems.find(x => x.id === id);
+            if(!w) return;
+            document.getElementById('wh-location-select').value = w.location || '';
+            document.getElementById('wh-item').value = w.item || '';
+            document.getElementById('wh-spec').value = w.spec || '';
+            document.getElementById('wh-unit').value = w.unit || '';
+            document.getElementById('wh-qty').value = w.qty || '';
+            document.getElementById('wh-note').value = w.note || '';
+            window.editWarehouseId = id;
+            const btn = document.getElementById('wh-submit-btn');
+            btn.innerText = "수정 저장"; btn.style.background = "#ff9f43";
+        };
+
+        window.deleteWarehouseItem = async function(id) {
+            if(confirm("이 창고 자재 기록을 삭제하시겠습니까?")) {
+                await window.db.collection("warehouse").doc(id).delete();
+            }
+        };
+
+        window.deleteSelectedWarehouseItems = async function() {
+            const checkboxes = document.querySelectorAll('.wh-delete-cb:checked');
+            if (checkboxes.length === 0) return alert("삭제할 항목을 선택해주세요.");
+            if (!confirm(`선택한 ${checkboxes.length}개의 창고 자재를 삭제하시겠습니까?`)) return;
+            
+            const promises = Array.from(checkboxes).map(cb => window.db.collection("warehouse").doc(cb.value).delete());
+            await Promise.all(promises);
+            alert("선택한 항목이 삭제되었습니다.");
+        };
+
+        window.deleteAllWarehouseItems = async function() {
+            if(!window.currentWarehouseItems || window.currentWarehouseItems.length === 0) return alert("삭제할 창고 자재가 없습니다.");
+            if (!confirm("⚠️ 정말로 모든 창고 자재 기록을 삭제하시겠습니까?\n이 작업은 복구할 수 봉습니다!")) return;
+            if (!confirm("다시 한 번 확인합니다. 모든 창고 자재를 완전히 삭제하시겠습니까?")) return;
+
+            const promises = window.currentWarehouseItems.map(w => window.db.collection("warehouse").doc(w.id).delete());
+            await Promise.all(promises);
+            alert("모든 창고 자재가 삭제되었습니다.");
+        };
+
+        window.renderWarehouse = function() {
+            const list = document.getElementById('warehouse-list');
+            if(!list) return;
+
+            const searchInput = document.getElementById('wh-search-input');
+            const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+
+            if(!window.currentWarehouseItems || window.currentWarehouseItems.length === 0) {
+                list.innerHTML = '<div style="text-align:center; padding:20px; color:#999; font-size:0.85rem;">등록된 창고 자재가 없습니다.</div>';
+                return;
+            }
+
+            // 검색어 기반 필터링
+            const filteredItems = window.currentWarehouseItems.filter(w => {
+                if (!searchTerm) return true;
+                const textToSearch = `${w.location||''} ${w.item||''} ${w.spec||''} ${w.note||''}`.toLowerCase();
+                return textToSearch.includes(searchTerm);
+            });
+
+            if (filteredItems.length === 0) {
+                list.innerHTML = '<div style="text-align:center; padding:20px; color:#999; font-size:0.85rem;">검색 결과가 없습니다.</div>';
+                return;
+            }
+
+            const grouped = {};
+            filteredItems.forEach(w => {
+                const g = w.location || '미지정';
+                if(!grouped[g]) grouped[g] = [];
+                grouped[g].push(w);
+            });
+
+            let html = '';
+            Object.keys(grouped).sort().forEach(g => {
+                html += `<div style="font-weight:bold; color:#2ecc71; font-size:0.85rem; margin-top:10px; border-bottom:1px solid #eee; padding-bottom:3px;">🏢 ${g}</div>`;
+                grouped[g].forEach(w => {
+                    html += `
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:8px; border-bottom:1px dashed #eee; background:#fff;">
+                        <div style="display:flex; align-items:center; gap:8px; flex:1; padding-right:10px;">
+                            <input type="checkbox" class="wh-delete-cb" value="${w.id}" style="width:16px; height:16px; cursor:pointer; accent-color:#ff5630;" title="삭제 선택">
+                            <div>
+                                <div style="font-size:0.9rem; font-weight:bold; color:#333;">
+                                    <span style="color:#666; font-size:0.75rem; font-weight:normal;">품명:</span> ${w.item || '-'}
+                                </div>
+                                <div style="font-size:0.8rem; color:#555; margin-top:3px; display:flex; flex-wrap:wrap; gap:8px;">
+                                    <span><span style="color:#888; font-size:0.7rem;">규격:</span> ${w.spec || '-'}</span>
+                                    <span><span style="color:#888; font-size:0.7rem;">단위:</span> ${w.unit || '-'}</span>
+                                    <span style="color:#0052cc;"><span style="color:#888; font-size:0.7rem;">수량:</span> <strong>${w.qty || 0}</strong></span>
+                                </div>
+                                ${w.note ? `<div style="font-size:0.75rem; color:#888; margin-top:3px;">비고: ${w.note}</div>` : ''}
+                            </div>
+                        </div>
+                        <div style="display:flex; gap:4px; flex-shrink:0;">
+                            <button onclick="window.editWarehouseItem('${w.id}')" style="background:#e6effc; color:#0052cc; border:none; padding:4px 8px; border-radius:4px; font-size:0.75rem; cursor:pointer; font-weight:bold;">수정</button>
+                            <button onclick="window.deleteWarehouseItem('${w.id}')" style="background:#ffebe6; color:#bf2600; border:none; padding:4px 8px; border-radius:4px; font-size:0.75rem; cursor:pointer; font-weight:bold;">삭제</button>
+                        </div>
+                    </div>`;
+                });
+            });
+            list.innerHTML = html;
         };
 
         // 모달 열기 함수들
@@ -994,6 +1279,7 @@
             div.style.border = '1px solid #c1c7d0'; 
             div.style.borderRadius = '6px'; 
             div.style.marginBottom = '8px'; 
+            div.style.position = 'relative'; 
             div.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)'; 
             div.style.alignItems = 'center'; 
             div.style.flexWrap = 'wrap'; 
@@ -1227,7 +1513,19 @@
 
             if (!isMat && s !== 'worklog') { 
                 const cardDropdownOptions = window.teamMembers.map(function(m){ return `<option value="${m.name}" ${t.assignee === m.name ? 'selected' : ''}>${m.name}</option>`; }).join(''); 
-                dropdownHtml = `<select onchange="window.changeField('${t.id}', 'assignee', this.value)" style="font-size:0.75rem; padding:3px; border:1px solid #ddd; border-radius:4px; max-width:100px; font-weight:bold; color:#172b4d;"><option value="">담당자 미지정</option>${cardDropdownOptions}</select>`; 
+                let selectHtml = `<select onchange="window.changeField('${t.id}', 'assignee', this.value)" style="font-size:0.75rem; padding:3px; border:1px solid #ddd; border-radius:4px; max-width:100px; font-weight:bold; color:#172b4d;"><option value="">담당자 미지정</option>${cardDropdownOptions}</select>`; 
+                
+                let inprogressText = ''; 
+                if (s !== 'todo' && t.inProgressTime) {
+                    inprogressText = `<span style="color:#ddd; margin:0 3px;">|</span> <span>진행: <strong>${t.inProgressUser||'-'} <span style="font-size:0.65rem; color:#0052cc; font-weight:normal;">(${t.inProgressTime})</span></strong></span>`;
+                }
+                
+                let doneText = ''; 
+                if (s === 'done' && t.doneTime) {
+                    doneText = `<span style="color:#ddd; margin:0 3px;">|</span> <span>완료: <strong>${t.doneUser||'-'} <span style="font-size:0.65rem; color:#00875a; font-weight:normal;">(${t.doneTime})</span></strong></span>`;
+                }
+
+                dropdownHtml = `<div style="display:flex; align-items:center; flex-wrap:wrap; gap:4px;">${selectHtml} <div style="font-size:0.75rem; color:#555; display:flex; align-items:center; flex-wrap:wrap;">${inprogressText}${doneText}</div></div>`;
             } else if (isMat) { 
                 let ordererText = t.orderer || '-'; 
                 if (s !== 'mat-request' && t.orderTime) ordererText += ` <span style="font-size:0.65rem; color:#00875a; font-weight:normal;">(${t.orderTime})</span>`; 
@@ -1240,6 +1538,7 @@
                 dropdownHtml = `<div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;"><span style="font-size:0.75rem; color:#555;">등록자: <strong>${t.assignee||'-'}</strong></span></div>`; 
             }
 
+            // 확인(Ack) 박스 렌더링 로직
             let ackDisplayHtml = ''; 
             let hasIHaveAcked = false; 
             if(t.acks && typeof t.acks === 'object' && !Array.isArray(t.acks)) { 
@@ -1255,11 +1554,21 @@
             } 
 
             let actionButtonsHtml = ''; 
+            const ackBtn = `<button class="${hasIHaveAcked ? 'btn-unack' : 'btn-ack'}" onclick="window.toggleAckRecord('${t.id}')">${hasIHaveAcked ? '확인취소' : '확인'}</button>`;
+
+            // 자재 항목일 경우에도 확인 버튼을 추가
             if (isMat) { 
-                actionButtonsHtml = `<button class="btn-edit" onclick="window.openEditModal('${t.id}')">수정</button>${s !== 'mat-request' ? `<button class="btn-move" onclick="window.moveTask('${t.id}', 'mat-request')">요청</button>` : ''}${s !== 'mat-ordered' ? `<button class="${s === 'mat-request' ? 'btn-ack' : 'btn-move'}" onclick="${s === 'mat-request' ? `window.orderMaterial('${t.id}')` : `window.moveTask('${t.id}', 'mat-ordered')`}">발주</button>` : ''}${s !== 'mat-delivered' ? `<button class="btn-move" onclick="window.deliverMaterial('${t.id}')">반입</button>` : ''}`; 
+                actionButtonsHtml = `<button class="btn-edit" onclick="window.openEditModal('${t.id}')">수정</button>` + ackBtn;
+                if (s === 'mat-request') {
+                    actionButtonsHtml += `<button class="btn-move" style="background:#e0e0e0; color:#333;" onclick="window.orderMaterial('${t.id}')">발주</button>`;
+                } else if (s === 'mat-ordered') {
+                    actionButtonsHtml += `<button class="btn-unack" style="background:#ffebe6; color:#bf2600;" onclick="window.cancelOrderMaterial('${t.id}')">발주취소</button>`;
+                    actionButtonsHtml += `<button class="btn-move" style="background:#e0e0e0; color:#333;" onclick="window.deliverMaterial('${t.id}')">반입</button>`;
+                } else if (s === 'mat-delivered') {
+                    actionButtonsHtml += `<button class="btn-move" style="background:#ffebe6; color:#bf2600;" onclick="window.moveTask('${t.id}', 'mat-ordered')">반입취소</button>`;
+                }
             } else if (s === 'todo' || s === 'inprogress' || s === 'done') { 
                 const btn1 = `<button class="btn-edit" onclick="window.openEditModal('${t.id}')">수정</button>`; 
-                const btn2 = `<button class="${hasIHaveAcked ? 'btn-unack' : 'btn-ack'}" onclick="window.toggleAckRecord('${t.id}')">${hasIHaveAcked ? '확인취소' : '확인'}</button>`; 
                 let btn3, btn4; 
                 if (s === 'todo') { 
                     btn3 = `<button class="btn-move" onclick="window.moveTask('${t.id}', 'inprogress')">진행</button>`; 
@@ -1271,7 +1580,7 @@
                     btn3 = `<button class="btn-move" onclick="window.moveTask('${t.id}', 'todo')">할일</button>`; 
                     btn4 = `<button class="btn-move" onclick="window.moveTask('${t.id}', 'inprogress')">진행</button>`; 
                 } 
-                actionButtonsHtml = btn1 + btn2 + btn3 + btn4; 
+                actionButtonsHtml = btn1 + ackBtn + btn3 + btn4; 
             } else { 
                 actionButtonsHtml = `<button class="btn-edit" onclick="window.openEditModal('${t.id}')">수정</button>`; 
             } 
@@ -1279,14 +1588,12 @@
             let checkBoxHtml = `<input type="checkbox" class="bulk-delete-cb" value="${t.id}" style="width:16px; height:16px; cursor:pointer; accent-color:#ff5630;" title="일괄 삭제 선택">`; 
             const fallback = window.getFallbackDate(t.createdAt); 
 
-            // 반복 뱃지 추가
             let repeatBadge = '';
             if(t.repeat && t.repeat !== 'none') {
                 const rMap = { 'daily':'매일', 'weekly':'매주', 'monthly':'매월' };
                 repeatBadge = `<span style="background:#e6effc; color:#0052cc; padding:2px 4px; border-radius:3px; font-size:0.65rem; margin-right:4px;">🔁 ${rMap[t.repeat]||''}</span>`;
             }
 
-            // 등록 시간 생성
             let regTimeStr = '';
             if (t.createdAt) {
                 let d = new Date(t.createdAt);
@@ -1699,17 +2006,20 @@
             document.getElementById('edit-worklog-modal').style.display = 'block'; 
         };
 
-        // 브리핑 팝업 함수 개선: 팀원별 미확인 내역 표시 추가
+        // 브리핑 팝업 함수 개선: 팀원별 미확인 내역 표시 및 진행 중인 항목 추가
         window.showDailyBriefing = function() { 
             try { 
                 const today = new Date(); 
                 const tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1); 
                 const tomorrowStr = window.getLocalDateString(tomorrow); 
+                
                 const tomorrowTasks = window.currentTasks.filter(function(t) { return t && t.status !== 'deleted' && ((t.startDate || window.getFallbackDate(t.createdAt)) === tomorrowStr || (t.dueDate || window.getFallbackDate(t.createdAt)) === tomorrowStr) && !(t.status || '').startsWith('mat-') && t.status !== 'worklog'; }); 
                 const matRequests = window.currentTasks.filter(function(t) { return t && t.status === 'mat-request'; }); 
                 const matOrdereds = window.currentTasks.filter(function(t) { return t && t.status === 'mat-ordered'; }); 
+                const inprogressTasks = window.currentTasks.filter(function(t) { return t && t.status === 'inprogress'; }); 
                 
                 const unackedContainer = document.getElementById('brief-unacked-list');
+                const inprogressContainer = document.getElementById('brief-inprogress-list');
                 const todoContainer = document.getElementById('brief-todo-list'); 
                 const reqContainer = document.getElementById('brief-mat-request-list'); 
                 const ordContainer = document.getElementById('brief-mat-ordered-list'); 
@@ -1755,7 +2065,14 @@
                     }
                 }
 
-                if(!todoContainer || !reqContainer || !ordContainer) return; 
+                if(!todoContainer || !reqContainer || !ordContainer || !inprogressContainer) return; 
+
+                // 진행 중인 할일 내역 렌더링
+                if(inprogressTasks.length > 0) {
+                    inprogressContainer.innerHTML = inprogressTasks.map(function(t) { return `<div class="brief-item"><strong>${t.text || '제목없음'}</strong><div class="brief-meta">담당자: ${t.assignee || '미지정'} | 기간: ${t.startDate || '-'} ~ ${t.dueDate || '-'}</div></div>`; }).join(''); 
+                } else {
+                    inprogressContainer.innerHTML = '<div style="color:#aaa; text-align:center; padding:5px 0;">현재 진행 중인 항목이 없습니다.</div>'; 
+                }
                 
                 if(tomorrowTasks.length > 0) {
                     todoContainer.innerHTML = tomorrowTasks.map(function(t) { return `<div class="brief-item"><strong>${t.text || '제목없음'}</strong><div class="brief-meta">담당자: ${t.assignee || '미지정'} | 기간: ${t.startDate || '-'} ~ ${t.dueDate || '-'}</div></div>`; }).join(''); 
@@ -1890,11 +2207,9 @@
 
             if(newBundledTasks.length === 0) return alert("작업 내용을 하나 이상 입력해주세요.");
 
-            // 기존 동일 날짜 일보가 있는지 확인
             const existingLog = window.currentTasks.find(t => t.status === 'worklog' && t.startDate === baseDate && t.status !== 'deleted');
 
             if (existingLog) {
-                // 수정된 부분: 두 가지 선택지 제공
                 const isMerge = confirm(`해당 날짜(${baseDate})에 이미 작성된 일보가 있습니다.\n기존 일보 내용 아래에 이어서 추가(병합)하시겠습니까?\n\n※ [확인]: 기존 기록에 합치기\n※ [취소]: 별개의 기록으로 만들기 선택`);
                 
                 if (isMerge) {
@@ -1982,10 +2297,24 @@
         };
 
         window.moveTask = async function(id, newStatus) {  
+            if(!window.loggedInUser) return alert("로그인 후 사용해주세요."); 
             const task = window.currentTasks.find(function(t){ return t.id === id; }); 
             const sMap = { 'todo':'할 일', 'inprogress':'진행 중', 'done':'완료', 'mat-request':'발주요청', 'mat-ordered':'발주완료', 'mat-delivered':'반입완료' }; 
+            
+            const now = new Date(); 
+            const timeStr = `${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`; 
+            
             if(task) window.sendLineNotificationProxy(`🔄 [상태 변경]\n처리자: ${window.loggedInUser}\n내용: ${task.text || task.workDetails || '내용없음'}\n상태: ${sMap[task.status]||task.status} ➡️ ${sMap[newStatus]||newStatus}`); 
             
+            let updateData = { status: newStatus };
+            if (newStatus === 'inprogress') {
+                updateData.inProgressUser = window.loggedInUser;
+                updateData.inProgressTime = timeStr;
+            } else if (newStatus === 'done') {
+                updateData.doneUser = window.loggedInUser;
+                updateData.doneTime = timeStr;
+            }
+
             // 반복 일정 처리 로직
             if (newStatus === 'done' && task.repeat && task.repeat !== 'none') {
                 const nextStart = window.getNextDateStr(task.startDate, task.repeat);
@@ -1999,10 +2328,10 @@
                 });
                 
                 // 현재 완료하는 일정은 반복 속성을 끊어서 완료됨 상태로 픽스
-                await window.db.collection("tasks").doc(id).update({ status: newStatus, repeat: 'none' });  
-            } else {
-                await window.db.collection("tasks").doc(id).update({ status: newStatus });  
+                updateData.repeat = 'none';
             }
+            
+            await window.db.collection("tasks").doc(id).update(updateData);  
         };
 
         window.orderMaterial = async function(id) { 
@@ -2021,6 +2350,17 @@
             const timeStr = `${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`; 
             if(task) window.sendLineNotificationProxy(`📦 [반입 완료 처리]\n품목: ${task.text || '품명없음'}\n반입확인자: ${window.loggedInUser}\n처리시간: ${timeStr}`); 
             await window.db.collection("tasks").doc(id).update({ status: 'mat-delivered', deliverer: window.loggedInUser, deliverTime: timeStr }); 
+        };
+
+        // 발주 취소 기능 추가
+        window.cancelOrderMaterial = async function(id) { 
+            if(!window.loggedInUser) return alert("로그인 후 사용해주세요."); 
+            const task = window.currentTasks.find(function(t){ return t.id === id; }); 
+            if(!confirm("발주를 취소하고 다시 요청 상태로 되돌리시겠습니까?")) return;
+            const now = new Date(); 
+            const timeStr = `${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`; 
+            if(task) window.sendLineNotificationProxy(`📦 [발주 취소]\n품목: ${task.text || '품명없음'}\n취소자: ${window.loggedInUser}\n처리시간: ${timeStr}`); 
+            await window.db.collection("tasks").doc(id).update({ status: 'mat-request', orderer: '', orderTime: '' }); 
         };
 
         window.toggleAckRecord = async function(id) { 
@@ -2298,7 +2638,7 @@
                         if (t.status === 'worklog' && Array.isArray(t.bundledTasks) && t.bundledTasks.length > 0) {
                             contentText = t.bundledTasks.map((bt, i) => {
                                 let wNames = (Array.isArray(bt.workers) && bt.workers.length > 0) ? ` (투입: ${bt.workers.join(', ')})` : '';
-                                let detailText = (bt.location !== undefined || bt.content !== undefined) ? `[${bt.location||'위치없음'}] ${bt.content||''}` : (bt.detail || '');
+                                let detailText = (bt.location !== undefined || bt.content !== undefined) ? `[${bt.location||'위치미상'}] ${bt.content||''}` : (bt.detail || '');
                                 return `[작업 ${i+1}] ${detailText}${wNames}`;
                             }).join('\n');
                         }
@@ -2317,6 +2657,20 @@
                     XLSX.utils.book_append_sheet(wb, ws, sMap[statusKey]);
                 }
             });
+
+            // 창고 자재 시트
+            if (window.currentWarehouseItems && window.currentWarehouseItems.length > 0) {
+                const whData = window.currentWarehouseItems.map(w => ({
+                    '위치/창고': w.location || '',
+                    '품명': w.item || '',
+                    '규격': w.spec || '',
+                    '단위': w.unit || '',
+                    '수량': w.qty || 0,
+                    '비고': w.note || ''
+                }));
+                const wsWh = XLSX.utils.json_to_sheet(whData);
+                XLSX.utils.book_append_sheet(wb, wsWh, "창고자재");
+            }
 
             // 지출 내역 시트
             const expenseData = window.currentExpenses.map(e => ({
@@ -2379,7 +2733,8 @@
                 notices: window.currentNotices,
                 contacts: window.currentContacts,
                 sites: window.currentSites,
-                equipments: window.currentOtherCos
+                equipments: window.currentEquips,
+                warehouse: window.currentWarehouseItems
             };
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fullData));
             const a = document.createElement('a');
@@ -2400,7 +2755,7 @@
                     if(!confirm("⚠️ 경고: 현재 데이터 베이스에 복구 데이터를 덮어씌웁니다.\n진행하시겠습니까?")) return;
                     
                     alert("데이터를 복구 중입니다...");
-                    const collections = ['tasks', 'team', 'expenses', 'notices', 'contacts', 'sites', 'equipments', 'otherCompanies'];
+                    const collections = ['tasks', 'team', 'expenses', 'notices', 'contacts', 'sites', 'equipments', 'otherCompanies', 'warehouse'];
                     const promises = [];
                     collections.forEach(col => {
                         if(data[col] && Array.isArray(data[col])) {
@@ -2469,6 +2824,7 @@
         window.renderContactGroups = createGroupRenderer('contactGroups', 'currentContactGroups', 'contact-group-list', ['contact-group-select', 'contact-group-filter']);
         window.renderSiteGroups = createGroupRenderer('siteGroups', 'currentSiteGroups', 'site-group-list', ['site-group-select', 'site-group-filter']);
         window.renderOtherCoGroups = createGroupRenderer('otherCompanyGroups', 'currentOtherCoGroups', 'otherco-group-list', ['otherco-group-select', 'otherco-group-filter']);
+        window.renderWarehouseGroups = createGroupRenderer('warehouseGroups', 'currentWarehouseGroups', 'warehouse-group-list', ['wh-location-select']);
         
         window.addContactGroup = async function() {
             const name = document.getElementById('new-contact-group').value.trim();
@@ -2477,6 +2833,14 @@
         window.addSiteGroup = async function() {
             const name = document.getElementById('new-site-group').value.trim();
             if(name) { await window.db.collection('siteGroups').add({name: name, createdAt: Date.now()}); document.getElementById('new-site-group').value=''; }
+        };
+        window.addOtherCoGroup = async function() { 
+            const name = document.getElementById('new-otherco-group').value.trim(); 
+            if(name) { await window.db.collection("otherCompanyGroups").add({ name: name, createdAt: Date.now() }); document.getElementById('new-otherco-group').value = ''; }
+        };
+        window.addWarehouseGroup = async function() {
+            const name = document.getElementById('new-warehouse-group').value.trim();
+            if(name) { await window.db.collection('warehouseGroups').add({name: name, createdAt: Date.now()}); document.getElementById('new-warehouse-group').value=''; }
         };
 
         const renderSimpleList = (arrName, filterId, listId, htmlMapper) => {
@@ -2588,117 +2952,105 @@
                     if(document.getElementById('expense-modal').style.display === 'block') window.renderExpenses(); 
                 });
 
-                window.db.collection("expense_limits").onSnapshot(function(s) { 
-                    window.expenseLimits = {}; 
-                    s.docs.forEach(function(d){ window.expenseLimits[d.id] = d.data().limit; }); 
-                    if(document.getElementById('expense-modal').style.display === 'block') window.renderExpenses(); 
+                window.db.collection("expense_limits").onSnapshot(function(s) {
+                    s.docs.forEach(function(d) {
+                        window.expenseLimits[d.id] = d.data().limit || 0;
+                    });
+                    if (document.getElementById('expense-modal').style.display === 'block') window.renderExpenses();
                 });
 
-                // 지출 기준일 설정 실시간 동기화
-                window.db.collection("settings").doc("expense").onSnapshot(function(doc) { 
-                    if(doc.exists && doc.data().cutoffDate) {
-                        window.expenseCutoffDate = doc.data().cutoffDate;
-                    } else {
-                        window.expenseCutoffDate = 25; 
+                window.db.collection("notices").onSnapshot(function(s) {
+                    window.currentNotices = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); });
+                    window.currentNotices.sort(function(a, b){ return (b.createdAt || 0) - (a.createdAt || 0); });
+                    if(document.getElementById('notice-modal').style.display === 'block') window.renderNotices();
+                });
+
+                window.db.collection("equipments").onSnapshot(function(s) {
+                    window.currentEquips = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); });
+                    window.currentEquips.sort(function(a, b){ return (b.createdAt || 0) - (a.createdAt || 0); });
+                    if(document.getElementById('equip-modal').style.display === 'block') window.renderEquips();
+                    window.updateUI();
+                });
+
+                window.db.collection("contacts").onSnapshot(function(s) {
+                    window.currentContacts = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); });
+                    window.currentContacts.sort(function(a, b){ return (a.createdAt || 0) - (b.createdAt || 0); });
+                    if(document.getElementById('contact-modal').style.display === 'block') window.renderContacts();
+                    window.renderSidePanels();
+                });
+
+                window.db.collection("sites").onSnapshot(function(s) {
+                    window.currentSites = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); });
+                    window.currentSites.sort(function(a, b){ return (a.createdAt || 0) - (b.createdAt || 0); });
+                    if(document.getElementById('site-modal').style.display === 'block') window.renderSites();
+                    window.renderSidePanels();
+                });
+
+                window.db.collection("otherCompanies").onSnapshot(function(s) {
+                    window.currentOtherCos = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); });
+                    window.currentOtherCos.sort(function(a, b){ return (a.createdAt || 0) - (b.createdAt || 0); });
+                    if(document.getElementById('otherco-modal').style.display === 'block') window.renderOtherCos();
+                    window.renderSidePanels();
+                });
+
+                window.db.collection("warehouse").onSnapshot(function(s) {
+                    window.currentWarehouseItems = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); });
+                    window.currentWarehouseItems.sort(function(a, b){ return (b.createdAt || 0) - (a.createdAt || 0); });
+                    if(document.getElementById('warehouse-modal').style.display === 'block') window.renderWarehouse();
+                });
+
+                // 그룹 데이터 리스너
+                window.db.collection("contactGroups").onSnapshot(function(s) {
+                    window.currentContactGroups = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); });
+                    window.renderContactGroups();
+                });
+                window.db.collection("siteGroups").onSnapshot(function(s) {
+                    window.currentSiteGroups = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); });
+                    window.renderSiteGroups();
+                });
+                window.db.collection("otherCompanyGroups").onSnapshot(function(s) {
+                    window.currentOtherCoGroups = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); });
+                    window.renderOtherCoGroups();
+                });
+                window.db.collection("warehouseGroups").onSnapshot(function(s) {
+                    window.currentWarehouseGroups = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); });
+                    window.renderWarehouseGroups();
+                });
+
+                // 설정(지출 갱신 기준일) 리스너
+                window.db.collection("settings").doc("expense").onSnapshot(function(doc) {
+                    if(doc.exists) {
+                        window.expenseCutoffDate = doc.data().cutoffDate || 25;
+                        if(document.getElementById('expense-modal').style.display === 'block') window.renderExpenses();
                     }
-                    let cutoffEl = document.getElementById('exp-cutoff-input');
-                    if(cutoffEl) cutoffEl.value = window.expenseCutoffDate;
-                    
-                    if(document.getElementById('expense-modal').style.display === 'block') {
-                        window.expenseViewCycle = window.getExpensePeriod(new Date());
-                        window.renderExpenses();
-                    }
                 });
 
-                window.db.collection("notices").onSnapshot(function(s) { 
-                    window.currentNotices = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); }); 
-                    window.currentNotices.sort(function(a, b){ return (b.createdAt || 0) - (a.createdAt || 0); }); 
-                    window.renderNotices(); 
-                });
-                
-                window.db.collection("contactGroups").onSnapshot(function(s) { 
-                    window.currentContactGroups = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); }); 
-                    window.currentContactGroups.sort(function(a, b){ return (a.createdAt || 0) - (b.createdAt || 0); }); 
-                    window.renderContactGroups(); window.renderSidePanels(); 
-                });
-
-                window.db.collection("siteGroups").onSnapshot(function(s) { 
-                    window.currentSiteGroups = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); }); 
-                    window.currentSiteGroups.sort(function(a, b){ return (a.createdAt || 0) - (b.createdAt || 0); }); 
-                    window.renderSiteGroups(); window.renderSidePanels(); 
-                });
-
-                window.db.collection("contacts").onSnapshot(function(s) { 
-                    window.currentContacts = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); }); 
-                    window.currentContacts.sort(function(a, b){ return (b.createdAt || 0) - (a.createdAt || 0); }); 
-                    if(document.getElementById('contact-modal').style.display === 'block') window.renderContacts(); 
-                    window.renderSidePanels(); 
-                });
-                
-                window.db.collection("sites").onSnapshot(function(s) { 
-                    window.currentSites = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); }); 
-                    window.currentSites.sort(function(a, b){ return (b.createdAt || 0) - (a.createdAt || 0); }); 
-                    if(document.getElementById('site-modal').style.display === 'block') window.renderSites(); 
-                    window.renderSidePanels(); 
-                });
-
-                window.db.collection("otherCompanyGroups").onSnapshot(function(s) { 
-                    window.currentOtherCoGroups = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); }); 
-                    window.currentOtherCoGroups.sort(function(a, b){ return (a.createdAt || 0) - (b.createdAt || 0); }); 
-                    window.renderOtherCoGroups(); window.renderSidePanels(); 
-                });
-
-                window.db.collection("otherCompanies").onSnapshot(function(s) { 
-                    window.currentOtherCos = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); }); 
-                    window.currentOtherCos.sort(function(a, b){ return (b.createdAt || 0) - (a.createdAt || 0); }); 
-                    if(document.getElementById('otherco-modal').style.display === 'block') window.renderOtherCos(); 
-                    window.renderSidePanels(); 
-                });
-                
-                window.db.collection("equipments").onSnapshot(function(s) { 
-                    window.currentEquips = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); }); 
-                    window.currentEquips.sort(function(a, b){ return (b.createdAt || 0) - (a.createdAt || 0); }); 
-                    window.renderEquips(); window.updateUI(); 
-                });
-            } catch(err) {
-                console.error("Firebase Listeners Init Error:", err);
+            } catch (e) {
+                console.error("Firebase Listener Init Error:", e);
             }
         };
 
-        // 초기 시작점
-        window.initApp = function() { 
-            // 모바일 환경이면 섹션 기본 접기
-            if (window.innerWidth <= 767) {
-                ['worklog-wrap', 'schedule-wrap', 'material-wrap'].forEach(function(id) {
-                    const wrap = document.getElementById(id);
-                    if(wrap) {
-                        wrap.style.display = 'none';
-                        const header = wrap.previousElementSibling;
-                        if(header && header.classList.contains('section-header')) {
-                            const icon = header.querySelector('.section-icon');
-                            if(icon) icon.innerText = '▶';
-                        }
-                    }
-                });
-            }
-
-            window.fetchWeather(); 
-            window.updateClock(); 
-            setInterval(window.updateClock, 1000); 
-            window.resetDates(); 
+        // 앱 초기화 및 로드 완료 시점 처리
+        window.onload = function() {
+            window.resetDates();
+            window.fetchWeather();
             
-            const container = document.getElementById('worklog-entries'); 
-            if(container) container.innerHTML = ''; 
-            window.worklogEntryCount = 0; 
-            for(let i=0; i<3; i++) { 
-                window.addWorklogEntry(); 
-            } 
-            window.initFirebaseListeners();
-        };
+            // 시계 업데이트 타이머 시작
+            window.updateClock();
+            setInterval(window.updateClock, 1000);
+            
+            // 초기 작업일보 입력폼 3개 생성
+            for(let i = 0; i < 3; i++) {
+                window.addWorklogEntry();
+            }
 
-        window.addEventListener('DOMContentLoaded', function() { 
-            window.initApp(); 
-        });
+            // 파이어베이스 DB가 연결되어 있으면 리스너 활성화
+            if (window.db) {
+                window.initFirebaseListeners();
+            } else {
+                console.warn("데이터베이스 연결에 실패했습니다. Firebase 설정을 확인해주세요.");
+            }
+        };
     </script>
 </body>
 </html>
