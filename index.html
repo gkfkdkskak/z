@@ -577,7 +577,7 @@
                 firebase.initializeApp(firebaseConfig); 
             }
             window.db = firebase.firestore();
-            window.db.settings({ experimentalForceLongPolling: true });
+            window.db.settings({ experimentalForceLongPolling: true, merge: true });
 
         } catch (e) {
             console.error("Firebase Init Error:", e);
@@ -1356,7 +1356,7 @@
 
         window.openWorkerModal = function(id) { 
             window.currentWorkerEntryId = id; 
-            const hiddenInput = document.getElementById(id.includes('edit') ? `wl-workers-hidden-${id}` : `wl-workers-hidden-${id}`); 
+            const hiddenInput = document.getElementById(`wl-workers-hidden-${id}`);
             const selected = hiddenInput && hiddenInput.value ? hiddenInput.value.split(',') : []; 
             const listEl = document.getElementById('worker-modal-list'); 
             if(!window.currentContacts || window.currentContacts.length === 0) { 
@@ -1384,9 +1384,9 @@
             const id = window.currentWorkerEntryId; 
             const checkboxes = document.querySelectorAll('#worker-modal-list input[type="checkbox"]:checked'); 
             const selected = Array.from(checkboxes).map(function(cb){ return cb.value; }); 
-            const targetHidden = document.getElementById(id.includes('edit') ? `wl-workers-hidden-${id}` : `wl-workers-hidden-${id}`); 
+            const targetHidden = document.getElementById(`wl-workers-hidden-${id}`); 
             if (targetHidden) targetHidden.value = selected.join(','); 
-            const displayEl = document.getElementById(id.includes('edit') ? `wl-workers-display-${id}` : `wl-workers-display-${id}`); 
+            const displayEl = document.getElementById(`wl-workers-display-${id}`); 
             if(displayEl) { 
                 if(selected.length > 0) { displayEl.innerHTML = `투입 ${selected.length}명 : <strong style="color:#0052cc;">${selected.join(', ')}</strong>`; } 
                 else { displayEl.innerHTML = '<span style="color:#aaa;">선택없음</span>'; } 
@@ -1752,7 +1752,7 @@
                             let groupKey = yyyy_mm; 
                             if (yyyy_mm === currentMonthStr && refDate && (t.status === 'done' || t.status === 'mat-delivered')) { 
                                 let rDateObj = new Date(refDate.split('-')[0], refDate.split('-')[1]-1, refDate.split('-')[2]); 
-                                let diffDays = (todayDateObj - rDateObj) / (1000 * 60 * 60 * 24); 
+                                let diffDays = Math.round((todayDateObj - rDateObj) / (1000 * 60 * 60 * 24));
                                 if (diffDays >= 7) groupKey = yyyy_mm + '-old'; 
                             } 
                             if(!grouped[groupKey]) grouped[groupKey] = []; 
