@@ -2810,7 +2810,10 @@
                 <div>
                     <div style="font-size:0.75rem; color:#009688; font-weight:bold;">${c.group || '미지정'}</div>
                     <div style="font-size:0.9rem; font-weight:bold;">${c.name}</div>
-                    <div style="font-size:0.8rem; color:#555;">📞 ${c.phone}</div>
+                    <div style="font-size:0.8rem; color:#555; margin:3px 0;">
+                        <!-- 전화 걸기 링크 적용 -->
+                        <a href="tel:${c.phone}" style="color:#0052cc; text-decoration:none; font-weight:bold;">📞 ${c.phone}</a>
+                    </div>
                     <div style="font-size:0.75rem; color:#888;">${c.note || ''}</div>
                 </div>
                 <div>
@@ -2838,7 +2841,10 @@
                 <div>
                     <div style="font-size:0.75rem; color:#d35400; font-weight:bold;">${o.group || '미지정'}</div>
                     <div style="font-size:0.9rem; font-weight:bold;">${o.name}</div>
-                    <div style="font-size:0.8rem; color:#555;">📞 ${o.phone}</div>
+                    <div style="font-size:0.8rem; color:#555; margin:3px 0;">
+                        <!-- 전화 걸기 링크 적용 -->
+                        <a href="tel:${o.phone}" style="color:#0052cc; text-decoration:none; font-weight:bold;">📞 ${o.phone}</a>
+                    </div>
                     <div style="font-size:0.75rem; color:#888;">${o.note || ''}</div>
                 </div>
                 <div>
