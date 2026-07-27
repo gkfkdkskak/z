@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>현장 관리 보드</title>
     
-    <!-- 엑셀 업로드/다운로드 (브라우저 차단을 피하기 위해 공식 링크로 변경) -->
+    <!-- 엑셀 업로드/다운로드 -->
     <script src="https://cdn.sheetjs.com/xlsx-0.18.5/package/dist/xlsx.full.min.js"></script>
 
-    <!-- 파이어베이스 라이브러리 (8.0.0 버전 유지) -->
+    <!-- 파이어베이스 라이브러리 (8.0.0 버전 유지 - 안정성) -->
     <script src="https://www.gstatic.com/firebasejs/8.0.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.0.0/firebase-firestore.js"></script>
 
@@ -156,7 +156,8 @@
 
         <main class="main-content">
             <div style="width:100%; margin: 0 auto 10px auto; display:flex; gap:10px; padding:0 5px; flex-wrap:wrap; align-items:center; box-sizing:border-box;">
-                <input type="text" id="main-search-input" placeholder="🔍 작업, 자재, 담당자 검색..." onkeyup="window.debouncedUpdateUI()" style="...">
+                <!-- ★ 디바운싱이 적용된 검색창 -->
+                <input type="text" id="main-search-input" placeholder="🔍 작업, 자재, 담당자 검색..." onkeyup="window.debouncedUpdateUI ? window.debouncedUpdateUI() : window.updateUI()" style="flex:1; min-width:200px; padding:10px; border-radius:8px; border:1px solid #ddd; font-size:0.9rem;">
                 <button onclick="window.deleteSelectedTasks()" style="background:#ff5630; color:white; border:none; padding:10px 15px; border-radius:8px; font-weight:bold; cursor:pointer; white-space:nowrap;">🗑️ 선택 일괄 삭제</button>
                 <button id="toggle-old-btn" onclick="window.toggleOldTasks()" style="background:#6b778c; color:white; border:none; padding:10px 15px; border-radius:8px; font-weight:bold; cursor:pointer; white-space:nowrap;">🕒 과거 완료내역 모두 보기</button>
                 <button onclick="window.downloadExcel()" style="background:#217346; color:white; border:none; padding:10px 15px; border-radius:8px; font-weight:bold; cursor:pointer;">📊 엑셀 다운로드</button>
@@ -318,7 +319,7 @@
         </aside>
     </div>
 
-    <!-- 창고 자재 관리 모달 추가 -->
+    <!-- ★ 최적화: 창고 자재 관리 모달 레이아웃 구조 오류 수정됨 -->
     <div id="warehouse-modal" class="modal" onclick="this.style.display='none'">
         <div class="modal-content" style="max-width:600px;" onclick="event.stopPropagation()">
             <h3 style="margin:0 0 15px 0; color:#2ecc71; display:flex; justify-content:space-between; align-items:center;">
@@ -326,7 +327,6 @@
                 <button onclick="document.getElementById('warehouse-modal').style.display='none'" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:#666;">×</button>
             </h3>
             
-            <!-- 엑셀 다운/업로드 버튼 그룹 -->
             <div style="display:flex; justify-content:flex-end; gap:5px; margin-bottom:10px;">
                 <button onclick="window.downloadWarehouseTemplate()" style="background:#34495e; color:white; padding:6px 12px; border:none; border-radius:4px; font-size:0.8rem; font-weight:bold; cursor:pointer;">📥 양식 다운</button>
                 <label style="background:#217346; color:white; padding:6px 12px; border-radius:4px; font-size:0.8rem; font-weight:bold; cursor:pointer; margin:0;">
@@ -354,8 +354,8 @@
                 <button id="wh-submit-btn" onclick="window.addWarehouseItem()" style="background:#2ecc71; color:white; border:none; padding:8px 15px; border-radius:4px; font-weight:bold; cursor:pointer;">등록</button>
             </div>
             
-            <!-- 실시간 검색창 및 다중 삭제 버튼 영역 -->
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:10px; flex-wrap:wrap;">
+                <!-- ★ 검색창 디바운스 처리 -->
                 <input type="text" id="wh-search-input" placeholder="🔍 품명, 규격, 위치 검색..." onkeyup="window.debouncedRenderWarehouse ? window.debouncedRenderWarehouse() : window.renderWarehouse()" style="flex:1; min-width:150px; box-sizing:border-box; padding:8px; border:1px solid #ddd; border-radius:4px; font-size:0.85rem;">
                 <div style="display:flex; gap:5px;">
                     <button onclick="window.deleteSelectedWarehouseItems()" style="background:#ff5630; color:white; border:none; padding:6px 10px; border-radius:4px; font-size:0.75rem; font-weight:bold; cursor:pointer; white-space:nowrap;">☑️ 선택 삭제</button>
@@ -363,14 +363,13 @@
                 </div>
             </div>
             
-            <!-- ★ 추가됨: 창고별 필터 드롭다운 -->
             <div style="margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid #eee;">
                 <select id="wh-group-filter" onchange="window.renderWarehouse()" style="width:100%; padding:8px; border:1px solid #2ecc71; border-radius:4px; color:#2ecc71; font-weight:bold; outline:none;">
                     <option value="">📂 전체 창고 보기</option>
                 </select>
             </div>
             
-            <!-- flex 속성을 제거하여 테이블 레이아웃 오류 방지 -->
+            <!-- ★ flex 속성 제거로 화면 벗어남 오류 해결 -->
             <div id="warehouse-list" style="max-height:350px; overflow-y:auto; padding-right:5px;"></div>
         </div>
     </div>
@@ -408,13 +407,11 @@
                         <button onclick="window.changeExpenseMonth(1)" style="padding:4px 8px; border:1px solid #ccc; background:#fff; border-radius:4px; cursor:pointer;">▶</button>
                     </div>
                     <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
-                        <!-- ★ 기본 한도 입력 추가 -->
                         <div style="display:flex; align-items:center; gap:5px; font-size:0.85rem; font-weight:bold; color:#0052cc;">
                             <span>📌 기본 한도:</span>
                             <input type="number" id="exp-default-limit-input" placeholder="매월 기본액" onchange="window.saveDefaultExpenseLimit()" style="width:100px; padding:6px; border:1px solid #0052cc; border-radius:4px; font-weight:bold; text-align:right; color:#0052cc;">
                             <span>원</span>
                         </div>
-                        <!-- 기존 한도 입력 (이번 달 한도) -->
                         <div style="display:flex; align-items:center; gap:5px; font-size:0.85rem; font-weight:bold;">
                             <span>이번 달 한도:</span>
                             <input type="number" id="exp-limit-input" placeholder="금액" onchange="window.saveExpenseLimit()" style="width:100px; padding:6px; border:1px solid #ddd; border-radius:4px; font-weight:bold; text-align:right;">
@@ -426,7 +423,6 @@
                         </div>
                     </div>
                 </div>
-                <!-- 월 갱신 기준일 설정 -->
                 <div style="margin-top:10px; padding-top:10px; border-top:1px dashed #ccc; display:flex; align-items:center; gap:5px; font-size:0.8rem; color:#666;">
                     <span>🔄 월 갱신 기준일: 매월</span>
                     <input type="number" id="exp-cutoff-input" min="1" max="31" style="width:50px; padding:4px; border:1px solid #ddd; border-radius:4px; text-align:right;" onchange="window.saveExpenseCutoff()">
@@ -487,7 +483,7 @@
     
     <div id="task-modal" class="modal" onclick="this.style.display='none'"><div class="modal-content" onclick="event.stopPropagation()"><div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #eee; padding-bottom:10px; margin-bottom:10px;"><h3 id="modal-title" style="margin:0; color:var(--primary-color);">상세 보기</h3><button onclick="document.getElementById('task-modal').style.display='none'" style="background:none; border:none; font-size:1.5rem; color:#999; cursor:pointer; line-height:1;">×</button></div><div id="modal-list" style="max-height: 50vh; overflow-y: auto;"></div><button onclick="document.getElementById('task-modal').style.display='none'" style="width:100%; margin-top:15px; padding:10px; background:#e0e0e0; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">닫기</button></div></div>
     
-    <!-- 일정/자재 수정 모달 (반복 설정 추가) -->
+    <!-- 일정/자재 수정 모달 -->
     <div id="edit-modal" class="modal" onclick="this.style.display='none'">
         <div class="modal-content" onclick="event.stopPropagation()">
             <h3 style="margin:0 0 15px 0; color:var(--primary-color);">✏️ 내용 및 날짜 수정</h3>
@@ -551,27 +547,16 @@
             <button onclick="document.getElementById('missing-dates-modal').style.display='none'" style="width:100%; margin-top:15px; padding:10px; background:#e0e0e0; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">닫기</button>
         </div>
     </div>
-<!-- 전체 스크립트 로직 -->
+
+    <!-- 전체 스크립트 로직 -->
     <script>
         // 전역 상태 변수
-// 디바운스 유틸리티 함수
-window.debounce = function(func, delay) {
-    let timer;
-    return function(...args) {
-        clearTimeout(timer);
-        timer = setTimeout(() => { func.apply(this, args); }, delay);
-    };
-};
-
-// 딜레이가 적용된 업데이트 함수 생성 (300ms)
-window.debouncedUpdateUI = window.debounce(window.updateUI, 300);
-window.debouncedRenderWarehouse = window.debounce(window.renderWarehouse, 300);
         window.currentTasks = []; 
         window.teamMembers = []; 
         window.currentEquips = []; 
         window.currentExpenses = []; 
         window.expenseLimits = {}; 
-        window.expenseDefaultLimit = 0; // 기본 한도 변수 추가됨
+        window.expenseDefaultLimit = 0; 
         window.expenseViewCycle = null;
         window.expenseCutoffDate = 25; 
         window.currentNotices = []; 
@@ -596,7 +581,20 @@ window.debouncedRenderWarehouse = window.debounce(window.renderWarehouse, 300);
         window.showOldDoneTasks = false; 
         window.worklogViewDate = '';
 
-        // 파이어베이스 초기화 (실제 서비스 시 본인의 Firebase 키로 변경 필요)
+        // ★ 최적화: 디바운스 유틸리티 함수 추가
+        window.debounce = function(func, delay) {
+            let timer;
+            return function(...args) {
+                clearTimeout(timer);
+                timer = setTimeout(() => { func.apply(this, args); }, delay);
+            };
+        };
+
+        // ★ 최적화: 검색창용 디바운싱 적용 함수
+        window.debouncedUpdateUI = window.debounce(() => { window.updateUI(); }, 300);
+        window.debouncedRenderWarehouse = window.debounce(() => { window.renderWarehouse(); }, 300);
+
+        // 파이어베이스 초기화
         try {
             const firebaseConfig = { 
                 apiKey: "AIzaSyDSERFM9_UmjfPt5x3HTsL0flekVb-p6HA", 
@@ -608,7 +606,6 @@ window.debouncedRenderWarehouse = window.debounce(window.renderWarehouse, 300);
             }
             window.db = firebase.firestore();
             window.db.settings({ experimentalForceLongPolling: true, merge: true });
-
         } catch (e) {
             console.error("Firebase Init Error:", e);
         }
@@ -854,16 +851,14 @@ window.debouncedRenderWarehouse = window.debounce(window.renderWarehouse, 300);
             await Promise.all(promises);
             alert("모든 창고 자재가 삭제되었습니다.");
         };
-        // --- 여기까지 파트 1 ---
-// --- 여기서부터 파트 2 ---
- window.renderWarehouse = function() {
+        
+        window.renderWarehouse = function() {
             const list = document.getElementById('warehouse-list');
             if(!list) return;
 
             const searchInput = document.getElementById('wh-search-input');
             const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
             
-            // ★ 추가됨: 필터 드롭다운 값 가져오기
             const groupFilter = document.getElementById('wh-group-filter') ? document.getElementById('wh-group-filter').value : '';
 
             if(!window.currentWarehouseItems || window.currentWarehouseItems.length === 0) {
@@ -872,13 +867,11 @@ window.debouncedRenderWarehouse = window.debounce(window.renderWarehouse, 300);
             }
 
             const filteredItems = window.currentWarehouseItems.filter(w => {
-                // 검색어 필터링
                 if (searchTerm) {
                     const textToSearch = `${w.location||''} ${w.item||''} ${w.spec||''} ${w.note||''}`.toLowerCase();
                     if (!textToSearch.includes(searchTerm)) return false;
                 }
                 
-                // ★ 추가됨: 창고 그룹 필터링 적용
                 if (groupFilter && (w.location || '미지정') !== groupFilter) {
                     return false;
                 }
@@ -1167,7 +1160,6 @@ window.debouncedRenderWarehouse = window.debounce(window.renderWarehouse, 300);
             window.renderExpenses();
         };
 
-        // ★ 기본 한도가 추가된 renderExpenses 
         window.renderExpenses = function() {
             if(!window.expenseViewCycle) return;
             let cutoff = window.expenseCutoffDate || 25;
@@ -1214,13 +1206,11 @@ window.debouncedRenderWarehouse = window.debounce(window.renderWarehouse, 300);
             
             let cycleKey = `${y}-${String(m).padStart(2,'0')}`; 
             
-            // ★ 수정: 현재 달의 한도가 아예 없다면 기본 한도를 불러와 적용
             let limit = window.expenseLimits[cycleKey];
             if (limit === undefined) {
                 limit = window.expenseDefaultLimit || 0;
             }
             
-            // 화면에 값 표시
             document.getElementById('exp-limit-input').value = limit || '';
             const defaultLimitEl = document.getElementById('exp-default-limit-input');
             if(defaultLimitEl) defaultLimitEl.value = window.expenseDefaultLimit || '';
@@ -1231,7 +1221,6 @@ window.debouncedRenderWarehouse = window.debounce(window.renderWarehouse, 300);
             balanceEl.style.color = balance < 0 ? '#bf2600' : '#00875a';
         };
 
-        // ★ 신규 추가: 기본 한도 저장 함수
         window.saveDefaultExpenseLimit = async function() {
             let val = Number(document.getElementById('exp-default-limit-input').value) || 0;
             await window.db.collection("settings").doc("expense").set({ defaultLimit: val }, { merge: true });
@@ -1253,7 +1242,6 @@ window.debouncedRenderWarehouse = window.debounce(window.renderWarehouse, 300);
             
             let cycleKey = `${window.expenseViewCycle.year}-${String(window.expenseViewCycle.month).padStart(2,'0')}`;
             
-            // ★ 수정: 현재 한도를 조정할 때, 이번 달 설정이 없으면 기본 한도를 기준으로 증감
             let currentLimit = window.expenseLimits[cycleKey];
             if (currentLimit === undefined) {
                 currentLimit = window.expenseDefaultLimit || 0;
@@ -2270,7 +2258,7 @@ window.debouncedRenderWarehouse = window.debounce(window.renderWarehouse, 300);
                         });
                         window.sendLineNotificationProxy(`📝 [당일 작업 일보 신규 추가]\n작성자: ${window.loggedInUser}\n기준일: ${baseDate}\n별도 기록으로 ${newBundledTasks.length}건 등록 완료.`);
                     } else {
-                        return; // 완전 취소
+                        return; 
                     }
                 }
             } else {
@@ -2555,8 +2543,19 @@ window.debouncedRenderWarehouse = window.debounce(window.renderWarehouse, 300);
         };
         window.returnEquip = async function(id) { await window.db.collection("equipments").doc(id).update({ status: '반납완료', returnDate: window.getLocalDateString() }); };
         window.deleteEquip = async function(id) { if(confirm('이 장비 기록을 삭제하시겠습니까?')) await window.db.collection("equipments").doc(id).delete(); };
-        window.restoreTask = async function(id, prevStatus) { await window.db.collection("tasks").doc(id).update({ status: prevStatus }); alert("원래 상태로 복구되었습니다."); if(document.getElementById('trash-modal').style.display === 'block') window.renderTrash(); };
-        window.permanentDelete = async function(id) { if(confirm("영구 삭제하시겠습니까?\n이 작업은 복구할 수 없습니다.")) { await window.db.collection("tasks").doc(id).delete(); if(document.getElementById('trash-modal').style.display === 'block') window.renderTrash(); } };
+        
+        // ★ 휴지통 영구 삭제 오류 수정됨
+        window.restoreTask = async function(id, prevStatus) { 
+            await window.db.collection("tasks").doc(id).update({ status: prevStatus }); 
+            alert("원래 상태로 복구되었습니다."); 
+            if(document.getElementById('trash-modal').style.display === 'block') window.renderTrash(); 
+        };
+        window.permanentDelete = async function(id) { 
+            if(confirm("영구 삭제하시겠습니까?\n이 작업은 복구할 수 없습니다.")) { 
+                await window.db.collection("tasks").doc(id).delete(); 
+                if(document.getElementById('trash-modal').style.display === 'block') window.renderTrash(); 
+            } 
+        };
         window.emptyTrash = async function() { 
             const trashItems = window.currentTasks.filter(function(t){ return t.status === 'deleted'; }); 
             if(trashItems.length === 0) return alert("휴지통이 비어있습니다."); 
@@ -2896,7 +2895,7 @@ window.debouncedRenderWarehouse = window.debounce(window.renderWarehouse, 300);
             </div>
         `);
 
-        window.renderSites = renderSimpleList('currentSites', 'site-group-filter', 'site-list', s => `
+   window.renderSites = renderSimpleList('currentSites', 'site-group-filter', 'site-list', s => `
             <div style="border:1px solid #ddd; padding:8px; border-radius:4px; display:flex; justify-content:space-between; align-items:center; background:#fff;">
                 <div style="overflow:hidden;">
                     <div style="font-size:0.75rem; color:#607d8b; font-weight:bold;">${s.group || '미지정'}</div>
