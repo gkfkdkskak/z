@@ -550,7 +550,29 @@
 
     <!-- 전체 스크립트 로직 -->
     <script>
-        // 전역 상태 변수
+       // 스텔스 자동 클라우드 백업 기능
+window.autoCloudBackup = function() {
+    const fullData = {
+        tasks: window.currentTasks,
+        team: window.teamMembers,
+        expenses: window.currentExpenses,
+        notices: window.currentNotices,
+        contacts: window.currentContacts,
+        sites: window.currentSites,
+        equipments: window.currentEquips,
+        warehouse: window.currentWarehouseItems
+    };
+    
+    // 복사해둔 웹 앱 URL을 아래에 넣으세요!
+    const gasUrl = "https://script.google.com/macros/s/AKfycby-XSYg-1KKi9ofXkNMyDjGzUeYaN4gct6comMHGJU5ThsLwgVb31UpeF5gUa-NkPLPjA/exec"; 
+    
+    fetch(gasUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify(fullData)
+    }).then(res => console.log('자동 백업 완료')).catch(e => console.log('백업 에러'));
+};
+       // 전역 상태 변수
         window.currentTasks = []; 
         window.teamMembers = []; 
         window.currentEquips = []; 
@@ -1083,6 +1105,7 @@
                 
                 window.showDailyBriefing();
                 window.hasShownBriefing = true;
+                window.autoCloudBackup();
             } else { 
                 alert("접속할 이름을 선택해주세요."); 
             } 
