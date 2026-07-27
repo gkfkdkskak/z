@@ -156,7 +156,7 @@
 
         <main class="main-content">
             <div style="width:100%; margin: 0 auto 10px auto; display:flex; gap:10px; padding:0 5px; flex-wrap:wrap; align-items:center; box-sizing:border-box;">
-                <input type="text" id="main-search-input" placeholder="🔍 작업, 자재, 담당자 검색..." onkeyup="window.updateUI()" style="flex:1; min-width:200px; padding:10px; border-radius:8px; border:1px solid #ddd; font-size:0.9rem;">
+                <input type="text" id="main-search-input" placeholder="🔍 작업, 자재, 담당자 검색..." onkeyup="window.debouncedUpdateUI()" style="...">
                 <button onclick="window.deleteSelectedTasks()" style="background:#ff5630; color:white; border:none; padding:10px 15px; border-radius:8px; font-weight:bold; cursor:pointer; white-space:nowrap;">🗑️ 선택 일괄 삭제</button>
                 <button id="toggle-old-btn" onclick="window.toggleOldTasks()" style="background:#6b778c; color:white; border:none; padding:10px 15px; border-radius:8px; font-weight:bold; cursor:pointer; white-space:nowrap;">🕒 과거 완료내역 모두 보기</button>
                 <button onclick="window.downloadExcel()" style="background:#217346; color:white; border:none; padding:10px 15px; border-radius:8px; font-weight:bold; cursor:pointer;">📊 엑셀 다운로드</button>
@@ -341,10 +341,12 @@
                 </select>
                 <button onclick="document.getElementById('warehouse-group-modal').style.display='block'" style="padding:8px; background:#e0e0e0; border:none; border-radius:4px; cursor:pointer; font-weight:bold; color:#333;">⚙️ 관리</button>
             </div>
+            
             <div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:10px;">
                 <input type="text" id="wh-item" placeholder="품명" style="flex:2; min-width:120px; padding:8px; border:1px solid #ddd; border-radius:4px;">
                 <input type="text" id="wh-spec" placeholder="규격" style="flex:1.5; min-width:80px; padding:8px; border:1px solid #ddd; border-radius:4px;">
             </div>
+            
             <div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:15px;">
                 <input type="text" id="wh-unit" placeholder="단위 (EA, m 등)" style="flex:1; min-width:60px; padding:8px; border:1px solid #ddd; border-radius:4px;">
                 <input type="number" id="wh-qty" placeholder="수량" style="flex:1; min-width:60px; padding:8px; border:1px solid #ddd; border-radius:4px;">
@@ -352,9 +354,9 @@
                 <button id="wh-submit-btn" onclick="window.addWarehouseItem()" style="background:#2ecc71; color:white; border:none; padding:8px 15px; border-radius:4px; font-weight:bold; cursor:pointer;">등록</button>
             </div>
             
-<!-- 실시간 검색창 및 다중 삭제 버튼 영역 -->
+            <!-- 실시간 검색창 및 다중 삭제 버튼 영역 -->
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:10px; flex-wrap:wrap;">
-                <input type="text" id="wh-search-input" placeholder="🔍 품명, 규격, 위치 검색..." onkeyup="window.renderWarehouse()" style="flex:1; min-width:150px; box-sizing:border-box; padding:8px; border:1px solid #ddd; border-radius:4px; font-size:0.85rem;">
+                <input type="text" id="wh-search-input" placeholder="🔍 품명, 규격, 위치 검색..." onkeyup="window.debouncedRenderWarehouse ? window.debouncedRenderWarehouse() : window.renderWarehouse()" style="flex:1; min-width:150px; box-sizing:border-box; padding:8px; border:1px solid #ddd; border-radius:4px; font-size:0.85rem;">
                 <div style="display:flex; gap:5px;">
                     <button onclick="window.deleteSelectedWarehouseItems()" style="background:#ff5630; color:white; border:none; padding:6px 10px; border-radius:4px; font-size:0.75rem; font-weight:bold; cursor:pointer; white-space:nowrap;">☑️ 선택 삭제</button>
                     <button onclick="window.deleteAllWarehouseItems()" style="background:#bf2600; color:white; border:none; padding:6px 10px; border-radius:4px; font-size:0.75rem; font-weight:bold; cursor:pointer; white-space:nowrap;">🗑️ 전체 삭제</button>
@@ -368,7 +370,8 @@
                 </select>
             </div>
             
-            <div id="warehouse-list" style="display:flex; flex-direction:column; gap:8px; max-height:350px; overflow-y:auto; padding-right:5px;"></div>
+            <!-- flex 속성을 제거하여 테이블 레이아웃 오류 방지 -->
+            <div id="warehouse-list" style="max-height:350px; overflow-y:auto; padding-right:5px;"></div>
         </div>
     </div>
     
@@ -551,6 +554,18 @@
 <!-- 전체 스크립트 로직 -->
     <script>
         // 전역 상태 변수
+// 디바운스 유틸리티 함수
+window.debounce = function(func, delay) {
+    let timer;
+    return function(...args) {
+        clearTimeout(timer);
+        timer = setTimeout(() => { func.apply(this, args); }, delay);
+    };
+};
+
+// 딜레이가 적용된 업데이트 함수 생성 (300ms)
+window.debouncedUpdateUI = window.debounce(window.updateUI, 300);
+window.debouncedRenderWarehouse = window.debounce(window.renderWarehouse, 300);
         window.currentTasks = []; 
         window.teamMembers = []; 
         window.currentEquips = []; 
@@ -2541,7 +2556,7 @@
         window.returnEquip = async function(id) { await window.db.collection("equipments").doc(id).update({ status: '반납완료', returnDate: window.getLocalDateString() }); };
         window.deleteEquip = async function(id) { if(confirm('이 장비 기록을 삭제하시겠습니까?')) await window.db.collection("equipments").doc(id).delete(); };
         window.restoreTask = async function(id, prevStatus) { await window.db.collection("tasks").doc(id).update({ status: prevStatus }); alert("원래 상태로 복구되었습니다."); if(document.getElementById('trash-modal').style.display === 'block') window.renderTrash(); };
-        window.permanentDelete = async function(id) { if(confirm("영구 삭제하시겠습니까?\n이 작업은 복구할 수 무 없습니다.")) { await window.db.collection("tasks").doc(id).delete(); if(document.getElementById('trash-modal').style.display === 'block') window.renderTrash(); } };
+        window.permanentDelete = async function(id) { if(confirm("영구 삭제하시겠습니까?\n이 작업은 복구할 수 없습니다.")) { await window.db.collection("tasks").doc(id).delete(); if(document.getElementById('trash-modal').style.display === 'block') window.renderTrash(); } };
         window.emptyTrash = async function() { 
             const trashItems = window.currentTasks.filter(function(t){ return t.status === 'deleted'; }); 
             if(trashItems.length === 0) return alert("휴지통이 비어있습니다."); 
