@@ -91,7 +91,7 @@
         .section-icon { font-size: 0.8rem; color: #666; }
 
         @media (max-width: 767px) { .hide-on-mobile { display: none !important; } }
-        @media (min-width: 768px) { .summary-grid { grid-template-columns: repeat(3, 1fr); } }
+        @media (min-width: 768px) { .summary-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (min-width: 900px) { .dashboard-layout { flex-direction: row; align-items: flex-start; } .board { flex-direction: row; align-items: flex-start; } }
         @media (min-width: 1400px) { .side-panel { display: flex; } }
     </style>
@@ -181,6 +181,7 @@
                                 <div><h4 style="margin:0 0 3px 0; font-size:0.75rem; color:#555;">👤 담당자</h4><table class="summary-table" id="assignee-table"><thead><tr><th>이름</th><th>할일</th><th>진행</th><th>완료</th></tr></thead><tbody></tbody></table></div>
                                 <div><h4 style="margin:0 0 3px 0; font-size:0.75rem; color:#0052cc;">⏳ 마감 예정 (7일 이내)</h4><table class="summary-table" id="task-date-table"><thead><tr><th>날짜</th><th>대기</th><th>완료</th></tr></thead><tbody></tbody></table></div>
                                 <div><h4 style="margin:0 0 3px 0; font-size:0.75rem; color:var(--warning-color);">⚠️ 기한 지연</h4><table class="summary-table" id="overdue-table"><thead><tr><th>항목</th><th>일자</th></tr></thead><tbody></tbody></table></div>
+                                <div><h4 style="margin:0 0 3px 0; font-size:0.75rem; color:#ff5630;">🐌 시작 지연 (미진행)</h4><table class="summary-table" id="start-delayed-table"><thead><tr><th>항목</th><th>시작일</th></tr></thead><tbody></tbody></table></div>
                             </div>
                         </div>
 
@@ -190,6 +191,7 @@
                                 <div><h4 style="margin:0 0 3px 0; font-size:0.75rem; color:#555;">📋 발주현황</h4><table class="summary-table" id="material-table"><thead><tr><th>이름</th><th>요청</th><th>발주</th><th>반입</th></tr></thead><tbody></tbody></table></div>
                                 <div><h4 style="margin:0 0 3px 0; font-size:0.75rem; color:#0052cc;">🚚 반입 예정 (7일 이내)</h4><table class="summary-table" id="mat-date-table"><thead><tr><th>날짜</th><th>대기</th><th>완료</th></tr></thead><tbody></tbody></table></div>
                                 <div><h4 style="margin:0 0 3px 0; font-size:0.75rem; color:var(--warning-color);">⚠️ 발주 지연 (미발주)</h4><table class="summary-table" id="un-ordered-table"><thead><tr><th>항목</th><th>요청일</th></tr></thead><tbody></tbody></table></div>
+                                <div><h4 style="margin:0 0 3px 0; font-size:0.75rem; color:#ff5630;">🐌 반입 지연 (미반입)</h4><table class="summary-table" id="delivery-delayed-table"><thead><tr><th>항목</th><th>반입예정일</th></tr></thead><tbody></tbody></table></div>
                             </div>
                         </div>
 
@@ -197,7 +199,7 @@
                             <div class="summary-group-title" style="color:#795548;">🧰 장비 대여 현황</div>
                             <div class="summary-grid">
                                 <div><table class="summary-table" id="equip-table"><thead><tr><th>빌려간사람</th><th>대여중</th><th>반납완료</th></tr></thead><tbody></tbody></table></div>
-                                <div></div><div></div>
+                                <div></div><div></div><div></div>
                             </div>
                         </div>
                     </div>
@@ -460,7 +462,7 @@
     <div id="init-modal" class="modal" onclick="this.style.display='none'"><div class="modal-content" onclick="event.stopPropagation()"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom: 2px solid #eee; padding-bottom: 10px;"><h3 style="margin:0; color:#bf2600;">💣 시스템 전체 데이터 초기화</h3><button onclick="document.getElementById('init-modal').style.display='none'" style="background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button></div><div style="background:#fff4f4; padding:15px; border-radius:6px; border:1px solid #ffebe6; margin-bottom:15px;"><p style="font-size:0.9rem; color:#333; line-height:1.5; margin-top:0;">모든 데이터가 <strong>영구적으로 삭제</strong>됩니다.<br>오작동 방지를 위해 <strong style="color:#bf2600;">[초기화 승인]</strong> 이라고 입력해주세요.</p><input type="text" id="init-confirm-text" placeholder="초기화 승인" style="width:100%; box-sizing:border-box; padding:12px; border:2px solid #bf2600; border-radius:6px; font-weight:bold; font-size:1rem; text-align:center;"></div><div style="display:flex; gap:5px;"><button onclick="window.executeInit()" style="flex:2; padding:12px; background:#bf2600; color:white; border:none; border-radius:6px; font-weight:bold; font-size:1rem; cursor:pointer;">🔥 삭제 실행</button><button onclick="document.getElementById('init-modal').style.display='none'" style="flex:1; padding:12px; background:#e0e0e0; color:#333; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">취소</button></div></div></div>
     <div id="backup-modal" class="modal" onclick="this.style.display='none'"><div class="modal-content" onclick="event.stopPropagation()"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;"><h3 style="margin:0; color:#34495e;">💾 데이터 백업 및 복구</h3><button onclick="document.getElementById('backup-modal').style.display='none'" style="background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button></div><div style="background:#f9f9fa; padding:15px; border-radius:6px; margin-bottom:15px; border:1px solid #eee;"><h4 style="margin:0 0 10px 0; color:#0052cc;">📥 데이터 백업 (다운로드)</h4><button onclick="window.backupData()" style="width:100%; background:#0052cc; color:white; border:none; padding:10px; border-radius:4px; font-weight:bold; cursor:pointer;">데이터 백업 (.json)</button></div><div style="background:#fff4f4; padding:15px; border-radius:6px; border:1px solid #ffebe6;"><h4 style="margin:0 0 10px 0; color:#bf2600;">📤 데이터 복구 (업로드)</h4><label style="display:block; width:100%; background:#bf2600; color:white; border:none; padding:10px; border-radius:4px; font-weight:bold; cursor:pointer; text-align:center; box-sizing:border-box;">파일 선택 및 복구<input type="file" style="display:none;" accept=".json" onchange="window.restoreData(event)"></label></div></div></div>
     
-    <div id="briefing-modal" class="modal" onclick="this.style.display='none'">
+   <div id="briefing-modal" class="modal" onclick="this.style.display='none'">
         <div class="modal-content" onclick="event.stopPropagation()">
             <div style="text-align: center; margin-bottom: 15px;"><h2 style="margin: 0; font-size: 1.25rem; color: #172b4d; display: flex; align-items: center; justify-content: center; gap: 6px;">🔔 일일 현황 브리핑</h2></div>
             <div class="brief-section-title" style="color: #e91e63;">👀 인원별 미확인 항목 (할일/자재)</div>
@@ -469,14 +471,27 @@
             <div class="brief-section-title" style="color: #673ab7;">🏃 현재 진행 중인 할 일</div>
             <div id="brief-inprogress-list" class="brief-list-container" style="margin-bottom:15px;">데이터 로딩 중...</div>
 
+            <!-- ★ 추가: 오늘 시작 항목 -->
+            <div class="brief-section-title" style="color: #009688;">🟢 오늘 시작 항목</div>
+            <div id="brief-today-start-list" class="brief-list-container" style="margin-bottom:15px;">데이터 로딩 중...</div>
+
             <div class="brief-section-title" style="color: #0052cc;">📅 내일 예정(시작/마감) 항목</div>
             <div id="brief-todo-list" class="brief-list-container" style="margin-bottom:15px;">데이터 로딩 중...</div>
+            
+            <!-- ★ 추가: 시작 지연 -->
+            <div class="brief-section-title" style="color: #ff5630;">🐌 시작 지연 (미진행)</div>
+            <div id="brief-start-delayed-list" class="brief-list-container" style="margin-bottom:15px;">데이터 로딩 중...</div>
             
             <div class="brief-section-title" style="color: #ff9f43;">📦 발주 대기 중인 자재 (미발주)</div>
             <div id="brief-mat-request-list" class="brief-list-container" style="margin-bottom:15px;">데이터 로딩 중...</div>
             
             <div class="brief-section-title" style="color: #00875a;">🚚 반입 대기 중인 자재 (발주완료)</div>
-            <div id="brief-mat-ordered-list" class="brief-list-container">데이터 로딩 중...</div>
+            <div id="brief-mat-ordered-list" class="brief-list-container" style="margin-bottom:15px;">데이터 로딩 중...</div>
+
+            <!-- ★ 추가: 반입 지연 -->
+            <div class="brief-section-title" style="color: #ff5630;">🐌 반입 지연 자재 (미반입)</div>
+            <div id="brief-delivery-delayed-list" class="brief-list-container">데이터 로딩 중...</div>
+
             <button onclick="document.getElementById('briefing-modal').style.display='none'" style="width:100%; margin-top:20px; padding:12px; background:#f4f5f7; border:1px solid #dfe1e6; border-radius:6px; font-weight:bold; font-size:0.95rem; cursor:pointer; color:#333;">닫기</button>
         </div>
     </div>
@@ -1719,236 +1734,256 @@ window.autoCloudBackup = function() {
             </div>`; 
         };
 
-        window.updateUI = function() { 
-            try { 
-                const statuses = ['worklog', 'todo', 'inprogress', 'done', 'mat-request', 'mat-ordered', 'mat-delivered']; 
-                const lists = {}; 
-                statuses.forEach(function(s){ lists[s] = []; }); 
-                
-                const todayDate = new Date(); todayDate.setHours(0,0,0,0); 
-                const nextWeek = new Date(todayDate); nextWeek.setDate(todayDate.getDate() + 7); 
-                const todayStr = window.getLocalDateString(); 
-                const currentMonthStr = todayStr.substring(0, 7); 
-                const nextWeekStr = window.getLocalDateString(nextWeek); 
-                
-                const baseOptions = window.teamMembers.map(function(m){ return `<option value="${m.name}">${m.name}</option>`; }).join(''); 
-                
-                try { 
-                    ['todo', 'inprogress', 'done'].forEach(function(s){ const el = document.getElementById(`${s}-assignee`); if(el) el.innerHTML = '<option value="">담당자</option>' + baseOptions; }); 
-                    ['mat-request', 'mat-ordered', 'mat-delivered'].forEach(function(s){ const r = document.getElementById(`${s}-requester`); if(r) r.innerHTML = '<option value="">요청자</option>' + baseOptions; const o = document.getElementById(`${s}-orderer`); if(o) o.innerHTML = '<option value="">발주자</option>' + baseOptions; }); 
-                    const expSpender = document.getElementById('exp-spender'); if(expSpender) { expSpender.innerHTML = '<option value="">지출자</option>' + baseOptions; } 
-                } catch(e) { console.error(e); } 
+      window.updateUI = function() { 
+    try { 
+        const statuses = ['worklog', 'todo', 'inprogress', 'done', 'mat-request', 'mat-ordered', 'mat-delivered']; 
+        const lists = {}; 
+        statuses.forEach(function(s){ lists[s] = []; }); 
+        
+        const todayDate = new Date(); todayDate.setHours(0,0,0,0); 
+        const nextWeek = new Date(todayDate); nextWeek.setDate(todayDate.getDate() + 7); 
+        const todayStr = window.getLocalDateString(); 
+        const currentMonthStr = todayStr.substring(0, 7); 
+        const nextWeekStr = window.getLocalDateString(nextWeek); 
+        
+        const baseOptions = window.teamMembers.map(function(m){ return `<option value="${m.name}">${m.name}</option>`; }).join(''); 
+        
+        try { 
+            ['todo', 'inprogress', 'done'].forEach(function(s){ const el = document.getElementById(`${s}-assignee`); if(el) el.innerHTML = '<option value="">담당자</option>' + baseOptions; }); 
+            ['mat-request', 'mat-ordered', 'mat-delivered'].forEach(function(s){ const r = document.getElementById(`${s}-requester`); if(r) r.innerHTML = '<option value="">요청자</option>' + baseOptions; const o = document.getElementById(`${s}-orderer`); if(o) o.innerHTML = '<option value="">발주자</option>' + baseOptions; }); 
+            const expSpender = document.getElementById('exp-spender'); if(expSpender) { expSpender.innerHTML = '<option value="">지출자</option>' + baseOptions; } 
+        } catch(e) { console.error(e); } 
 
-                const searchEl = document.getElementById('main-search-input'); 
-                const search = searchEl ? searchEl.value.toLowerCase() : ''; 
-                const worklogDates = []; 
-                const wlViewYm = (window.worklogViewDate || todayStr).substring(0, 7); 
+        const searchEl = document.getElementById('main-search-input'); 
+        const search = searchEl ? searchEl.value.toLowerCase() : ''; 
+        const worklogDates = []; 
+        const wlViewYm = (window.worklogViewDate || todayStr).substring(0, 7); 
 
-                window.currentTasks.forEach(function(t){ 
-                    if (t.status === 'deleted') return; 
-                    let bundledText = ''; 
-                    if(Array.isArray(t.bundledTasks)) { 
-                        bundledText = t.bundledTasks.map(function(bt){ 
-                            const locStr = bt.location ? `[${bt.location}] ` : '';
-                            const contStr = bt.content || bt.detail || '';
-                            const workStr = Array.isArray(bt?.workers) ? bt.workers.join('') : '';
-                            return locStr + contStr + workStr; 
-                        }).join(' '); 
-                    } 
-                    const fullText = String(t.text || '') + ' ' + String(t.workDetails || '') + ' ' + String(t.assignee || '') + ' ' + String(t.requester || '') + ' ' + String(t.orderer || '') + ' ' + bundledText; 
-                    if (search && !fullText.toLowerCase().includes(search)) return; 
-                    
-                    const fallback = window.getFallbackDate(t.createdAt); 
-                    const dateToCheck = String(t.dueDate || t.startDate || fallback); 
-                    const isCurrentMonth = dateToCheck.startsWith(currentMonthStr); 
-                    const isDoneOrDelivered = ['done', 'mat-delivered'].includes(t.status); 
-                    if (isDoneOrDelivered && !isCurrentMonth && !window.showOldDoneTasks) return; 
-                    
-                    const sDate = String(t.startDate || fallback); 
-                    if (t.status === 'worklog' && sDate && sDate.startsWith(wlViewYm)) { 
-                        const dNum = parseInt(sDate.split('-')[2]); 
-                        if (!isNaN(dNum) && !worklogDates.includes(dNum)) worklogDates.push(dNum); 
-                    } 
-                    if (t.status === 'worklog' && sDate !== window.worklogViewDate) return; 
-                    if (lists[t.status]) lists[t.status].push(t); 
-                }); 
-
-                try { 
-                    worklogDates.sort(function(a,b){ return a - b; }); 
-                    const wlDatesEl = document.getElementById('worklog-recorded-dates'); 
-                    if (wlDatesEl) { 
-                        const missingDates = [];
-                        const viewYear = parseInt(wlViewYm.split('-')[0]);
-                        const viewMonth = parseInt(wlViewYm.split('-')[1]);
-                        const todayNow = new Date();
-                        const currentYmStr = todayNow.getFullYear() + '-' + String(todayNow.getMonth() + 1).padStart(2, '0');
-                        
-                        let maxDay = 0;
-                        if (wlViewYm < currentYmStr) {
-                            maxDay = new Date(viewYear, viewMonth, 0).getDate();
-                        } else if (wlViewYm === currentYmStr) {
-                            maxDay = todayNow.getDate();
-                        }
-                        
-                        for (let d = 1; d <= maxDay; d++) {
-                            const checkDate = new Date(viewYear, viewMonth - 1, d);
-                            if (checkDate.getDay() === 0) continue; 
-
-                            if (!worklogDates.includes(d)) {
-                                missingDates.push(d);
-                            }
-                        }
-                        
-                        if (maxDay === 0) {
-                            wlDatesEl.innerText = '미래의 날짜입니다';
-                            wlDatesEl.style.color = '#666';
-                            wlDatesEl.style.cursor = 'default';
-                            wlDatesEl.onclick = null;
-                        } else if (missingDates.length > 0) { 
-                            wlDatesEl.innerHTML = `<span style="text-decoration:underline; cursor:pointer;">⚠️ ${viewMonth}월 미작성일 보기 (${missingDates.length}일)</span>`; 
-                            wlDatesEl.style.color = '#bf2600'; 
-                            wlDatesEl.onclick = function() { window.showMissingDatesModal(missingDates, viewMonth, viewYear); };
-                        } else { 
-                            wlDatesEl.innerText = `✨ ${viewMonth}월 모두 작성됨 (일요일 제외)`; 
-                            wlDatesEl.style.color = '#00875a'; 
-                            wlDatesEl.style.cursor = 'default';
-                            wlDatesEl.onclick = null;
-                        } 
-                    } 
-                } catch(e) { console.error(e); } 
-
-                const todayDateObj = new Date(todayStr.split('-')[0], todayStr.split('-')[1]-1, todayStr.split('-')[2]); 
-
-                statuses.forEach(function(s){ 
-                    const el = document.getElementById(`${s}-list`); 
-                    const countEl = document.getElementById(`${s}-count`); 
-                    if(countEl) countEl.innerText = lists[s].length; 
-                    if(!el) return; 
-                    if (lists[s].length === 0) { el.innerHTML = ''; return; } 
-
-                    if (s === 'worklog') { 
-                        el.innerHTML = lists[s].map(function(t){ return window.renderCard(t, s, currentMonthStr); }).join(''); 
-                    } else { 
-                        const grouped = {}; 
-                        lists[s].forEach(function(t){ 
-                            const fallback = window.getFallbackDate(t.createdAt); 
-                            let refDate = String(t.dueDate || t.startDate || fallback); 
-                            let yyyy_mm = refDate && refDate !== 'undefined' ? refDate.substring(0, 7) : '미지정'; 
-                            let groupKey = yyyy_mm; 
-                            if (yyyy_mm === currentMonthStr && refDate && (t.status === 'done' || t.status === 'mat-delivered')) { 
-                                let rDateObj = new Date(refDate.split('-')[0], refDate.split('-')[1]-1, refDate.split('-')[2]); 
-                                let diffDays = Math.round((todayDateObj - rDateObj) / (1000 * 60 * 60 * 24));
-                                if (diffDays >= 7) groupKey = yyyy_mm + '-old'; 
-                            } 
-                            if(!grouped[groupKey]) grouped[groupKey] = []; 
-                            grouped[groupKey].push(t); 
-                        }); 
-                        const sortedMonths = Object.keys(grouped).sort(function(a,b){ 
-                            const aBase = a.replace('-old', ''); 
-                            const bBase = b.replace('-old', ''); 
-                            if (aBase !== bBase) return bBase.localeCompare(aBase); 
-                            if (a.includes('-old') && !b.includes('-old')) return 1; 
-                            if (!a.includes('-old') && b.includes('-old')) return -1; 
-                            return 0; 
-                        }); 
-                        let finalHtml = ''; 
-                        sortedMonths.forEach(function(month){ 
-                            const isActiveStatus = ['todo', 'inprogress', 'mat-request', 'mat-ordered'].includes(s); 
-                            const isCurrent = (month === currentMonthStr || month === '미지정') || window.showOldDoneTasks || isActiveStatus; 
-                            const displayStyle = isCurrent ? 'flex' : 'none'; 
-                            const icon = isCurrent ? '▼' : '▶'; 
-                            let label = '일자 미지정'; 
-                            if(month !== '미지정') { 
-                                const parts = month.replace('-old','').split('-'); 
-                                label = `${parts[0]}년 ${parseInt(parts[1])}월`; 
-                                if(month.includes('-old')) label += ' (7일 경과)'; 
-                            } 
-                            finalHtml += `<div style="background:#d9e2ec; padding:6px 10px; margin-top:5px; margin-bottom:5px; border-radius:4px; font-weight:bold; font-size:0.8rem; cursor:pointer; display:flex; justify-content:space-between; align-items:center; color:#172b4d;" onclick="const content = this.nextElementSibling; const ic = this.querySelector('.fold-icon'); if(content.style.display==='none'){content.style.display='flex'; ic.innerText='▼';}else{content.style.display='none'; ic.innerText='▶';}">${label} <span class="fold-icon" style="font-size:0.7rem; color:#6b778c;">${icon}</span></div><div style="display:${displayStyle}; flex-direction:column; gap:5px; margin-bottom:10px;">${grouped[month].map(function(t){ return window.renderCard(t, s, currentMonthStr); }).join('')}</div>`; 
-                        }); 
-                        el.innerHTML = finalHtml; 
-                    } 
-                }); 
-                
-                const assignees = {}; const taskDates = {}; const overdueTasks = []; const mats = {}; const matDates = {}; const delayedMats = [];   
-                window.currentTasks.forEach(function(t){ 
-                    if (t.status === 'deleted') return; 
-                    const statusStr = String(t.status || ''); 
-                    const isMat = statusStr.startsWith('mat-'); 
-                    const isDone = ['done', 'worklog'].includes(t.status); 
-                    const isDelivered = t.status === 'mat-delivered'; 
-                    const fallback = window.getFallbackDate(t.createdAt); 
-                    const dateToCheck = String(t.dueDate || t.startDate || fallback); 
-                    const isCurrentMonth = dateToCheck.startsWith(currentMonthStr); 
-                    
-                    if ((isDone || isDelivered) && !isCurrentMonth && !window.showOldDoneTasks) return; 
-
-                    if (!isMat) { 
-                        if (t.assignee) { 
-                            if(!assignees[t.assignee]) assignees[t.assignee] = {todo:0, inprogress:0, done:0}; 
-                            if(t.status === 'todo') assignees[t.assignee].todo++; 
-                            else if(t.status === 'inprogress') assignees[t.assignee].inprogress++; 
-                            else if(isDone) assignees[t.assignee].done++; 
-                        } 
-                        const dueDateOnly = String(t.dueDate || ''); 
-                        if (dueDateOnly && dueDateOnly !== 'undefined' && t.status !== 'worklog') { 
-                            if(dueDateOnly >= todayStr && dueDateOnly <= nextWeekStr) { 
-                                if(!taskDates[dueDateOnly]) taskDates[dueDateOnly] = {wait:0, done:0}; 
-                                if(t.status === 'done') taskDates[dueDateOnly].done++; 
-                                else taskDates[dueDateOnly].wait++; 
-                            } 
-                            if (dueDateOnly < todayStr && t.status !== 'done') { 
-                                overdueTasks.push({ id: t.id, name: t.text || t.workDetails || '제목없음', date: dueDateOnly }); 
-                            } 
-                        } 
-                    } else { 
-                        if (t.requester) { 
-                            if(!mats[t.requester]) mats[t.requester] = {req:0, ord:0, del:0}; 
-                            if(t.status === 'mat-request') mats[t.requester].req++; 
-                            else if(t.status === 'mat-ordered') mats[t.requester].ord++; 
-                            else if(isDelivered) mats[t.requester].del++; 
-                        } 
-                        const matDueDateOnly = String(t.dueDate || ''); 
-                        if (matDueDateOnly && matDueDateOnly !== 'undefined') { 
-                            if(matDueDateOnly >= todayStr && matDueDateOnly <= nextWeekStr) { 
-                                if(!matDates[matDueDateOnly]) matDates[matDueDateOnly] = {wait:0, done:0}; 
-                                if(t.status === 'mat-delivered') matDates[matDueDateOnly].done++; 
-                                else matDates[matDueDateOnly].wait++; 
-                            } 
-                        } 
-                        const matStartDateOnly = String(t.startDate || ''); 
-                        if (t.status === 'mat-request' && matStartDateOnly && matStartDateOnly !== 'undefined' && matStartDateOnly < todayStr) { 
-                            delayedMats.push({ id: t.id, name: t.text || '제목없음', date: matStartDateOnly }); 
-                        } 
-                    } 
-                }); 
-
-                document.getElementById('assignee-table').querySelector('tbody').innerHTML = Object.keys(assignees).map(function(k){ return `<tr><td>${k}</td><td><a class="clickable" onclick="window.showTaskModal('assignee','${k}','todo')">${assignees[k].todo}</a></td><td><a class="clickable" onclick="window.showTaskModal('assignee','${k}','inprogress')">${assignees[k].inprogress}</a></td><td><a class="clickable" onclick="window.showTaskModal('assignee','${k}','done')">${assignees[k].done}</a></td></tr>`; }).join(''); 
-                const sortedTaskDates = Object.keys(taskDates).sort(); 
-                document.getElementById('task-date-table').querySelector('tbody').innerHTML = sortedTaskDates.map(function(k){ return `<tr><td>${k.substring(5)}</td><td><a class="clickable" onclick="window.showTaskModal('dueDate','${k}','wait')">${taskDates[k].wait}</a></td><td><a class="clickable" onclick="window.showTaskModal('dueDate','${k}','done')">${taskDates[k].done}</a></td></tr>`; }).join(''); 
-                document.getElementById('overdue-table').querySelector('tbody').innerHTML = overdueTasks.map(function(t){ return `<tr><td style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70px;" title="${t.name}"><a class="clickable" onclick="window.showTaskModal('single','${t.id}','')">${t.name}</a></td><td>${t.date.substring(5)}</td></tr>`; }).join(''); 
-                document.getElementById('material-table').querySelector('tbody').innerHTML = Object.keys(mats).map(function(k){ return `<tr><td>${k}</td><td><a class="clickable" onclick="window.showTaskModal('requester','${k}','req')">${mats[k].req}</a></td><td><a class="clickable" onclick="window.showTaskModal('requester','${k}','ord')">${mats[k].ord}</a></td><td><a class="clickable" onclick="window.showTaskModal('requester','${k}','del')">${mats[k].del}</a></td></tr>`; }).join(''); 
-                const sortedMatDates = Object.keys(matDates).sort(); 
-                document.getElementById('mat-date-table').querySelector('tbody').innerHTML = sortedMatDates.map(function(k){ return `<tr><td>${k.substring(5)}</td><td><a class="clickable" onclick="window.showTaskModal('dueDate-mat','${k}','wait')">${matDates[k].wait}</a></td><td><a class="clickable" onclick="window.showTaskModal('dueDate-mat','${k}','done')">${matDates[k].done}</a></td></tr>`; }).join(''); 
-                document.getElementById('un-ordered-table').querySelector('tbody').innerHTML = delayedMats.map(function(t){ return `<tr><td style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70px;" title="${t.name}"><a class="clickable" onclick="window.showTaskModal('single','${t.id}','')">${t.name}</a></td><td>${t.date.substring(5)}</td></tr>`; }).join(''); 
-
-                const eqStats = {}; 
-                window.currentEquips.forEach(function(eq){ 
-                    const b = eq.borrower || '미상'; 
-                    const isReturned = eq.status === '반납완료'; 
-                    const fallback = window.getFallbackDate(eq.createdAt); 
-                    const refDate = String(eq.returnDate || eq.borrowDate || fallback); 
-                    const isCurrentMonth = refDate.startsWith(currentMonthStr); 
-                    if (isReturned && !isCurrentMonth && !window.showOldDoneTasks) return; 
-                    if(!eqStats[b]) eqStats[b] = { renting: 0, returned: 0 }; 
-                    if(!isReturned) eqStats[b].renting++; else eqStats[b].returned++; 
-                }); 
-                document.getElementById('equip-table').querySelector('tbody').innerHTML = Object.keys(eqStats).map(function(k){ return `<tr><td>${k}</td><td><a class="clickable" style="color:var(--warning-color);" onclick="window.showTaskModal('equip','${k}','대여중')">${eqStats[k].renting}</a></td><td><a class="clickable" onclick="window.showTaskModal('equip','${k}','반납완료')">${eqStats[k].returned}</a></td></tr>`; }).join(''); 
-
-                window.renderCalendar(); 
-            } catch (globalUIError) { 
-                console.error("Update UI Error:", globalUIError); 
+        window.currentTasks.forEach(function(t){ 
+            if (t.status === 'deleted') return; 
+            let bundledText = ''; 
+            if(Array.isArray(t.bundledTasks)) { 
+                bundledText = t.bundledTasks.map(function(bt){ 
+                    const locStr = bt.location ? `[${bt.location}] ` : '';
+                    const contStr = bt.content || bt.detail || '';
+                    const workStr = Array.isArray(bt?.workers) ? bt.workers.join('') : '';
+                    return locStr + contStr + workStr; 
+                }).join(' '); 
             } 
-        };
+            const fullText = String(t.text || '') + ' ' + String(t.workDetails || '') + ' ' + String(t.assignee || '') + ' ' + String(t.requester || '') + ' ' + String(t.orderer || '') + ' ' + bundledText; 
+            if (search && !fullText.toLowerCase().includes(search)) return; 
+            
+            const fallback = window.getFallbackDate(t.createdAt); 
+            const dateToCheck = String(t.dueDate || t.startDate || fallback); 
+            const isCurrentMonth = dateToCheck.startsWith(currentMonthStr); 
+            const isDoneOrDelivered = ['done', 'mat-delivered'].includes(t.status); 
+            if (isDoneOrDelivered && !isCurrentMonth && !window.showOldDoneTasks) return; 
+            
+            const sDate = String(t.startDate || fallback); 
+            if (t.status === 'worklog' && sDate && sDate.startsWith(wlViewYm)) { 
+                const dNum = parseInt(sDate.split('-')[2]); 
+                if (!isNaN(dNum) && !worklogDates.includes(dNum)) worklogDates.push(dNum); 
+            } 
+            if (t.status === 'worklog' && sDate !== window.worklogViewDate) return; 
+            if (lists[t.status]) lists[t.status].push(t); 
+        }); 
+
+        try { 
+            worklogDates.sort(function(a,b){ return a - b; }); 
+            const wlDatesEl = document.getElementById('worklog-recorded-dates'); 
+            if (wlDatesEl) { 
+                const missingDates = [];
+                const viewYear = parseInt(wlViewYm.split('-')[0]);
+                const viewMonth = parseInt(wlViewYm.split('-')[1]);
+                const todayNow = new Date();
+                const currentYmStr = todayNow.getFullYear() + '-' + String(todayNow.getMonth() + 1).padStart(2, '0');
+                
+                let maxDay = 0;
+                if (wlViewYm < currentYmStr) {
+                    maxDay = new Date(viewYear, viewMonth, 0).getDate();
+                } else if (wlViewYm === currentYmStr) {
+                    maxDay = todayNow.getDate();
+                }
+                
+                for (let d = 1; d <= maxDay; d++) {
+                    const checkDate = new Date(viewYear, viewMonth - 1, d);
+                    if (checkDate.getDay() === 0) continue; 
+
+                    if (!worklogDates.includes(d)) {
+                        missingDates.push(d);
+                    }
+                }
+                
+                if (maxDay === 0) {
+                    wlDatesEl.innerText = '미래의 날짜입니다';
+                    wlDatesEl.style.color = '#666';
+                    wlDatesEl.style.cursor = 'default';
+                    wlDatesEl.onclick = null;
+                } else if (missingDates.length > 0) { 
+                    wlDatesEl.innerHTML = `<span style="text-decoration:underline; cursor:pointer;">⚠️ ${viewMonth}월 미작성일 보기 (${missingDates.length}일)</span>`; 
+                    wlDatesEl.style.color = '#bf2600'; 
+                    wlDatesEl.onclick = function() { window.showMissingDatesModal(missingDates, viewMonth, viewYear); };
+                } else { 
+                    wlDatesEl.innerText = `✨ ${viewMonth}월 모두 작성됨 (일요일 제외)`; 
+                    wlDatesEl.style.color = '#00875a'; 
+                    wlDatesEl.style.cursor = 'default';
+                    wlDatesEl.onclick = null;
+                } 
+            } 
+        } catch(e) { console.error(e); } 
+
+        const todayDateObj = new Date(todayStr.split('-')[0], todayStr.split('-')[1]-1, todayStr.split('-')[2]); 
+
+        statuses.forEach(function(s){ 
+            const el = document.getElementById(`${s}-list`); 
+            const countEl = document.getElementById(`${s}-count`); 
+            if(countEl) countEl.innerText = lists[s].length; 
+            if(!el) return; 
+            if (lists[s].length === 0) { el.innerHTML = ''; return; } 
+
+            if (s === 'worklog') { 
+                el.innerHTML = lists[s].map(function(t){ return window.renderCard(t, s, currentMonthStr); }).join(''); 
+            } else { 
+                const grouped = {}; 
+                lists[s].forEach(function(t){ 
+                    const fallback = window.getFallbackDate(t.createdAt); 
+                    let refDate = String(t.dueDate || t.startDate || fallback); 
+                    let yyyy_mm = refDate && refDate !== 'undefined' ? refDate.substring(0, 7) : '미지정'; 
+                    let groupKey = yyyy_mm; 
+                    if (yyyy_mm === currentMonthStr && refDate && (t.status === 'done' || t.status === 'mat-delivered')) { 
+                        let rDateObj = new Date(refDate.split('-')[0], refDate.split('-')[1]-1, refDate.split('-')[2]); 
+                        let diffDays = Math.round((todayDateObj - rDateObj) / (1000 * 60 * 60 * 24));
+                        if (diffDays >= 7) groupKey = yyyy_mm + '-old'; 
+                    } 
+                    if(!grouped[groupKey]) grouped[groupKey] = []; 
+                    grouped[groupKey].push(t); 
+                }); 
+                const sortedMonths = Object.keys(grouped).sort(function(a,b){ 
+                    const aBase = a.replace('-old', ''); 
+                    const bBase = b.replace('-old', ''); 
+                    if (aBase !== bBase) return bBase.localeCompare(aBase); 
+                    if (a.includes('-old') && !b.includes('-old')) return 1; 
+                    if (!a.includes('-old') && b.includes('-old')) return -1; 
+                    return 0; 
+                }); 
+                let finalHtml = ''; 
+                sortedMonths.forEach(function(month){ 
+                    const isActiveStatus = ['todo', 'inprogress', 'mat-request', 'mat-ordered'].includes(s); 
+                    const isCurrent = (month === currentMonthStr || month === '미지정') || window.showOldDoneTasks || isActiveStatus; 
+                    const displayStyle = isCurrent ? 'flex' : 'none'; 
+                    const icon = isCurrent ? '▼' : '▶'; 
+                    let label = '일자 미지정'; 
+                    if(month !== '미지정') { 
+                        const parts = month.replace('-old','').split('-'); 
+                        label = `${parts[0]}년 ${parseInt(parts[1])}월`; 
+                        if(month.includes('-old')) label += ' (7일 경과)'; 
+                    } 
+                    finalHtml += `<div style="background:#d9e2ec; padding:6px 10px; margin-top:5px; margin-bottom:5px; border-radius:4px; font-weight:bold; font-size:0.8rem; cursor:pointer; display:flex; justify-content:space-between; align-items:center; color:#172b4d;" onclick="const content = this.nextElementSibling; const ic = this.querySelector('.fold-icon'); if(content.style.display==='none'){content.style.display='flex'; ic.innerText='▼';}else{content.style.display='none'; ic.innerText='▶';}">${label} <span class="fold-icon" style="font-size:0.7rem; color:#6b778c;">${icon}</span></div><div style="display:${displayStyle}; flex-direction:column; gap:5px; margin-bottom:10px;">${grouped[month].map(function(t){ return window.renderCard(t, s, currentMonthStr); }).join('')}</div>`; 
+                }); 
+                el.innerHTML = finalHtml; 
+            } 
+        }); 
+        
+        const assignees = {}; const taskDates = {}; const overdueTasks = []; const startDelayedTasks = []; 
+        const mats = {}; const matDates = {}; const delayedMats = []; const deliveryDelayedMats = [];  
+
+        window.currentTasks.forEach(function(t){ 
+            if (t.status === 'deleted') return; 
+            const statusStr = String(t.status || ''); 
+            const isMat = statusStr.startsWith('mat-'); 
+            const isDone = ['done', 'worklog'].includes(t.status); 
+            const isDelivered = t.status === 'mat-delivered'; 
+            const fallback = window.getFallbackDate(t.createdAt); 
+            const dateToCheck = String(t.dueDate || t.startDate || fallback); 
+            const isCurrentMonth = dateToCheck.startsWith(currentMonthStr); 
+            
+            if ((isDone || isDelivered) && !isCurrentMonth && !window.showOldDoneTasks) return; 
+
+            if (!isMat) { 
+                if (t.assignee) { 
+                    if(!assignees[t.assignee]) assignees[t.assignee] = {todo:0, inprogress:0, done:0}; 
+                    if(t.status === 'todo') assignees[t.assignee].todo++; 
+                    else if(t.status === 'inprogress') assignees[t.assignee].inprogress++; 
+                    else if(isDone) assignees[t.assignee].done++; 
+                } 
+                const dueDateOnly = String(t.dueDate || ''); 
+                if (dueDateOnly && dueDateOnly !== 'undefined' && t.status !== 'worklog') { 
+                    if(dueDateOnly >= todayStr && dueDateOnly <= nextWeekStr) { 
+                        if(!taskDates[dueDateOnly]) taskDates[dueDateOnly] = {wait:0, done:0}; 
+                        if(t.status === 'done') taskDates[dueDateOnly].done++; 
+                        else taskDates[dueDateOnly].wait++; 
+                    } 
+                    if (dueDateOnly < todayStr && t.status !== 'done') { 
+                        overdueTasks.push({ id: t.id, name: t.text || t.workDetails || '제목없음', date: dueDateOnly }); 
+                    } 
+                }
+                const startDateOnly = String(t.startDate || '');
+                if (t.status === 'todo' && startDateOnly && startDateOnly !== 'undefined' && startDateOnly < todayStr) {
+                    if (!startDelayedTasks.find(x => x.id === t.id)) {
+                        startDelayedTasks.push({ id: t.id, name: t.text || t.workDetails || '제목없음', date: startDateOnly });
+                    }
+                }
+            } else { 
+                if (t.requester) { 
+                    if(!mats[t.requester]) mats[t.requester] = {req:0, ord:0, del:0}; 
+                    if(t.status === 'mat-request') mats[t.requester].req++; 
+                    else if(t.status === 'mat-ordered') mats[t.requester].ord++; 
+                    else if(isDelivered) mats[t.requester].del++; 
+                } 
+                const matDueDateOnly = String(t.dueDate || ''); 
+                if (matDueDateOnly && matDueDateOnly !== 'undefined') { 
+                    if(matDueDateOnly >= todayStr && matDueDateOnly <= nextWeekStr) { 
+                        if(!matDates[matDueDateOnly]) matDates[matDueDateOnly] = {wait:0, done:0}; 
+                        if(t.status === 'mat-delivered') matDates[matDueDateOnly].done++; 
+                        else matDates[matDueDateOnly].wait++; 
+                    } 
+                } 
+                const matStartDateOnly = String(t.startDate || ''); 
+                if (t.status === 'mat-request' && matStartDateOnly && matStartDateOnly !== 'undefined' && matStartDateOnly < todayStr) { 
+                    delayedMats.push({ id: t.id, name: t.text || '제목없음', date: matStartDateOnly }); 
+                }
+                if (t.status === 'mat-ordered' && matDueDateOnly && matDueDateOnly !== 'undefined' && matDueDateOnly < todayStr) {
+                    if (!deliveryDelayedMats.find(x => x.id === t.id)) {
+                        deliveryDelayedMats.push({ id: t.id, name: t.text || '품명없음', date: matDueDateOnly });
+                    }
+                }
+            } 
+        }); 
+
+        document.getElementById('assignee-table').querySelector('tbody').innerHTML = Object.keys(assignees).map(function(k){ return `<tr><td>${k}</td><td><a class="clickable" onclick="window.showTaskModal('assignee','${k}','todo')">${assignees[k].todo}</a></td><td><a class="clickable" onclick="window.showTaskModal('assignee','${k}','inprogress')">${assignees[k].inprogress}</a></td><td><a class="clickable" onclick="window.showTaskModal('assignee','${k}','done')">${assignees[k].done}</a></td></tr>`; }).join(''); 
+        const sortedTaskDates = Object.keys(taskDates).sort(); 
+        document.getElementById('task-date-table').querySelector('tbody').innerHTML = sortedTaskDates.map(function(k){ return `<tr><td>${k.substring(5)}</td><td><a class="clickable" onclick="window.showTaskModal('dueDate','${k}','wait')">${taskDates[k].wait}</a></td><td><a class="clickable" onclick="window.showTaskModal('dueDate','${k}','done')">${taskDates[k].done}</a></td></tr>`; }).join(''); 
+        document.getElementById('overdue-table').querySelector('tbody').innerHTML = overdueTasks.map(function(t){ return `<tr><td style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70px;" title="${t.name}"><a class="clickable" onclick="window.showTaskModal('single','${t.id}','')">${t.name}</a></td><td>${t.date.substring(5)}</td></tr>`; }).join(''); 
+        
+        const sdTable = document.getElementById('start-delayed-table');
+        if(sdTable) sdTable.querySelector('tbody').innerHTML = startDelayedTasks.map(function(t){ return `<tr><td style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70px;" title="${t.name}"><a class="clickable" onclick="window.showTaskModal('single','${t.id}','')">${t.name}</a></td><td>${t.date.substring(5)}</td></tr>`; }).join('');
+
+        document.getElementById('material-table').querySelector('tbody').innerHTML = Object.keys(mats).map(function(k){ return `<tr><td>${k}</td><td><a class="clickable" onclick="window.showTaskModal('requester','${k}','req')">${mats[k].req}</a></td><td><a class="clickable" onclick="window.showTaskModal('requester','${k}','ord')">${mats[k].ord}</a></td><td><a class="clickable" onclick="window.showTaskModal('requester','${k}','del')">${mats[k].del}</a></td></tr>`; }).join(''); 
+        const sortedMatDates = Object.keys(matDates).sort(); 
+        document.getElementById('mat-date-table').querySelector('tbody').innerHTML = sortedMatDates.map(function(k){ return `<tr><td>${k.substring(5)}</td><td><a class="clickable" onclick="window.showTaskModal('dueDate-mat','${k}','wait')">${matDates[k].wait}</a></td><td><a class="clickable" onclick="window.showTaskModal('dueDate-mat','${k}','done')">${matDates[k].done}</a></td></tr>`; }).join(''); 
+        document.getElementById('un-ordered-table').querySelector('tbody').innerHTML = delayedMats.map(function(t){ return `<tr><td style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70px;" title="${t.name}"><a class="clickable" onclick="window.showTaskModal('single','${t.id}','')">${t.name}</a></td><td>${t.date.substring(5)}</td></tr>`; }).join(''); 
+        
+        const ddTable = document.getElementById('delivery-delayed-table');
+        if(ddTable) ddTable.querySelector('tbody').innerHTML = deliveryDelayedMats.map(function(t){ return `<tr><td style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70px;" title="${t.name}"><a class="clickable" onclick="window.showTaskModal('single','${t.id}','')">${t.name}</a></td><td>${t.date.substring(5)}</td></tr>`; }).join('');
+
+        const eqStats = {}; 
+        window.currentEquips.forEach(function(eq){ 
+            const b = eq.borrower || '미상'; 
+            const isReturned = eq.status === '반납완료'; 
+            const fallback = window.getFallbackDate(eq.createdAt); 
+            const refDate = String(eq.returnDate || eq.borrowDate || fallback); 
+            const isCurrentMonth = refDate.startsWith(currentMonthStr); 
+            if (isReturned && !isCurrentMonth && !window.showOldDoneTasks) return; 
+            if(!eqStats[b]) eqStats[b] = { renting: 0, returned: 0 }; 
+            if(!isReturned) eqStats[b].renting++; else eqStats[b].returned++; 
+        }); 
+        document.getElementById('equip-table').querySelector('tbody').innerHTML = Object.keys(eqStats).map(function(k){ return `<tr><td>${k}</td><td><a class="clickable" style="color:var(--warning-color);" onclick="window.showTaskModal('equip','${k}','대여중')">${eqStats[k].renting}</a></td><td><a class="clickable" onclick="window.showTaskModal('equip','${k}','반납완료')">${eqStats[k].returned}</a></td></tr>`; }).join(''); 
+
+        window.renderCalendar(); 
+    } catch (globalUIError) { 
+        console.error("Update UI Error:", globalUIError); 
+    } 
+}; 
 
         window.renderSidePanels = function() { 
             try { 
@@ -2063,10 +2098,11 @@ window.autoCloudBackup = function() {
             } catch(e) { console.error("상세 팝업 오류", e); } 
         };
 
-        window.showDailyBriefing = function() { 
+      window.showDailyBriefing = function() { 
             try { 
                 const today = new Date(); 
                 const tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1); 
+                const todayStr = window.getLocalDateString(today);
                 const tomorrowStr = window.getLocalDateString(tomorrow); 
                 
                 const tomorrowTasks = window.currentTasks.filter(function(t) { return t && t.status !== 'deleted' && ((t.startDate || window.getFallbackDate(t.createdAt)) === tomorrowStr || (t.dueDate || window.getFallbackDate(t.createdAt)) === tomorrowStr) && !(t.status || '').startsWith('mat-') && t.status !== 'worklog'; }); 
@@ -2074,11 +2110,19 @@ window.autoCloudBackup = function() {
                 const matOrdereds = window.currentTasks.filter(function(t) { return t && t.status === 'mat-ordered'; }); 
                 const inprogressTasks = window.currentTasks.filter(function(t) { return t && t.status === 'inprogress'; }); 
                 
+                // ★ 추가: 필터링 조건 (오늘 시작, 시작 지연, 반입 지연)
+                const todayStartTasks = window.currentTasks.filter(function(t) { return t && t.status === 'todo' && t.startDate === todayStr; });
+                const startDelayedTasks = window.currentTasks.filter(function(t) { return t && t.status === 'todo' && t.startDate < todayStr && t.startDate !== ''; });
+                const deliveryDelayedMats = window.currentTasks.filter(function(t) { return t && t.status === 'mat-ordered' && t.dueDate < todayStr && t.dueDate !== ''; });
+
                 const unackedContainer = document.getElementById('brief-unacked-list');
                 const inprogressContainer = document.getElementById('brief-inprogress-list');
+                const todayStartContainer = document.getElementById('brief-today-start-list');
                 const todoContainer = document.getElementById('brief-todo-list'); 
+                const startDelayedContainer = document.getElementById('brief-start-delayed-list');
                 const reqContainer = document.getElementById('brief-mat-request-list'); 
                 const ordContainer = document.getElementById('brief-mat-ordered-list'); 
+                const deliveryDelayedContainer = document.getElementById('brief-delivery-delayed-list');
                 
                 if (unackedContainer) {
                     let unackedHtml = '';
@@ -2087,10 +2131,8 @@ window.autoCloudBackup = function() {
                             const memberName = m.name;
                             const unackedTasks = window.currentTasks.filter(function(t) {
                                 if (!t || t.status === 'deleted' || t.status === 'done' || t.status === 'mat-delivered' || t.status === 'worklog') return false;
-                                
                                 const isRelevant = (t.assignee === memberName) || (t.requester === memberName) || (t.orderer === memberName);
                                 const hasAcked = t.acks && t.acks[memberName];
-                                
                                 return isRelevant && !hasAcked;
                             });
 
@@ -2123,11 +2165,29 @@ window.autoCloudBackup = function() {
                 } else {
                     inprogressContainer.innerHTML = '<div style="color:#aaa; text-align:center; padding:5px 0;">현재 진행 중인 항목이 없습니다.</div>'; 
                 }
+
+                // ★ 표시: 오늘 시작
+                if(todayStartContainer) {
+                    if(todayStartTasks.length > 0) {
+                        todayStartContainer.innerHTML = todayStartTasks.map(function(t) { return `<div class="brief-item"><strong>${t.text || '제목없음'}</strong><div class="brief-meta">담당자: ${t.assignee || '미지정'} | 시작일: ${t.startDate || '-'}</div></div>`; }).join('');
+                    } else {
+                        todayStartContainer.innerHTML = '<div style="color:#aaa; text-align:center; padding:5px 0;">오늘 시작할 항목이 없습니다.</div>';
+                    }
+                }
                 
                 if(tomorrowTasks.length > 0) {
                     todoContainer.innerHTML = tomorrowTasks.map(function(t) { return `<div class="brief-item"><strong>${t.text || '제목없음'}</strong><div class="brief-meta">담당자: ${t.assignee || '미지정'} | 기간: ${t.startDate || '-'} ~ ${t.dueDate || '-'}</div></div>`; }).join(''); 
                 } else {
                     todoContainer.innerHTML = '<div style="color:#aaa; text-align:center; padding:5px 0;">내일 예정된 항목이 없습니다.</div>'; 
+                }
+
+                // ★ 표시: 시작 지연
+                if(startDelayedContainer) {
+                    if(startDelayedTasks.length > 0) {
+                        startDelayedContainer.innerHTML = startDelayedTasks.map(function(t) { return `<div class="brief-item"><strong style="color:#bf2600;">${t.text || '제목없음'}</strong><div class="brief-meta">담당자: ${t.assignee || '미지정'} | 시작예정일: ${t.startDate || '-'}</div></div>`; }).join('');
+                    } else {
+                        startDelayedContainer.innerHTML = '<div style="color:#aaa; text-align:center; padding:5px 0;">시작이 지연된 항목이 없습니다.</div>';
+                    }
                 }
                 
                 if(matRequests.length > 0) {
@@ -2140,6 +2200,15 @@ window.autoCloudBackup = function() {
                     ordContainer.innerHTML = matOrdereds.map(function(t){ return `<div class="brief-item"><strong>${t.text || '품명없음'}</strong><div class="brief-meta">반입예정: ${t.dueDate || '-'} | 발주자: ${t.orderer || '-'}</div></div>`; }).join(''); 
                 } else {
                     ordContainer.innerHTML = '<div style="color:#aaa; text-align:center; padding:5px 0;">반입 대기 중인 자재가 없습니다.</div>'; 
+                }
+
+                // ★ 표시: 반입 지연
+                if(deliveryDelayedContainer) {
+                    if(deliveryDelayedMats.length > 0) {
+                        deliveryDelayedContainer.innerHTML = deliveryDelayedMats.map(function(t){ return `<div class="brief-item"><strong style="color:#bf2600;">${t.text || '품명없음'}</strong><div class="brief-meta">반입예정: ${t.dueDate || '-'} | 발주자: ${t.orderer || '-'}</div></div>`; }).join('');
+                    } else {
+                        deliveryDelayedContainer.innerHTML = '<div style="color:#aaa; text-align:center; padding:5px 0;">반입이 지연된 자재가 없습니다.</div>';
+                    }
                 }
                 
                 document.getElementById('briefing-modal').style.display = 'block'; 
