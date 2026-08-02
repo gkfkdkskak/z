@@ -1,0 +1,81 @@
+:root { --bg-color: #f4f5f7; --column-bg: #ebecf0; --card-bg: #ffffff; --text-color: #172b4d; --primary-color: #0052cc; --warning-color: #ff5630; --d1-color: #ff9f43; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 5px; }
+
+header { display: flex; justify-content: space-between; align-items: center; padding: 12px 10px; margin-bottom: 10px; flex-wrap: wrap; gap: 10px; background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.header-left, .header-center, .header-right { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.header-center { justify-content: center; flex: 1; min-width: 280px; }
+.header-center h1 { margin: 0; font-size: 1.25rem; color: var(--primary-color); display:flex; align-items:center; gap:8px; flex-wrap: wrap; justify-content: center; }
+
+#weather-widget { font-size: 0.95rem; background: #e0f7fa; padding: 5px 12px; border-radius: 20px; color: #00838f; font-weight: 800; box-shadow: 0 2px 5px rgba(0,82,204,0.12); letter-spacing: 0.5px; white-space: nowrap; }
+#clock-widget { font-size: 0.9rem; background: #fff3bf; padding: 5px 12px; border-radius: 20px; color: #d9480f; font-weight: 800; box-shadow: 0 2px 5px rgba(0,0,0,0.08); letter-spacing: 0.5px; white-space: nowrap; }
+.btn-team { background: #6b778c; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; font-weight: bold; }
+
+.modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); overflow-y: auto; }
+.modal-sub { z-index: 11000; } 
+.modal-content { background-color: #fff; margin: 10% auto; padding: 20px; width: 92%; max-width: 500px; border-radius: 12px; box-shadow: 0 12px 30px rgba(0,0,0,0.25); box-sizing: border-box; }
+
+#login-overlay { display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f4f5f7; z-index: 99999; flex-direction: column; align-items: center; justify-content: center; }
+.login-box { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); text-align: center; width: 80%; max-width: 320px; }
+
+.page-wrapper { display: flex; justify-content: center; gap: 15px; padding: 0 5px; align-items: flex-start; max-width: 100%; margin: 0 auto; }
+.main-content { flex: 1; max-width: 1200px; min-width: 0; width: 100%; display: flex; flex-direction: column; }
+.side-panel { display: none; width: 260px; flex-shrink: 0; flex-direction: column; gap: 15px; position: sticky; top: 10px; height: calc(100vh - 20px); overflow-y: auto; }
+.side-panel-box { background: #fff; border-radius: 6px; padding: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-top: 4px solid var(--primary-color); }
+
+.dashboard-container { display: flex; flex-direction: column; gap: 8px; width: 100%; box-sizing: border-box; margin-bottom: 10px; }
+.dashboard-layout { display: flex; width: 100%; gap: 8px; flex-direction: column; align-items: stretch; } 
+.panel { background: #fff; border-radius: 6px; padding: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); width: 100%; box-sizing: border-box; }
+
+.summary-group { margin-bottom: 15px; }
+.summary-group-title { font-size: 0.85rem; font-weight: bold; margin: 0 0 6px 0; border-bottom: 2px solid #eee; padding-bottom: 4px; display: flex; align-items: center; gap: 5px; }
+.summary-grid { display: grid; grid-template-columns: 1fr; gap: 10px; align-items: start; }
+
+.summary-table { width: 100%; border-collapse: collapse; font-size: 0.65rem; text-align: center; background: #fff; table-layout: fixed; }
+.summary-table th { background: #f4f5f7; color: #333; padding: 4px; border: 1px solid #eee; font-weight: bold; }
+.summary-table td { border: 1px solid #eee; padding: 4px; word-break: keep-all; color: var(--primary-color); font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.summary-table td:first-child { color: #333; font-weight: normal; } 
+
+.clickable { cursor: pointer; color: var(--primary-color); text-decoration: underline; font-weight: bold; }
+.clickable:hover { color: #003d99; background:#f0f4f8; border-radius:3px; padding:0 2px;}
+
+.calendar-day-cell { border: 1px solid #eee; border-radius: 2px; height: 45px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 2px; font-size: 0.6rem; cursor: pointer; }
+.calendar-day-cell:hover { background: #f0f4f8; }
+.calendar-num-badge { font-size: 0.65rem; background: var(--primary-color); color: white; border-radius: 50%; width: 18px; height: 18px; line-height: 18px; text-align: center; margin-top: 4px; font-weight: bold; }
+
+.board { display: flex; flex-direction: column; gap: 8px; width: 100%; box-sizing: border-box; }
+.column { background-color: var(--column-bg); flex: 1 1 0%; min-width: 0; border-radius: 6px; padding: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.12); box-sizing: border-box; }
+.column h2 { font-size: 0.9rem; margin: 0 0 5px 0; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+
+.add-card-form { margin-bottom: 8px; display: flex; flex-direction: column; gap: 4px; width: 100%; box-sizing: border-box; }
+.add-card-form textarea { width: 100%; box-sizing: border-box; border: 1px solid #ddd; border-radius: 4px; padding: 5px; font-size: 0.8rem; resize: vertical; }
+.form-row { display: flex; gap: 3px; width: 100%; box-sizing: border-box; align-items: center; }
+.form-row input, .form-row select { flex: 1; min-width: 0; box-sizing: border-box; border: 1px solid #ddd; border-radius: 4px; padding: 4px; font-size: 0.7rem; }
+.form-row button { background: var(--primary-color); color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.7rem; white-space: nowrap; }
+
+.card { background-color: var(--card-bg); border-radius: 4px; padding: 8px; margin-bottom: 5px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); width: 100%; box-sizing: border-box; }
+
+.card-actions { display: flex; justify-content: flex-end; align-items: center; gap: 4px; margin-top: 8px; border-top: 1px solid #eee; padding-top: 6px; flex-wrap: wrap; } 
+.card-actions button { border: none; border-radius: 3px; padding: 3px 8px; cursor: pointer; font-size: 0.7rem; font-weight: bold; white-space: nowrap; transition: background 0.1s; }
+.card-actions .btn-edit { background: #e0e0e0; color: #333; }
+.card-actions .btn-ack { background: #e3fcef; color: #00875a; }
+.card-actions .btn-unack { background: #ffebe6; color: #bf2600; } 
+.card-actions .btn-move { background: #e0e0e0; color: #333; }
+.card-actions .btn-del { background: #ff5630; color: white; }
+.card-actions button:hover { opacity: 0.85; }
+
+.ack-box { background: #e3fcef; color: #00875a; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; margin-top: 6px; display: flex; flex-direction: column; gap: 2px; }
+
+.brief-section-title { font-size: 0.9rem; font-weight: bold; margin: 15px 0 6px 0; display: flex; align-items: center; gap: 5px; }
+.brief-list-container { background: #f9f9fa; border: 1px solid #eee; border-radius: 6px; padding: 10px; font-size: 0.85rem; color: #333; display: flex; flex-direction: column; gap: 6px; min-height: 36px; }
+.brief-item { padding: 4px 0; border-bottom: 1px solid #f0f0f2; line-height: 1.4; }
+.brief-item:last-child { border-bottom: none; }
+.brief-meta { font-size: 0.75rem; color: #666; margin-top: 2px; }
+
+.section-header { width: 100%; box-sizing:border-box; margin: 15px auto 5px; font-size: 1rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; padding: 5px; border-radius: 4px; transition: background 0.2s; }
+.section-header:hover { background-color: #e5e5e5; }
+.section-icon { font-size: 0.8rem; color: #666; }
+
+@media (max-width: 767px) { .hide-on-mobile { display: none !important; } }
+@media (min-width: 768px) { .summary-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 900px) { .dashboard-layout { flex-direction: row; align-items: flex-start; } .board { flex-direction: row; align-items: flex-start; } }
+@media (min-width: 1400px) { .side-panel { display: flex; } }
