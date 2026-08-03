@@ -201,13 +201,27 @@ window.uploadWarehouseExcel = function(event) {
                 return;
             }
 
-            alert("기존 데이터를 삭제하고 업로드를 시작합니다. 잠시만 기다려주세요...");
+            alert("기존 데이터를 삭제하고 엑셀 업로드를 시작합니다.\n인터넷 환경에 따라 시간이 걸릴 수 있으니 창을 닫지 말고 잠시만 기다려주세요...");
             
-            const deletePromises = window.currentWarehouseItems.map(w => window.db.collection("warehouse").doc(w.id).delete());
-            await Promise.all(deletePromises);
+            // ★ 변경: 네트워크 불안정 시 데이터 꼬임 방지를 위한 Batch(일괄 처리) 로직 적용
+            let batches = [];
+            let currentBatch = window.db.batch();
+            let operationCount = 0;
 
+            // 1단계: 기존 자재 데이터 전체 삭제 예약
+            window.currentWarehouseItems.forEach(w => {
+                currentBatch.delete(window.db.collection("warehouse").doc(w.id));
+                operationCount++;
+                if(operationCount === 490) { // Firebase Batch 한도(500) 방지
+                    batches.push(currentBatch);
+                    currentBatch = window.db.batch();
+                    operationCount = 0;
+                }
+            });
+
+            // 2단계: 엑셀 파일의 새 데이터 추가 예약
             let count = 0;
-            const addPromises = json.map(async (row) => {
+            json.forEach(row => {
                 const loc = row['위치'] || row['창고'] || row['위치/창고'] || row['그룹'] || '미지정';
                 const item = row['품명'] || row['이름'] || row['자재명'] || '';
                 const spec = row['규격'] || row['스펙'] || '';
@@ -217,18 +231,31 @@ window.uploadWarehouseExcel = function(event) {
 
                 if(item) {
                     count++;
-                    return window.db.collection("warehouse").add({
+                    const newDocRef = window.db.collection("warehouse").doc();
+                    currentBatch.set(newDocRef, {
                         location: loc, item: item, spec: spec, unit: unit, qty: qty, note: note, createdAt: Date.now()
                     });
+                    operationCount++;
+                    if(operationCount === 490) {
+                        batches.push(currentBatch);
+                        currentBatch = window.db.batch();
+                        operationCount = 0;
+                    }
                 }
             });
+            
+            if (operationCount > 0) batches.push(currentBatch);
 
-            await Promise.all(addPromises);
+            // 3단계: 예약된 모든 작업을 순차적으로 서버에 전송 (모두 성공하거나, 모두 취소됨)
+            for(let i=0; i<batches.length; i++) {
+                await batches[i].commit();
+            }
+
             alert(`✅ 총 ${count}개의 자재 데이터가 성공적으로 덮어쓰기 되었습니다!`);
             event.target.value = '';
         } catch(err) {
             console.error("Excel Upload Error:", err);
-            alert("엑셀 업로드 중 오류가 발생했습니다. 파일 형식을 확인해주세요.");
+            alert("엑셀 업로드 중 오류가 발생했습니다. 엑셀 파일 양식을 다시 한번 확인해주세요.");
             event.target.value = '';
         }
     };
@@ -756,6 +783,7 @@ window.addWorklogEntry = function(loc = '', cont = '', workers = []) {
     const workersStr = workers.join(',');
     const workersDisp = workers.length > 0 ? `투입 ${workers.length}명 : <strong style="color:#0052cc;">${workers.join(', ')}</strong>` : '<span style="color:#aaa;">선택없음</span>';
 
+    // ★ 추가: 우측 끝에 [❌ 삭제] 버튼 삽입
     div.innerHTML = `
         <div style="width:100%; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
             <div style="font-size:0.8rem; font-weight:bold; color:var(--primary-color); white-space:nowrap; flex-shrink:0;">#${id}</div>
@@ -765,11 +793,13 @@ window.addWorklogEntry = function(loc = '', cont = '', workers = []) {
                 <button type="button" onclick="window.openWorkerModal('${id}')" style="background:#f0f4f8; border:1px solid #dcdfe4; padding:6px 10px; border-radius:6px; font-size:0.75rem; font-weight:bold; cursor:pointer; color:#0052cc; white-space:nowrap;">🙋‍♂️ 인원 선택</button>
                 <div id="wl-workers-display-${id}" style="font-size:0.7rem; color:#333; line-height:1.2; min-width:80px; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${workersDisp}</div>
                 <input type="hidden" class="wl-workers-hidden" id="wl-workers-hidden-${id}" value="${workersStr}">
+                <button type="button" onclick="this.closest('.worklog-entry').remove()" style="background:#ffebe6; color:#bf2600; border:none; padding:6px 10px; border-radius:6px; font-size:0.75rem; font-weight:bold; cursor:pointer; white-space:nowrap;">❌ 삭제</button>
             </div>
         </div>
     `; 
     container.appendChild(div); 
 };
+
 
 window.openWorklogEditModal = function(task) { 
     document.getElementById('edit-wl-id').value = task.id; 
@@ -2389,15 +2419,23 @@ window.initFirebaseListeners = function() {
             const loginSelect = document.getElementById('login-user-select'); 
             if(loginSelect) { loginSelect.innerHTML = '<option value="">이름 선택 (팀원이 없다면 직접 등록하세요)</option>' + window.teamMembers.map(function(m){ return `<option value="${m.name}">${m.name}</option>`; }).join(''); } 
             
-            if(window.loggedInUser && window.teamMembers.find(function(m){ return m.name === window.loggedInUser; })) { 
-                const overlay = document.getElementById('login-overlay');
-                if (overlay.style.display !== 'none') {
-                    overlay.style.display = 'none'; 
-                    document.getElementById('header-user-name').innerText = window.loggedInUser + ' 님'; 
-                    if (!window.hasShownBriefing) {
-                        window.showDailyBriefing();
-                        window.hasShownBriefing = true;
+            // ★ 변경: 퇴사자(유령 계정) 확인 및 강제 로그아웃 방어 로직
+            if(window.loggedInUser) {
+                const isUserValid = window.teamMembers.find(function(m){ return m.name === window.loggedInUser; });
+                if(isUserValid) { 
+                    const overlay = document.getElementById('login-overlay');
+                    if (overlay.style.display !== 'none') {
+                        overlay.style.display = 'none'; 
+                        document.getElementById('header-user-name').innerText = window.loggedInUser + ' 님'; 
+                        if (!window.hasShownBriefing) {
+                            window.showDailyBriefing();
+                            window.hasShownBriefing = true;
+                        }
                     }
+                } else {
+                    // 팀원 명단에서 삭제된 경우 접속 차단
+                    alert("⚠️ 관리자에 의해 팀원 목록에서 삭제되었습니다.\n다시 로그인해주세요.");
+                    window.logoutUser();
                 }
             } 
             window.renderTeam(); window.updateUI(); 
