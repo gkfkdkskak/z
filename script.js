@@ -1776,7 +1776,17 @@ window.addCard = async function(col) {
     } 
     const typeStr = col.startsWith('mat-') ? '자재' : '일정'; 
     window.sendLineNotificationProxy(`🔔 [신규 등록 - ${typeStr}]\n등록자: ${window.loggedInUser}\n내용: ${text}\n일자: ${startDate} ~ ${dueDate}`); 
-    await window.db.collection("tasks").add({ text: text, status: col, startDate: startDate, dueDate: dueDate, assignee: asg, requester: req, orderer: ord, repeat: repeat, acks: {}, createdAt: Date.now() });  
+    const now = new Date();
+const timeStr = `${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+// 2. 작성자 본인을 자동으로 확인 명단에 추가
+let autoAck = {};
+if (window.loggedInUser) {
+    autoAck[window.loggedInUser] = timeStr;
+}
+
+// 3. 빈 객체(acks: {}) 대신 위에서 만든 autoAck를 넣어서 저장
+await window.db.collection("tasks").add({ text: text, status: col, startDate: startDate, dueDate: dueDate, assignee: asg, requester: req, orderer: ord, repeat: repeat, acks: autoAck, createdAt: Date.now() });  
 };
 
 window.moveTask = async function(id, newStatus) {  
