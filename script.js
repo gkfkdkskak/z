@@ -2578,3 +2578,134 @@ window.onload = function() {
         console.warn("데이터베이스 연결에 실패했습니다. Firebase 설정을 확인해주세요.");
     }
 };
+// ==========================================
+// 💬 현장 요청사항 게시판 기능 (기존 JS 맨 밑에 추가)
+// ==========================================
+window.currentRequests = [];
+
+// Firebase 실시간 리스너 자동 실행
+if (window.db) {
+    window.db.collection("requests").onSnapshot(function(s) {
+        window.currentRequests = s.docs.map(function(d){ 
+            return Object.assign({ id: d.id }, d.data()); 
+        });
+        window.currentRequests.sort(function(a, b){ 
+            return (b.createdAt || 0) - (a.createdAt || 0); 
+        }); 
+        window.renderRequests();
+    });
+}
+
+// 요청사항 등록
+window.addRequest = async function() {
+    if(!window.loggedInUser) return alert("로그인 후 이용해주세요.");
+    const textInput = document.getElementById('request-input');
+    const text = textInput ? textInput.value.trim() : '';
+    if(!text) return alert("요청사항 내용을 입력하세요.");
+    
+    const now = new Date();
+    const timeStr = `${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    
+    let autoAck = {};
+    autoAck[window.loggedInUser] = timeStr;
+
+    try {
+        await window.db.collection("requests").add({
+            text: text,
+            author: window.loggedInUser,
+            acks: autoAck,
+            createdAt: Date.now()
+        });
+        if(textInput) textInput.value = '';
+        if (typeof window.sendLineNotificationProxy === 'function') {
+            window.sendLineNotificationProxy(`💬 [현장 요청사항]\n작성자: ${window.loggedInUser}\n내용: ${text}`);
+        }
+    } catch(e) {
+        alert("등록 실패: " + e.message);
+    }
+};
+
+// 요청사항 화면 표시
+window.renderRequests = function() {
+    const list = document.getElementById('request-list');
+    if(!list) return;
+    
+    if(!window.currentRequests || window.currentRequests.length === 0) {
+        list.innerHTML = '<div style="text-align:center; padding:15px; color:#999; font-size:0.85rem;">등록된 요청사항이 없습니다.</div>';
+        return;
+    }
+    
+    let html = '';
+    window.currentRequests.forEach(function(req) {
+        let regTimeStr = '';
+        if (req.createdAt) {
+            let d = new Date(req.createdAt);
+            regTimeStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+        }
+
+        let ackDisplayHtml = ''; 
+        let hasIHaveAcked = false; 
+        if(req.acks && typeof req.acks === 'object' && !Array.isArray(req.acks)) { 
+            const keys = Object.keys(req.acks); 
+            if(keys.length > 0) { 
+                ackDisplayHtml = `<div class="ack-box" style="margin-top:8px; font-size:0.8rem; color:#555;">`; 
+                keys.forEach(function(name){ 
+                    if(name === window.loggedInUser) hasIHaveAcked = true; 
+                    ackDisplayHtml += `<div>✓ 확인: ${name} (${req.acks[name]})</div>`; 
+                }); 
+                ackDisplayHtml += `</div>`; 
+            } 
+        } 
+
+        const ackBtn = `<button onclick="window.toggleRequestAck('${req.id}')" style="background:${hasIHaveAcked ? '#ffebe6' : '#e3fcef'}; color:${hasIHaveAcked ? '#bf2600' : '#00875a'}; border:none; padding:6px 12px; border-radius:4px; font-size:0.8rem; font-weight:bold; cursor:pointer;">${hasIHaveAcked ? '확인취소' : '확인'}</button>`;
+        const delBtn = (req.author === window.loggedInUser) ? `<button onclick="window.deleteRequest('${req.id}')" style="background:none; border:none; color:#bf2600; cursor:pointer; font-size:0.75rem; font-weight:bold; text-decoration:underline;">삭제</button>` : '';
+
+        html += `
+        <div style="background:#fff; border:1px solid #ddd; padding:12px; border-radius:8px; box-shadow:0 1px 2px rgba(0,0,0,0.05);">
+            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                <span style="font-weight:bold; font-size:0.9rem; color:#009688;">👤 ${req.author || '미상'}</span>
+                <span style="font-size:0.75rem; color:#888;">⏱️ ${regTimeStr}</span>
+            </div>
+            <div style="font-size:0.95rem; color:#333; line-height:1.4; white-space:pre-wrap;">${req.text}</div>
+            ${ackDisplayHtml}
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; border-top:1px dashed #eee; padding-top:10px;">
+                ${ackBtn}
+                ${delBtn}
+            </div>
+        </div>`;
+    });
+    list.innerHTML = html;
+};
+
+// 확인 토글
+window.toggleRequestAck = async function(id) {
+    if(!window.loggedInUser) return alert("로그인 후 사용해주세요."); 
+    try {
+        const reqSnap = await window.db.collection("requests").doc(id).get(); 
+        if(!reqSnap.exists) return; 
+        const req = reqSnap.data(); 
+        let acks = req.acks || {}; 
+        
+        if(acks[window.loggedInUser]) {
+            delete acks[window.loggedInUser];
+        } else { 
+            const now = new Date(); 
+            const timeStr = `${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`; 
+            acks[window.loggedInUser] = timeStr; 
+        } 
+        await window.db.collection("requests").doc(id).update({ acks: acks });
+    } catch(e) {
+        alert("오류 발생: " + e.message);
+    }
+};
+
+// 삭제
+window.deleteRequest = async function(id) {
+    if(confirm("이 요청사항을 삭제하시겠습니까?")) {
+        try {
+            await window.db.collection("requests").doc(id).delete();
+        } catch(e) {
+            alert("삭제 실패: " + e.message);
+        }
+    }
+};
