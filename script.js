@@ -2578,143 +2578,12 @@ window.onload = function() {
         console.warn("데이터베이스 연결에 실패했습니다. Firebase 설정을 확인해주세요.");
     }
 };
-// ==========================================
-// 💬 현장 요청사항 게시판 기능 (기존 JS 맨 밑에 추가)
-// ==========================================
-window.currentRequests = [];
-
-// Firebase 실시간 리스너 자동 실행
-if (window.db) {
-    window.db.collection("requests").onSnapshot(function(s) {
-        window.currentRequests = s.docs.map(function(d){ 
-            return Object.assign({ id: d.id }, d.data()); 
-        });
-        window.currentRequests.sort(function(a, b){ 
-            return (b.createdAt || 0) - (a.createdAt || 0); 
-        }); 
-        window.renderRequests();
-    });
-}
-
-// 요청사항 등록
-window.addRequest = async function() {
-    if(!window.loggedInUser) return alert("로그인 후 이용해주세요.");
-    const textInput = document.getElementById('request-input');
-    const text = textInput ? textInput.value.trim() : '';
-    if(!text) return alert("요청사항 내용을 입력하세요.");
-    
-    const now = new Date();
-    const timeStr = `${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-    
-    let autoAck = {};
-    autoAck[window.loggedInUser] = timeStr;
-
-    try {
-        await window.db.collection("requests").add({
-            text: text,
-            author: window.loggedInUser,
-            acks: autoAck,
-            createdAt: Date.now()
-        });
-        if(textInput) textInput.value = '';
-        if (typeof window.sendLineNotificationProxy === 'function') {
-            window.sendLineNotificationProxy(`💬 [현장 요청사항]\n작성자: ${window.loggedInUser}\n내용: ${text}`);
-        }
-    } catch(e) {
-        alert("등록 실패: " + e.message);
-    }
-};
-
-// 요청사항 화면 표시
-window.renderRequests = function() {
-    const list = document.getElementById('request-list');
-    if(!list) return;
-    
-    if(!window.currentRequests || window.currentRequests.length === 0) {
-        list.innerHTML = '<div style="text-align:center; padding:15px; color:#999; font-size:0.85rem;">등록된 요청사항이 없습니다.</div>';
-        return;
-    }
-    
-    let html = '';
-    window.currentRequests.forEach(function(req) {
-        let regTimeStr = '';
-        if (req.createdAt) {
-            let d = new Date(req.createdAt);
-            regTimeStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-        }
-
-        let ackDisplayHtml = ''; 
-        let hasIHaveAcked = false; 
-        if(req.acks && typeof req.acks === 'object' && !Array.isArray(req.acks)) { 
-            const keys = Object.keys(req.acks); 
-            if(keys.length > 0) { 
-                ackDisplayHtml = `<div class="ack-box" style="margin-top:8px; font-size:0.8rem; color:#555;">`; 
-                keys.forEach(function(name){ 
-                    if(name === window.loggedInUser) hasIHaveAcked = true; 
-                    ackDisplayHtml += `<div>✓ 확인: ${name} (${req.acks[name]})</div>`; 
-                }); 
-                ackDisplayHtml += `</div>`; 
-            } 
-        } 
-
-        const ackBtn = `<button onclick="window.toggleRequestAck('${req.id}')" style="background:${hasIHaveAcked ? '#ffebe6' : '#e3fcef'}; color:${hasIHaveAcked ? '#bf2600' : '#00875a'}; border:none; padding:6px 12px; border-radius:4px; font-size:0.8rem; font-weight:bold; cursor:pointer;">${hasIHaveAcked ? '확인취소' : '확인'}</button>`;
-        const delBtn = (req.author === window.loggedInUser) ? `<button onclick="window.deleteRequest('${req.id}')" style="background:none; border:none; color:#bf2600; cursor:pointer; font-size:0.75rem; font-weight:bold; text-decoration:underline;">삭제</button>` : '';
-
-        html += `
-        <div style="background:#fff; border:1px solid #ddd; padding:12px; border-radius:8px; box-shadow:0 1px 2px rgba(0,0,0,0.05);">
-            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-                <span style="font-weight:bold; font-size:0.9rem; color:#009688;">👤 ${req.author || '미상'}</span>
-                <span style="font-size:0.75rem; color:#888;">⏱️ ${regTimeStr}</span>
-            </div>
-            <div style="font-size:0.95rem; color:#333; line-height:1.4; white-space:pre-wrap;">${req.text}</div>
-            ${ackDisplayHtml}
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; border-top:1px dashed #eee; padding-top:10px;">
-                ${ackBtn}
-                ${delBtn}
-            </div>
-        </div>`;
-    });
-    list.innerHTML = html;
-};
-
-// 확인 토글
-window.toggleRequestAck = async function(id) {
-    if(!window.loggedInUser) return alert("로그인 후 사용해주세요."); 
-    try {
-        const reqSnap = await window.db.collection("requests").doc(id).get(); 
-        if(!reqSnap.exists) return; 
-        const req = reqSnap.data(); 
-        let acks = req.acks || {}; 
-        
-        if(acks[window.loggedInUser]) {
-            delete acks[window.loggedInUser];
-        } else { 
-            const now = new Date(); 
-            const timeStr = `${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`; 
-            acks[window.loggedInUser] = timeStr; 
-        } 
-        await window.db.collection("requests").doc(id).update({ acks: acks });
-    } catch(e) {
-        alert("오류 발생: " + e.message);
-    }
-};
-
-// 삭제
-window.deleteRequest = async function(id) {
-    if(confirm("이 요청사항을 삭제하시겠습니까?")) {
-        try {
-            await window.db.collection("requests").doc(id).delete();
-        } catch(e) {
-            alert("삭제 실패: " + e.message);
-        }
-    }
-};
-// ================= ==========================
-// 💬 현장 요청사항 관리 전용 변수 및 기능
+// ============================================
+// 💬 현장 요청사항 게시판 최종 통합 관리 코드
 // ============================================
 window.currentRequests = [];
-window.showOldRequests = false; // 30일 이전 완료내역 불러오기 여부
-window.showCompletedRequests = false; // 완료 목록 펼침 여부
+window.showOldRequests = false;         // 상단 버튼과 연동될 과거내역 표시 상태
+window.showCompletedRequests = false;  // 완료 목록 펼침 여부
 
 // 파이어베이스 실시간 데이터 수신
 if (window.db) {
@@ -2729,48 +2598,59 @@ if (window.db) {
 
 // 1. 요청사항 등록
 window.addRequest = async function() {
+    if (!window.loggedInUser) return alert("로그인 후 이용해주세요.");
     const input = document.getElementById('request-input');
     if (!input) return;
     const text = input.value.trim();
-    if (!text) return alert("요청사항을 입력해주세요.");
+    if (!text) return alert("요청사항 내용을 입력하세요.");
 
-    await window.db.collection("requests").add({
-        text: text,
-        author: window.loggedInUser || '익명',
-        createdAt: Date.now(),
-        completed: false,
-        completedAt: null
-    });
-    input.value = '';
+    try {
+        await window.db.collection("requests").add({
+            text: text,
+            author: window.loggedInUser,
+            createdAt: Date.now(),
+            completed: false,
+            completedAt: null
+        });
+        input.value = '';
+        if (typeof window.sendLineNotificationProxy === 'function') {
+            window.sendLineNotificationProxy(`💬 [현장 요청사항]\n작성자: ${window.loggedInUser}\n내용: ${text}`);
+        }
+    } catch(e) {
+        alert("등록 실패: " + e.message);
+    }
 };
 
 // 2. 처리 완료 / 완료 취소 토글
 window.toggleRequestComplete = async function(id, status) {
-    await window.db.collection("requests").doc(id).update({
-        completed: status,
-        completedAt: status ? Date.now() : null
-    });
+    try {
+        await window.db.collection("requests").doc(id).update({
+            completed: status,
+            completedAt: status ? Date.now() : null
+        });
+    } catch(e) {
+        alert("상태 변경 실패: " + e.message);
+    }
 };
 
 // 3. 요청사항 삭제
 window.deleteRequest = async function(id) {
     if (confirm("이 요청사항을 삭제하시겠습니까?")) {
-        await window.db.collection("requests").doc(id).delete();
+        try {
+            await window.db.collection("requests").doc(id).delete();
+        } catch(e) {
+            alert("삭제 실패: " + e.message);
+        }
     }
 };
 
-// 4. 과거 (30일 이상) 완료내역 모두 불러오기 토글
+// 4. 상단 [과거 완료내역 모두 보기] 버튼과 연동되는 함수
 window.toggleOldRequests = function() {
     window.showOldRequests = !window.showOldRequests;
-    const btn = document.getElementById('toggle-old-requests-btn');
-    if (btn) {
-        if (window.showOldRequests) {
-            btn.innerText = "📁 30일 이전 과거 내역 숨기기";
-            btn.style.background = "#42526e";
-        } else {
-            btn.innerText = "📜 과거 완료내역 모두 불러오기";
-            btn.style.background = "#6b778c";
-        }
+    
+    // 버튼을 눌렀을 때 과거 내역을 켜면서 완료 목록이 닫혀있다면 자동으로 펼쳐줌
+    if (window.showOldRequests && !window.showCompletedRequests) {
+        window.toggleCompletedRequestsView();
     }
     window.renderRequests();
 };
@@ -2812,7 +2692,7 @@ window.renderRequests = function() {
             const completedTime = req.completedAt || req.createdAt || now;
             const isOlderThan30Days = (now - completedTime) > thirtyDaysMs;
             
-            // 30일 이내이거나, '과거 내역 불러오기'가 켜진 경우에만 포함
+            // 30일 이내이거나, 상단 버튼을 통해 '과거 내역 보기'가 켜진 경우에만 포함
             if (!isOlderThan30Days || window.showOldRequests) {
                 completedRequests.push({
                     ...req,
@@ -2827,20 +2707,23 @@ window.renderRequests = function() {
         listEl.innerHTML = '<div style="text-align:center; color:#999; padding:15px; font-size:0.85rem;">등록된 진행 중 요청사항이 없습니다.</div>';
     } else {
         listEl.innerHTML = pendingRequests.map(req => {
-            const dateStr = window.getFallbackDate ? window.getFallbackDate(req.createdAt) : new Date(req.createdAt).toLocaleDateString();
+            let regTimeStr = '';
+            if (req.createdAt) {
+                let d = new Date(req.createdAt);
+                regTimeStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+            }
+            const delBtn = (req.author === window.loggedInUser) ? `<button onclick="window.deleteRequest('${req.id}')" style="background:#ffebe6; color:#bf2600; border:none; padding:6px 10px; border-radius:4px; font-size:0.75rem; font-weight:bold; cursor:pointer;">🗑️ 삭제</button>` : '';
+
             return `
-            <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; padding:10px 12px; border:1px solid #e0e0e0; border-left:4px solid #009688; border-radius:6px; box-shadow:0 1px 2px rgba(0,0,0,0.05);">
-                <div style="flex:1; margin-right:10px;">
-                    <div style="font-size:0.9rem; color:#333; font-weight:500; word-break:break-all;">${req.text}</div>
-                    <div style="font-size:0.75rem; color:#888; margin-top:4px;">
-                        <span>👤 ${req.author || '익명'}</span>
-                        <span style="margin:0 5px;">|</span>
-                        <span>📅 ${dateStr}</span>
-                    </div>
+            <div style="background:#fff; border:1px solid #ddd; padding:12px; border-radius:8px; box-shadow:0 1px 2px rgba(0,0,0,0.05);">
+                <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                    <span style="font-weight:bold; font-size:0.9rem; color:#009688;">👤 ${req.author || '미상'}</span>
+                    <span style="font-size:0.75rem; color:#888;">⏱️ ${regTimeStr}</span>
                 </div>
-                <div style="display:flex; gap:5px; white-space:nowrap;">
-                    <button onclick="window.toggleRequestComplete('${req.id}', true)" style="background:#00b894; color:white; border:none; padding:6px 10px; border-radius:4px; font-size:0.75rem; font-weight:bold; cursor:pointer;">✅ 처리 완료</button>
-                    <button onclick="window.deleteRequest('${req.id}')" style="background:#ffebe6; color:#bf2600; border:none; padding:6px 10px; border-radius:4px; font-size:0.75rem; font-weight:bold; cursor:pointer;">🗑️ 삭제</button>
+                <div style="font-size:0.95rem; color:#333; line-height:1.4; white-space:pre-wrap;">${req.text}</div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; border-top:1px dashed #eee; padding-top:10px;">
+                    <button onclick="window.toggleRequestComplete('${req.id}', true)" style="background:#00b894; color:white; border:none; padding:6px 12px; border-radius:4px; font-size:0.8rem; font-weight:bold; cursor:pointer;">✅ 처리 완료</button>
+                    ${delBtn}
                 </div>
             </div>`;
         }).join('');
@@ -2853,23 +2736,21 @@ window.renderRequests = function() {
         completedListEl.innerHTML = '<div style="text-align:center; color:#999; padding:10px; font-size:0.8rem;">처리 완료된 내역이 없습니다.</div>';
     } else {
         completedListEl.innerHTML = completedRequests.map(req => {
-            const completedDateStr = req.completedAt ? (window.getFallbackDate ? window.getFallbackDate(req.completedAt) : new Date(req.completedAt).toLocaleDateString()) : '완료됨';
+            const completedDateStr = req.completedAt ? new Date(req.completedAt).toLocaleDateString() : '완료됨';
             const oldBadge = req.isOld ? '<span style="background:#ffebe6; color:#bf2600; padding:2px 5px; border-radius:3px; font-size:0.65rem; margin-left:5px;">30일 이전</span>' : '';
+            const delBtn = (req.author === window.loggedInUser) ? `<button onclick="window.deleteRequest('${req.id}')" style="background:#ffebe6; color:#bf2600; border:none; padding:5px 8px; border-radius:4px; font-size:0.7rem; font-weight:bold; cursor:pointer;">🗑️ 삭제</button>` : '';
 
             return `
             <div style="display:flex; justify-content:space-between; align-items:center; background:#f9f9fa; padding:8px 12px; border:1px dashed #ccc; border-radius:6px; opacity:0.85;">
-                <div style="flex:1; margin-right:10px;">
+                <div style="flex:1; margin-root:10px; margin-right:10px;">
                     <div style="font-size:0.85rem; color:#666; text-decoration:line-through; word-break:break-all;">${req.text}</div>
                     <div style="font-size:0.7rem; color:#888; margin-top:3px;">
-                        <span>👤 ${req.author || '익명'}</span>
-                        <span style="margin:0 4px;">|</span>
-                        <span>완료: ${completedDateStr}</span>
-                        ${oldBadge}
+                        <span>👤 ${req.author || '익명'}</span> | <span>완료: ${completedDateStr}</span> ${oldBadge}
                     </div>
                 </div>
                 <div style="display:flex; gap:5px; white-space:nowrap;">
                     <button onclick="window.toggleRequestComplete('${req.id}', false)" style="background:#e0e0e0; color:#333; border:none; padding:5px 8px; border-radius:4px; font-size:0.7rem; font-weight:bold; cursor:pointer;">↩️ 완료 취소</button>
-                    <button onclick="window.deleteRequest('${req.id}')" style="background:#ffebe6; color:#bf2600; border:none; padding:5px 8px; border-radius:4px; font-size:0.7rem; font-weight:bold; cursor:pointer;">🗑️ 삭제</button>
+                    ${delBtn}
                 </div>
             </div>`;
         }).join('');
