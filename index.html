@@ -124,19 +124,33 @@
                 </div>
             </div>
 <!-- ========================================== -->
-<!-- 💬 현장 요청사항 (게시판) 추가 영역         -->
+<!-- 💬 현장 요청사항 (게시판) 영역             -->
 <!-- ========================================== -->
 <h3 class="section-header" style="color: #009688;" onclick="window.toggleMainSection('request-board-wrap', this)">
     <span>💬 현장 요청사항 (게시판)</span> <span class="section-icon">▼</span>
 </h3>
 <div id="request-board-wrap">
     <div class="panel" style="margin-bottom: 10px;">
-        <div style="display:flex; gap:5px; margin-bottom:10px;">
-            <input type="text" id="request-input" placeholder="요청사항이나 전달사항을 입력해주세요..." style="flex:1; padding:10px; border:1px solid #ddd; border-radius:6px; font-size:0.9rem;">
+        <div style="display:flex; gap:5px; margin-bottom:10px; flex-wrap:wrap;">
+            <input type="text" id="request-input" placeholder="요청사항이나 전달사항을 입력해주세요..." style="flex:1; min-width:200px; padding:10px; border:1px solid #ddd; border-radius:6px; font-size:0.9rem;">
             <button onclick="window.addRequest()" style="background:#009688; color:white; border:none; padding:10px 15px; border-radius:6px; font-weight:bold; cursor:pointer; white-space:nowrap;">등록</button>
+            <button id="toggle-old-requests-btn" onclick="window.toggleOldRequests()" style="background:#6b778c; color:white; border:none; padding:10px 15px; border-radius:6px; font-weight:bold; cursor:pointer; white-space:nowrap;">📜 과거 완료내역 모두 불러오기</button>
         </div>
+        
+        <!-- 진행 중인 요청 목록 -->
         <div id="request-list" style="display:flex; flex-direction:column; gap:8px; max-height:300px; overflow-y:auto; padding-right:5px;">
-            <!-- 목록 영역 -->
+            <!-- 목록 자동 렌더링 -->
+        </div>
+
+        <!-- 처리 완료 목록 (접기/펼치기) -->
+        <div id="completed-request-wrapper" style="border-top:1px dashed #ccc; padding-top:10px; margin-top:12px;">
+            <div id="completed-request-header" onclick="window.toggleCompletedRequestsView()" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; background:#f4f5f7; padding:8px 12px; border-radius:6px; font-weight:bold; font-size:0.85rem; color:#555; border:1px solid #e0e0e0;">
+                <span>✅ 처리 완료된 요청 (<span id="completed-request-count">0</span>개)</span>
+                <span id="completed-request-icon">▶ 펼치기</span>
+            </div>
+            <div id="completed-request-list" style="display:none; flex-direction:column; gap:8px; margin-top:8px; max-height:250px; overflow-y:auto; padding-right:5px;">
+                <!-- 완료 목록 자동 렌더링 -->
+            </div>
         </div>
     </div>
 </div>
