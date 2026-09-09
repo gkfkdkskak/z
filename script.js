@@ -2709,3 +2709,169 @@ window.deleteRequest = async function(id) {
         }
     }
 };
+// ================= ==========================
+// 💬 현장 요청사항 관리 전용 변수 및 기능
+// ============================================
+window.currentRequests = [];
+window.showOldRequests = false; // 30일 이전 완료내역 불러오기 여부
+window.showCompletedRequests = false; // 완료 목록 펼침 여부
+
+// 파이어베이스 실시간 데이터 수신
+if (window.db) {
+    window.db.collection("requests").orderBy("createdAt", "desc").onSnapshot(snapshot => {
+        window.currentRequests = [];
+        snapshot.forEach(doc => {
+            window.currentRequests.push({ id: doc.id, ...doc.data() });
+        });
+        window.renderRequests();
+    }, err => console.error("요청사항 수신 에러:", err));
+}
+
+// 1. 요청사항 등록
+window.addRequest = async function() {
+    const input = document.getElementById('request-input');
+    if (!input) return;
+    const text = input.value.trim();
+    if (!text) return alert("요청사항을 입력해주세요.");
+
+    await window.db.collection("requests").add({
+        text: text,
+        author: window.loggedInUser || '익명',
+        createdAt: Date.now(),
+        completed: false,
+        completedAt: null
+    });
+    input.value = '';
+};
+
+// 2. 처리 완료 / 완료 취소 토글
+window.toggleRequestComplete = async function(id, status) {
+    await window.db.collection("requests").doc(id).update({
+        completed: status,
+        completedAt: status ? Date.now() : null
+    });
+};
+
+// 3. 요청사항 삭제
+window.deleteRequest = async function(id) {
+    if (confirm("이 요청사항을 삭제하시겠습니까?")) {
+        await window.db.collection("requests").doc(id).delete();
+    }
+};
+
+// 4. 과거 (30일 이상) 완료내역 모두 불러오기 토글
+window.toggleOldRequests = function() {
+    window.showOldRequests = !window.showOldRequests;
+    const btn = document.getElementById('toggle-old-requests-btn');
+    if (btn) {
+        if (window.showOldRequests) {
+            btn.innerText = "📁 30일 이전 과거 내역 숨기기";
+            btn.style.background = "#42526e";
+        } else {
+            btn.innerText = "📜 과거 완료내역 모두 불러오기";
+            btn.style.background = "#6b778c";
+        }
+    }
+    window.renderRequests();
+};
+
+// 5. 처리 완료 목록 접기/펼치기
+window.toggleCompletedRequestsView = function() {
+    window.showCompletedRequests = !window.showCompletedRequests;
+    const list = document.getElementById('completed-request-list');
+    const icon = document.getElementById('completed-request-icon');
+    if (list && icon) {
+        if (window.showCompletedRequests) {
+            list.style.display = 'flex';
+            icon.innerText = '▼ 접기';
+        } else {
+            list.style.display = 'none';
+            icon.innerText = '▶ 펼치기';
+        }
+    }
+};
+
+// 6. 요청사항 화면 렌더링
+window.renderRequests = function() {
+    const listEl = document.getElementById('request-list');
+    const completedListEl = document.getElementById('completed-request-list');
+    const completedCountEl = document.getElementById('completed-request-count');
+    if (!listEl || !completedListEl) return;
+
+    const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+    const now = Date.now();
+
+    const pendingRequests = [];
+    const completedRequests = [];
+
+    window.currentRequests.forEach(req => {
+        if (!req.completed) {
+            pendingRequests.push(req);
+        } else {
+            // 완료일 기준 30일 경과 여부 확인
+            const completedTime = req.completedAt || req.createdAt || now;
+            const isOlderThan30Days = (now - completedTime) > thirtyDaysMs;
+            
+            // 30일 이내이거나, '과거 내역 불러오기'가 켜진 경우에만 포함
+            if (!isOlderThan30Days || window.showOldRequests) {
+                completedRequests.push({
+                    ...req,
+                    isOld: isOlderThan30Days
+                });
+            }
+        }
+    });
+
+    // --- 진행 중인 요청 렌더링 ---
+    if (pendingRequests.length === 0) {
+        listEl.innerHTML = '<div style="text-align:center; color:#999; padding:15px; font-size:0.85rem;">등록된 진행 중 요청사항이 없습니다.</div>';
+    } else {
+        listEl.innerHTML = pendingRequests.map(req => {
+            const dateStr = window.getFallbackDate ? window.getFallbackDate(req.createdAt) : new Date(req.createdAt).toLocaleDateString();
+            return `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; padding:10px 12px; border:1px solid #e0e0e0; border-left:4px solid #009688; border-radius:6px; box-shadow:0 1px 2px rgba(0,0,0,0.05);">
+                <div style="flex:1; margin-right:10px;">
+                    <div style="font-size:0.9rem; color:#333; font-weight:500; word-break:break-all;">${req.text}</div>
+                    <div style="font-size:0.75rem; color:#888; margin-top:4px;">
+                        <span>👤 ${req.author || '익명'}</span>
+                        <span style="margin:0 5px;">|</span>
+                        <span>📅 ${dateStr}</span>
+                    </div>
+                </div>
+                <div style="display:flex; gap:5px; white-space:nowrap;">
+                    <button onclick="window.toggleRequestComplete('${req.id}', true)" style="background:#00b894; color:white; border:none; padding:6px 10px; border-radius:4px; font-size:0.75rem; font-weight:bold; cursor:pointer;">✅ 처리 완료</button>
+                    <button onclick="window.deleteRequest('${req.id}')" style="background:#ffebe6; color:#bf2600; border:none; padding:6px 10px; border-radius:4px; font-size:0.75rem; font-weight:bold; cursor:pointer;">🗑️ 삭제</button>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    // --- 처리 완료된 요청 렌더링 ---
+    if (completedCountEl) completedCountEl.innerText = completedRequests.length;
+
+    if (completedRequests.length === 0) {
+        completedListEl.innerHTML = '<div style="text-align:center; color:#999; padding:10px; font-size:0.8rem;">처리 완료된 내역이 없습니다.</div>';
+    } else {
+        completedListEl.innerHTML = completedRequests.map(req => {
+            const completedDateStr = req.completedAt ? (window.getFallbackDate ? window.getFallbackDate(req.completedAt) : new Date(req.completedAt).toLocaleDateString()) : '완료됨';
+            const oldBadge = req.isOld ? '<span style="background:#ffebe6; color:#bf2600; padding:2px 5px; border-radius:3px; font-size:0.65rem; margin-left:5px;">30일 이전</span>' : '';
+
+            return `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:#f9f9fa; padding:8px 12px; border:1px dashed #ccc; border-radius:6px; opacity:0.85;">
+                <div style="flex:1; margin-right:10px;">
+                    <div style="font-size:0.85rem; color:#666; text-decoration:line-through; word-break:break-all;">${req.text}</div>
+                    <div style="font-size:0.7rem; color:#888; margin-top:3px;">
+                        <span>👤 ${req.author || '익명'}</span>
+                        <span style="margin:0 4px;">|</span>
+                        <span>완료: ${completedDateStr}</span>
+                        ${oldBadge}
+                    </div>
+                </div>
+                <div style="display:flex; gap:5px; white-space:nowrap;">
+                    <button onclick="window.toggleRequestComplete('${req.id}', false)" style="background:#e0e0e0; color:#333; border:none; padding:5px 8px; border-radius:4px; font-size:0.7rem; font-weight:bold; cursor:pointer;">↩️ 완료 취소</button>
+                    <button onclick="window.deleteRequest('${req.id}')" style="background:#ffebe6; color:#bf2600; border:none; padding:5px 8px; border-radius:4px; font-size:0.7rem; font-weight:bold; cursor:pointer;">🗑️ 삭제</button>
+                </div>
+            </div>`;
+        }).join('');
+    }
+};
