@@ -1546,6 +1546,9 @@ window.showDailyBriefing = function() {
         const startDelayedTasks = window.currentTasks.filter(function(t) { return t && t.status === 'todo' && t.startDate < todayStr && t.startDate !== ''; });
         const deliveryDelayedMats = window.currentTasks.filter(function(t) { return t && t.status === 'mat-ordered' && t.dueDate < todayStr && t.dueDate !== ''; });
 
+        // 🟢 현장에서 등록된 요청 중 관리자팀이 아직 처리하지 않은 미확인(미완료) 요청사항 전체
+        const pendingRequests = (window.currentRequests || []).filter(function(r) { return !r.completed; });
+
         const unackedContainer = document.getElementById('brief-unacked-list');
         const inprogressContainer = document.getElementById('brief-inprogress-list');
         const todayStartContainer = document.getElementById('brief-today-start-list');
@@ -1554,11 +1557,12 @@ window.showDailyBriefing = function() {
         const reqContainer = document.getElementById('brief-mat-request-list'); 
         const ordContainer = document.getElementById('brief-mat-ordered-list'); 
         const deliveryDelayedContainer = document.getElementById('brief-delivery-delayed-list');
+        const siteReqContainer = document.getElementById('brief-request-list'); 
         
+        // 1. 관리자팀 미확인 항목 렌더링
         if (unackedContainer) {
             let unackedHtml = '';
             if (window.teamMembers && window.teamMembers.length > 0) {
-                // 🔗 [핵심 연동] 소속 팀(group)이 '관리자팀'이거나 이름/팀에 '관리자'가 포함된 팀원만 추출
                 const adminMembers = window.teamMembers.filter(function(m) {
                     const groupName = m.group || '';
                     const memberName = m.name || '';
@@ -1567,18 +1571,23 @@ window.showDailyBriefing = function() {
 
                 adminMembers.forEach(function(m) {
                     const memberName = m.name;
-                    // 관리자팀 인원에게 할당되거나(담당/요청/발주) 관련된 항목 중 확인(ack) 안 한 건 검색
+                    
+                    // 1-1. 미확인 할일 및 자재 (담당자 미지정 포함)
                     const unackedTasks = window.currentTasks.filter(function(t) {
                         if (!t || t.status === 'deleted' || t.status === 'done' || t.status === 'mat-delivered' || t.status === 'worklog') return false;
-                        // 담당자가 본인이거나, 담당자가 아예 미지정("")인 항목도 관리자팀 미확인에 포함
-const isRelevant = (t.assignee === memberName) || (!t.assignee) || (t.requester === memberName) || (t.orderer === memberName);
+                        const isRelevant = (t.assignee === memberName) || (!t.assignee) || (t.requester === memberName) || (t.orderer === memberName);
                         const hasAcked = t.acks && t.acks[memberName];
                         return isRelevant && !hasAcked;
                     });
 
-                    if (unackedTasks.length > 0) {
+                    // 총 미확인 건수 = (미확인 업무/자재 수) + (현장 미확인 요청사항 수)
+                    const totalUnconfirmedCount = unackedTasks.length + pendingRequests.length;
+
+                    if (totalUnconfirmedCount > 0) {
                         unackedHtml += `<div style="margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px dashed #eee;">`;
-                        unackedHtml += `<div style="font-weight:bold; color:#e91e63; font-size:0.85rem; margin-bottom:4px;">👤 ${memberName} <span style="font-size:0.75rem; color:#888; font-weight:normal;">(${m.group || '관리자팀'})</span> <span style="font-size:0.75rem; color:#bf2600; font-weight:bold;">- 미확인 ${unackedTasks.length}건</span></div>`;
+                        unackedHtml += `<div style="font-weight:bold; color:#e91e63; font-size:0.85rem; margin-bottom:4px;">👤 ${memberName} <span style="font-size:0.75rem; color:#888; font-weight:normal;">(${m.group || '관리자팀'})</span> <span style="font-size:0.75rem; color:#bf2600; font-weight:bold;">- 미확인/미처리 ${totalUnconfirmedCount}건</span></div>`;
+                        
+                        // ① 미확인 일정/자재 출력
                         unackedTasks.forEach(function(t) {
                             const statusMap = { 'todo':'할일', 'inprogress':'진행중', 'mat-request':'발주요청', 'mat-ordered':'발주완료' };
                             const sName = statusMap[t.status] || t.status;
@@ -1586,13 +1595,21 @@ const isRelevant = (t.assignee === memberName) || (!t.assignee) || (t.requester 
                                 <strong style="color:#bf2600; font-size:0.7rem;">[${sName}]</strong> ${t.text || '제목없음'}
                             </div>`;
                         });
+
+                        // ② 현장에서 올라온 미확인 현장 요청사항 출력 (작성자 표기)
+                        pendingRequests.forEach(function(r) {
+                            unackedHtml += `<div style="font-size:0.8rem; color:#333; margin-left:5px; border-left:3px solid #009688; padding-left:6px; margin-top:3px; line-height:1.3;">
+                                <strong style="color:#009688; font-size:0.7rem;">[현장요청]</strong> ${r.text || '내용없음'} <span style="font-size:0.7rem; color:#666;">(작성자: ${r.author || '익명'})</span>
+                            </div>`;
+                        });
+
                         unackedHtml += `</div>`;
                     }
                 });
             }
             
             if (unackedHtml === '') {
-                unackedContainer.innerHTML = '<div style="color:#aaa; text-align:center; padding:5px 0;">관리자팀 인원의 미확인 항목이 없습니다. 🎉</div>';
+                unackedContainer.innerHTML = '<div style="color:#aaa; text-align:center; padding:5px 0;">관리자팀이 확인/처리해야 할 항목이 없습니다. 🎉</div>';
             } else {
                 unackedContainer.innerHTML = unackedHtml;
             }
@@ -1647,11 +1664,29 @@ const isRelevant = (t.assignee === memberName) || (!t.assignee) || (t.requester 
                 deliveryDelayedContainer.innerHTML = '<div style="color:#aaa; text-align:center; padding:5px 0;">반입이 지연된 자재가 없습니다.</div>';
             }
         }
+
+        // 2. 미완료 현장 요청사항 전체 목록 (브리핑 하단 출력)
+        if (siteReqContainer) {
+            if (pendingRequests.length > 0) {
+                siteReqContainer.innerHTML = pendingRequests.map(function(r) {
+                    let regTimeStr = '';
+                    if (r.createdAt) {
+                        let d = new Date(r.createdAt);
+                        regTimeStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+                    }
+                    return `<div class="brief-item">
+                        <strong style="color:#009688;">${r.text || '내용없음'}</strong>
+                        <div class="brief-meta">작성자: ${r.author || '익명'} | 작성일시: ${regTimeStr || '-'}</div>
+                    </div>`;
+                }).join('');
+            } else {
+                siteReqContainer.innerHTML = '<div style="color:#aaa; text-align:center; padding:5px 0;">미완료된 현장 요청사항이 없습니다. 🎉</div>';
+            }
+        }
         
         document.getElementById('briefing-modal').style.display = 'block'; 
     } catch (err) { alert("브리핑을 불러오는 중 오류가 발생했습니다."); } 
 };
-
 window.openReportModal = function() { 
     try { 
         const today = window.getLocalDateString(); 
