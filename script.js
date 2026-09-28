@@ -1,7 +1,3 @@
-// ============================================
-// 현장 관리 보드 - 통합/정리된 script.js
-// 중복 함수 제거 및 Firebase/그룹 관리 정리
-// ============================================
 // 전역 변수 선언부에 추가
 window.currentTeamGroups = [];
 
@@ -104,7 +100,7 @@ try {
         firebase.initializeApp(firebaseConfig); 
     }
     window.db = firebase.firestore();
-    window.db.settings({ experimentalForceLongPolling: true });
+    window.db.settings({ experimentalForceLongPolling: true, merge: true });
 } catch (e) {
     console.error("Firebase Init Error:", e);
 }
@@ -154,62 +150,69 @@ window.fetchWeather = async function() {
     const wEl = document.getElementById('weather-widget');
     if (!wEl) return;
 
-    const loadWeather = async function(latitude, longitude, locationName) {
-        try {
-            const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`);
-            if (!res.ok) throw new Error('날씨 API 응답 오류');
-            const data = await res.json();
-            const temp = data.current_weather.temperature;
-            const code = data.current_weather.weathercode;
-            let icon = '☀️';
-            if ([1,2,3].includes(code)) icon = '⛅';
-            else if ([45,48].includes(code)) icon = '🌫️';
-            else if ([51,53,55,56,57,61,63,65,66,67,80,81,82].includes(code)) icon = '🌧️';
-            else if ([71,73,75,77,85,86].includes(code)) icon = '❄️';
-            else if ([95,96,99].includes(code)) icon = '⛈️';
-            wEl.innerText = `${icon} ${locationName} ${temp}℃`;
-        } catch(e) {
-            console.error('날씨 조회 오류:', e);
-            wEl.innerText = '🌤️ 현재 위치 날씨 확인불가';
+    // 브라우저에서 현재 위치를 받아오는 함수
+    const getCurrentPosition = () => new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+            reject(new Error('이 브라우저는 위치 정보를 지원하지 않습니다.'));
+            return;
         }
-    };
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: false,
+            timeout: 10000,
+            maximumAge: 10 * 60 * 1000
+        });
+    });
 
-    const getLocationName = async function(latitude, longitude) {
+    try {
+        wEl.innerText = '📍 현재 위치 확인 중...';
+
+        const position = await getCurrentPosition();
+        const latitude = position.coords.latitude;
+        const longitude = position.coords.longitude;
+
+        // 현재 위치의 날씨 조회
+        const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${encodeURIComponent(latitude)}&longitude=${encodeURIComponent(longitude)}&current=temperature_2m,weather_code&timezone=auto`;
+        const weatherRes = await fetch(weatherUrl);
+        if (!weatherRes.ok) throw new Error('날씨 정보를 가져오지 못했습니다.');
+        const weatherData = await weatherRes.json();
+
+        const temp = weatherData.current?.temperature_2m;
+        const code = weatherData.current?.weather_code;
+        if (temp === undefined || code === undefined) throw new Error('날씨 데이터가 없습니다.');
+
+        // 현재 위치의 지역명 조회
+        let regionName = '현재 위치';
         try {
-            const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=ko`);
-            if (!res.ok) throw new Error('주소 조회 오류');
-            const data = await res.json();
-            return data.city || data.locality || data.principalSubdivision || '현재 위치';
-        } catch(e) {
-            console.warn('현재 위치 지역명 조회 실패:', e);
-            return '현재 위치';
-        }
-    };
-
-    if (!navigator.geolocation) {
-        wEl.innerText = '🌤️ 위치 기능을 지원하지 않는 브라우저';
-        return;
-    }
-
-    wEl.innerText = '📍 현재 위치 확인 중...';
-
-    navigator.geolocation.getCurrentPosition(
-        async function(position) {
-            const latitude = position.coords.latitude;
-            const longitude = position.coords.longitude;
-            const locationName = await getLocationName(latitude, longitude);
-            await loadWeather(latitude, longitude, locationName);
-        },
-        function(error) {
-            console.warn('위치 권한/조회 실패:', error);
-            if (error.code === error.PERMISSION_DENIED) {
-                wEl.innerText = '📍 위치 권한을 허용하면 현재 지역 날씨가 표시됩니다';
-            } else {
-                wEl.innerText = '🌤️ 현재 위치를 확인할 수 없습니다';
+            const geoUrl = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${encodeURIComponent(latitude)}&longitude=${encodeURIComponent(longitude)}&localityLanguage=ko`;
+            const geoRes = await fetch(geoUrl);
+            if (geoRes.ok) {
+                const geoData = await geoRes.json();
+                regionName = geoData.city || geoData.locality || geoData.principalSubdivision || regionName;
             }
-        },
-        { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
-    );
+        } catch (geoError) {
+            // 지역명 조회에 실패해도 날씨는 정상 표시
+            console.warn('지역명 조회 실패:', geoError);
+        }
+
+        let icon = '☀️';
+        if ([1, 2, 3].includes(code)) icon = '⛅';
+        else if ([45, 48].includes(code)) icon = '🌫️';
+        else if ([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(code)) icon = '🌧️';
+        else if ([71, 73, 75, 77, 85, 86].includes(code)) icon = '❄️';
+        else if ([95, 96, 99].includes(code)) icon = '⛈️';
+
+        wEl.innerText = `${icon} ${regionName} ${temp}℃`;
+    } catch (e) {
+        console.warn('현재 위치 날씨 조회 실패:', e);
+
+        if (e && e.code === 1) {
+            wEl.innerText = '📍 위치 권한을 허용해주세요';
+        } else if (e && e.code === 3) {
+            wEl.innerText = '📍 위치 확인 시간 초과';
+        } else {
+            wEl.innerText = '📍 현재 위치 날씨 확인불가';
+        }
+    }
 };
 
 window.sendLineNotificationProxy = function(messageText) { 
@@ -627,6 +630,27 @@ window.renderTeam = function() {
     list.innerHTML = html;
 };
 
+window.addTeamMember = async function() {
+    const nameInput = document.getElementById('new-member-name');
+    const name = nameInput.value.trim();
+    if(!name) return alert('추가할 팀원 이름을 입력해주세요.');
+    if(window.teamMembers.some(m => m.name === name)) return alert('이미 등록된 이름입니다.');
+    await window.db.collection("team").add({ name: name, createdAt: Date.now() });
+    nameInput.value = '';
+};
+
+window.editTeamMember = async function(id, currentName) {
+    const newName = prompt('수정할 이름을 입력하세요:', currentName);
+    if(!newName || newName.trim() === '' || newName.trim() === currentName) return;
+    if(window.teamMembers.some(m => m.name === newName.trim())) return alert('이미 존재하는 이름입니다.');
+    await window.db.collection("team").doc(id).update({ name: newName.trim() });
+    
+    if(currentName === window.loggedInUser) {
+        window.setLocalUser(newName.trim());
+        window.loggedInUser = newName.trim();
+        document.getElementById('header-user-name').innerText = window.loggedInUser + ' 님';
+    }
+};
 
 window.deleteTeamMember = async function(id) {
     if(confirm('해당 팀원을 삭제하시겠습니까?\n(기존에 등록된 작업 내역의 이름은 그대로 유지됩니다)')) {
@@ -2434,8 +2458,30 @@ window.executeInit = async function() {
     }
 };
 
+window.editTeamMember = async function(id, currentName, currentGroup) {
+    const newName = prompt('수정할 팀원 이름을 입력하세요:', currentName);
+    if(newName === null) return; // 취소 클릭 시 종료
+    
+    const nameToSave = newName.trim() || currentName;
+    
+    // 💡 빈칸으로 두면 '미지정' 처리되어 팀에서 빠집니다.
+    const newGroup = prompt('소속 팀명을 입력하세요.\n(예: 관리자팀, 시공팀 / 팀에서 빼려면 빈칸 그대로 확인):', currentGroup || '');
+    if(newGroup === null) return; // 취소 클릭 시 종료
+    
+    await window.db.collection("team").doc(id).update({ 
+        name: nameToSave,
+        group: newGroup.trim() // 빈칸이면 '' (미지정)으로 저장됨
+    });
+    
+    if(currentName === window.loggedInUser) {
+        window.setLocalUser(nameToSave);
+        window.loggedInUser = nameToSave;
+        const headerEl = document.getElementById('header-user-name');
+        if(headerEl) headerEl.innerText = window.loggedInUser + ' 님';
+    }
+};
 // 🟢 [추가] createGroupRenderer 함수 정의 (아래 render... 코드보다 위에 있어야 에러가 안 납니다)
-const createGroupRenderer = window.createGroupRenderer = (collectionName, arrName, listId, selectIds) => {
+const createGroupRenderer = (collectionName, arrName, listId, selectIds) => {
     return function() {
         const list = document.getElementById(listId);
         const groups = window[arrName] || [];
@@ -2462,11 +2508,26 @@ const createGroupRenderer = window.createGroupRenderer = (collectionName, arrNam
 };
 
 // 기존 그룹 렌더러 등록 부분 (+ renderTeamGroups 추가)
+window.renderTeamGroups = createGroupRenderer('teamGroups', 'currentTeamGroups', 'team-group-list', ['team-group-select', 'team-group-filter']);
 window.renderContactGroups = createGroupRenderer('contactGroups', 'currentContactGroups', 'contact-group-list', ['contact-group-select', 'contact-group-filter']);
 window.renderSiteGroups = createGroupRenderer('siteGroups', 'currentSiteGroups', 'site-group-list', ['site-group-select', 'site-group-filter']);
 window.renderOtherCoGroups = createGroupRenderer('otherCompanyGroups', 'currentOtherCoGroups', 'otherco-group-list', ['otherco-group-select', 'otherco-group-filter']);
 window.renderWarehouseGroups = createGroupRenderer('warehouseGroups', 'currentWarehouseGroups', 'warehouse-group-list', ['wh-location-select', 'wh-group-filter']);
+window.renderContactGroups = createGroupRenderer('contactGroups', 'currentContactGroups', 'contact-group-list', ['contact-group-select', 'contact-group-filter']);
+window.renderSiteGroups = createGroupRenderer('siteGroups', 'currentSiteGroups', 'site-group-list', ['site-group-select', 'site-group-filter']);
+window.renderOtherCoGroups = createGroupRenderer('otherCompanyGroups', 'currentOtherCoGroups', 'otherco-group-list', ['otherco-group-select', 'otherco-group-filter']);
+window.renderWarehouseGroups = createGroupRenderer('warehouseGroups', 'currentWarehouseGroups', 'warehouse-group-list', ['wh-location-select', 'wh-group-filter']);
+// 🟢 [이 위치에 추가] 팀 그룹 렌더러 및 팀 추가 함수
+window.renderTeamGroups = createGroupRenderer('teamGroups', 'currentTeamGroups', 'team-group-list', ['team-group-select', 'team-group-filter']);
 
+window.addTeamGroup = async function() {
+    const nameInput = document.getElementById('new-team-group');
+    const name = nameInput ? nameInput.value.trim() : '';
+    if(name) { 
+        await window.db.collection('teamGroups').add({ name: name, createdAt: Date.now() }); 
+        if(nameInput) nameInput.value = ''; 
+    }
+};
 window.addContactGroup = async function() {
     const name = document.getElementById('new-contact-group').value.trim();
     if(name) { await window.db.collection('contactGroups').add({name: name, createdAt: Date.now()}); document.getElementById('new-contact-group').value=''; }
@@ -2560,6 +2621,8 @@ window.renderEquips = renderSimpleList('currentEquips', null, 'equip-list', e =>
 
 window.initFirebaseListeners = function() {
     try {
+        const oneYearAgo = Date.now() - (365 * 24 * 60 * 60 * 1000);
+
         window.db.collection("team").onSnapshot(function(s) { 
             window.teamMembers = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); }); 
             window.teamMembers.sort(function(a, b){ return (a.createdAt || 0) - (b.createdAt || 0); }); 
@@ -2589,7 +2652,7 @@ window.initFirebaseListeners = function() {
             if(document.getElementById('briefing-modal').style.display === 'block') window.showDailyBriefing();
         });
 
-        window.db.collection("tasks").onSnapshot(function(s) { 
+        window.db.collection("tasks").where("createdAt", ">=", oneYearAgo).onSnapshot(function(s) { 
             window.currentTasks = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); }); 
             window.currentTasks.sort(function(a, b){ return (b.createdAt || 0) - (a.createdAt || 0); }); 
             window.updateUI(); 
@@ -2597,7 +2660,7 @@ window.initFirebaseListeners = function() {
             if(document.getElementById('briefing-modal').style.display === 'block') window.showDailyBriefing();
         });
 
-        window.db.collection("expenses").onSnapshot(function(s) { 
+        window.db.collection("expenses").where("createdAt", ">=", oneYearAgo).onSnapshot(function(s) { 
             window.currentExpenses = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); }); 
             window.currentExpenses.sort(function(a, b){ return (b.createdAt || 0) - (a.createdAt || 0); }); 
             if(document.getElementById('expense-modal').style.display === 'block') window.renderExpenses(); 
@@ -2905,6 +2968,40 @@ window.renderRequests = function() {
         }).join('');
     }
 };
+/* ==========================================
+   👥 팀 및 팀원 관리 전용 추가 기능 (맨 아래 추가)
+   ========================================== */
+
+// 1. 그룹 렌더러 생성 함수 (안전 정의)
+if (typeof window.createGroupRenderer === 'undefined') {
+    window.createGroupRenderer = function(collectionName, arrName, listId, selectIds) {
+        return function() {
+            const list = document.getElementById(listId);
+            const groups = window[arrName] || [];
+            if(list) {
+                list.innerHTML = groups.map(function(g) {
+                    return `<div style="display:flex; justify-content:space-between; align-items:center; padding:6px; border-bottom:1px solid #eee; font-size:0.85rem;">
+                        <strong>${g.name}</strong>
+                        <div style="display:flex; gap:4px;">
+                            <button onclick="window.editGroup('${collectionName}', '${g.id}', '${g.name}')" style="background:none; border:none; color:#0052cc; cursor:pointer; font-weight:bold; font-size:0.75rem;">수정</button>
+                            <button onclick="window.deleteGroup('${collectionName}', '${g.id}')" style="background:none; border:none; color:#bf2600; cursor:pointer; font-weight:bold; font-size:0.75rem;">✕</button>
+                        </div>
+                    </div>`;
+                }).join('');
+            }
+            selectIds.forEach(function(selectId) {
+                const sel = document.getElementById(selectId);
+                if(sel) {
+                    const currentVal = sel.value;
+                    sel.innerHTML = '<option value="">📁 전체보기 / 미지정</option>' + groups.map(function(g) {
+                        return `<option value="${g.name}">${g.name}</option>`;
+                    }).join('');
+                    sel.value = currentVal;
+                }
+            });
+        };
+    };
+}
 
 // 2. 팀(그룹) 추가 함수
 window.addTeamGroup = async function() {
