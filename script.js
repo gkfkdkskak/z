@@ -2480,45 +2480,81 @@ window.editTeamMember = async function(id, currentName, currentGroup) {
         if(headerEl) headerEl.innerText = window.loggedInUser + ' 님';
     }
 };
-// 🟢 [추가] createGroupRenderer 함수 정의 (아래 render... 코드보다 위에 있어야 에러가 안 납니다)
-const createGroupRenderer = (collectionName, arrName, listId, selectIds) => {
+window.createGroupRenderer = function(collectionName, arrName, listId, selectIds) {
     return function() {
-        const list = document.getElementById(listId);
-        const groups = window[arrName] || [];
-        if(list) {
-            list.innerHTML = groups.map(g => `
-                <div style="display:flex; justify-content:space-between; align-items:center; padding:6px; border-bottom:1px solid #eee; font-size:0.85rem;">
-                    <strong>${g.name}</strong>
-                    <div style="display:flex; gap:4px;">
-                        <button onclick="window.editGroup('${collectionName}', '${g.id}', '${g.name}')" style="background:none; border:none; color:#0052cc; cursor:pointer; font-weight:bold; font-size:0.75rem;">수정</button>
-                        <button onclick="window.deleteGroup('${collectionName}', '${g.id}')" style="background:none; border:none; color:#bf2600; cursor:pointer; font-weight:bold; font-size:0.75rem;">✕</button>
-                    </div>
-                </div>
-            `).join('');
-        }
-        selectIds.forEach(selectId => {
-            const sel = document.getElementById(selectId);
-            if(sel) {
-                const currentVal = sel.value;
-                sel.innerHTML = '<option value="">📁 전체보기 / 미지정</option>' + groups.map(g => `<option value="${g.name}">${g.name}</option>`).join('');
-                sel.value = currentVal;
+        try {
+            const arr = window[arrName] || [];
+            const listEl = document.getElementById(listId);
+
+            if (!listEl) return;
+
+            const selects = (selectIds || [])
+                .map(function(id) {
+                    return document.getElementById(id);
+                })
+                .filter(Boolean);
+
+            const groups = Array.from(
+                new Set(
+                    arr
+                        .map(function(item) {
+                            return item && item.group ? item.group : '';
+                        })
+                        .filter(Boolean)
+                )
+            );
+
+            if (selects.length) {
+                selects.forEach(function(select) {
+                    const currentValue = select.value;
+
+                    select.innerHTML =
+                        '<option value="">전체</option>' +
+                        groups.map(function(group) {
+                            return '<option value="' +
+                                String(group).replace(/"/g, '&quot;') +
+                                '">' +
+                                String(group).replace(/</g, '&lt;') +
+                                '</option>';
+                        }).join('');
+
+                    if (groups.includes(currentValue)) {
+                        select.value = currentValue;
+                    }
+                });
             }
-        });
-    }
+
+            listEl.innerHTML = arr.map(function(item) {
+                if (!item) return '';
+
+                const group = item.group || '미지정';
+                const name = item.name || item.text || '';
+
+                return '<div class="group-item">' +
+                    '<span>' + group + '</span>' +
+                    '<strong>' + name + '</strong>' +
+                    '</div>';
+            }).join('');
+
+        } catch (e) {
+            console.error('그룹 렌더링 오류:', e);
+        }
+    };
 };
 
+
 // 기존 그룹 렌더러 등록 부분 (+ renderTeamGroups 추가)
-window.renderTeamGroups = createGroupRenderer('teamGroups', 'currentTeamGroups', 'team-group-list', ['team-group-select', 'team-group-filter']);
-window.renderContactGroups = createGroupRenderer('contactGroups', 'currentContactGroups', 'contact-group-list', ['contact-group-select', 'contact-group-filter']);
-window.renderSiteGroups = createGroupRenderer('siteGroups', 'currentSiteGroups', 'site-group-list', ['site-group-select', 'site-group-filter']);
-window.renderOtherCoGroups = createGroupRenderer('otherCompanyGroups', 'currentOtherCoGroups', 'otherco-group-list', ['otherco-group-select', 'otherco-group-filter']);
-window.renderWarehouseGroups = createGroupRenderer('warehouseGroups', 'currentWarehouseGroups', 'warehouse-group-list', ['wh-location-select', 'wh-group-filter']);
-window.renderContactGroups = createGroupRenderer('contactGroups', 'currentContactGroups', 'contact-group-list', ['contact-group-select', 'contact-group-filter']);
-window.renderSiteGroups = createGroupRenderer('siteGroups', 'currentSiteGroups', 'site-group-list', ['site-group-select', 'site-group-filter']);
-window.renderOtherCoGroups = createGroupRenderer('otherCompanyGroups', 'currentOtherCoGroups', 'otherco-group-list', ['otherco-group-select', 'otherco-group-filter']);
-window.renderWarehouseGroups = createGroupRenderer('warehouseGroups', 'currentWarehouseGroups', 'warehouse-group-list', ['wh-location-select', 'wh-group-filter']);
+window.renderTeamGroups = window.createGroupRenderer('teamGroups', 'currentTeamGroups', 'team-group-list', ['team-group-select', 'team-group-filter']);
+window.renderContactGroups = window.createGroupRenderer('contactGroups', 'currentContactGroups', 'contact-group-list', ['contact-group-select', 'contact-group-filter']);
+window.renderSiteGroups = window.createGroupRenderer('siteGroups', 'currentSiteGroups', 'site-group-list', ['site-group-select', 'site-group-filter']);
+window.renderOtherCoGroups = window.createGroupRenderer('otherCompanyGroups', 'currentOtherCoGroups', 'otherco-group-list', ['otherco-group-select', 'otherco-group-filter']);
+window.renderWarehouseGroups = window.createGroupRenderer('warehouseGroups', 'currentWarehouseGroups', 'warehouse-group-list', ['wh-location-select', 'wh-group-filter']);
+window.renderContactGroups = window.createGroupRenderer('contactGroups', 'currentContactGroups', 'contact-group-list', ['contact-group-select', 'contact-group-filter']);
+window.renderSiteGroups = window.createGroupRenderer('siteGroups', 'currentSiteGroups', 'site-group-list', ['site-group-select', 'site-group-filter']);
+window.renderOtherCoGroups = window.createGroupRenderer('otherCompanyGroups', 'currentOtherCoGroups', 'otherco-group-list', ['otherco-group-select', 'otherco-group-filter']);
+window.renderWarehouseGroups = window.createGroupRenderer('warehouseGroups', 'currentWarehouseGroups', 'warehouse-group-list', ['wh-location-select', 'wh-group-filter']);
 // 🟢 [이 위치에 추가] 팀 그룹 렌더러 및 팀 추가 함수
-window.renderTeamGroups = createGroupRenderer('teamGroups', 'currentTeamGroups', 'team-group-list', ['team-group-select', 'team-group-filter']);
+window.renderTeamGroups = window.createGroupRenderer('teamGroups', 'currentTeamGroups', 'team-group-list', ['team-group-select', 'team-group-filter']);
 
 window.addTeamGroup = async function() {
     const nameInput = document.getElementById('new-team-group');
@@ -3022,7 +3058,7 @@ window.addTeamGroup = async function() {
 };
 
 // 3. 팀 그룹 렌더러 등록
-window.renderTeamGroups = window.createGroupRenderer('teamGroups', 'currentTeamGroups', 'team-group-list', ['team-group-select', 'team-group-filter']);
+window.renderTeamGroups = window.window.createGroupRenderer('teamGroups', 'currentTeamGroups', 'team-group-list', ['team-group-select', 'team-group-filter']);
 
 // 4. 팀(그룹) 이름 수정 함수
 window.editGroup = async function(col, id, currentName) {
