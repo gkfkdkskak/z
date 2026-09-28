@@ -1530,7 +1530,8 @@ window.showDailyBriefing = function() {
                     // 관리자팀 인원에게 할당되거나(담당/요청/발주) 관련된 항목 중 확인(ack) 안 한 건 검색
                     const unackedTasks = window.currentTasks.filter(function(t) {
                         if (!t || t.status === 'deleted' || t.status === 'done' || t.status === 'mat-delivered' || t.status === 'worklog') return false;
-                        const isRelevant = (t.assignee === memberName) || (t.requester === memberName) || (t.orderer === memberName);
+                        // 담당자가 본인이거나, 담당자가 아예 미지정("")인 항목도 관리자팀 미확인에 포함
+const isRelevant = (t.assignee === memberName) || (!t.assignee) || (t.requester === memberName) || (t.orderer === memberName);
                         const hasAcked = t.acks && t.acks[memberName];
                         return isRelevant && !hasAcked;
                     });
