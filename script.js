@@ -2400,32 +2400,26 @@ window.executeInit = async function() {
     }
 };
 
-const createGroupRenderer = (collectionName, arrName, listId, selectIds) => {
-    return function() {
-        const list = document.getElementById(listId);
-        const groups = window[arrName] || [];
-        if(list) {
-            list.innerHTML = groups.map(g => `
-                <div style="display:flex; justify-content:space-between; padding:6px; border-bottom:1px solid #eee; font-size:0.85rem;">
-                    <strong>${g.name}</strong>
-                    <button onclick="window.deleteGroup('${collectionName}', '${g.id}')" style="background:none; border:none; color:#bf2600; cursor:pointer; font-weight:bold;">✕</button>
-                </div>
-            `).join('');
-        }
-        selectIds.forEach(selectId => {
-            const sel = document.getElementById(selectId);
-            if(sel) {
-                const currentVal = sel.value;
-                sel.innerHTML = '<option value="">📁 전체보기 / 미지정</option>' + groups.map(g => `<option value="${g.name}">${g.name}</option>`).join('');
-                sel.value = currentVal;
-            }
-        });
-    }
-};
-
-window.deleteGroup = async function(col, id) {
-    if(confirm("이 그룹을 삭제하시겠습니까? (하위 내용은 미지정으로 변경됩니다)")) {
-        await window.db.collection(col).doc(id).delete();
+window.editTeamMember = async function(id, currentName, currentGroup) {
+    const newName = prompt('수정할 팀원 이름을 입력하세요:', currentName);
+    if(newName === null) return; // 취소 클릭 시 종료
+    
+    const nameToSave = newName.trim() || currentName;
+    
+    // 💡 빈칸으로 두면 '미지정' 처리되어 팀에서 빠집니다.
+    const newGroup = prompt('소속 팀명을 입력하세요.\n(예: 관리자팀, 시공팀 / 팀에서 빼려면 빈칸 그대로 확인):', currentGroup || '');
+    if(newGroup === null) return; // 취소 클릭 시 종료
+    
+    await window.db.collection("team").doc(id).update({ 
+        name: nameToSave,
+        group: newGroup.trim() // 빈칸이면 '' (미지정)으로 저장됨
+    });
+    
+    if(currentName === window.loggedInUser) {
+        window.setLocalUser(nameToSave);
+        window.loggedInUser = nameToSave;
+        const headerEl = document.getElementById('header-user-name');
+        if(headerEl) headerEl.innerText = window.loggedInUser + ' 님';
     }
 };
 
