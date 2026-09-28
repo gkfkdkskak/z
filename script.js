@@ -2431,7 +2431,39 @@ window.editTeamMember = async function(id, currentName, currentGroup) {
         if(headerEl) headerEl.innerText = window.loggedInUser + ' 님';
     }
 };
+// 🟢 [추가] createGroupRenderer 함수 정의 (아래 render... 코드보다 위에 있어야 에러가 안 납니다)
+const createGroupRenderer = (collectionName, arrName, listId, selectIds) => {
+    return function() {
+        const list = document.getElementById(listId);
+        const groups = window[arrName] || [];
+        if(list) {
+            list.innerHTML = groups.map(g => `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:6px; border-bottom:1px solid #eee; font-size:0.85rem;">
+                    <strong>${g.name}</strong>
+                    <div style="display:flex; gap:4px;">
+                        <button onclick="window.editGroup('${collectionName}', '${g.id}', '${g.name}')" style="background:none; border:none; color:#0052cc; cursor:pointer; font-weight:bold; font-size:0.75rem;">수정</button>
+                        <button onclick="window.deleteGroup('${collectionName}', '${g.id}')" style="background:none; border:none; color:#bf2600; cursor:pointer; font-weight:bold; font-size:0.75rem;">✕</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        selectIds.forEach(selectId => {
+            const sel = document.getElementById(selectId);
+            if(sel) {
+                const currentVal = sel.value;
+                sel.innerHTML = '<option value="">📁 전체보기 / 미지정</option>' + groups.map(g => `<option value="${g.name}">${g.name}</option>`).join('');
+                sel.value = currentVal;
+            }
+        });
+    }
+};
 
+// 기존 그룹 렌더러 등록 부분 (+ renderTeamGroups 추가)
+window.renderTeamGroups = createGroupRenderer('teamGroups', 'currentTeamGroups', 'team-group-list', ['team-group-select', 'team-group-filter']);
+window.renderContactGroups = createGroupRenderer('contactGroups', 'currentContactGroups', 'contact-group-list', ['contact-group-select', 'contact-group-filter']);
+window.renderSiteGroups = createGroupRenderer('siteGroups', 'currentSiteGroups', 'site-group-list', ['site-group-select', 'site-group-filter']);
+window.renderOtherCoGroups = createGroupRenderer('otherCompanyGroups', 'currentOtherCoGroups', 'otherco-group-list', ['otherco-group-select', 'otherco-group-filter']);
+window.renderWarehouseGroups = createGroupRenderer('warehouseGroups', 'currentWarehouseGroups', 'warehouse-group-list', ['wh-location-select', 'wh-group-filter']);
 window.renderContactGroups = createGroupRenderer('contactGroups', 'currentContactGroups', 'contact-group-list', ['contact-group-select', 'contact-group-filter']);
 window.renderSiteGroups = createGroupRenderer('siteGroups', 'currentSiteGroups', 'site-group-list', ['site-group-select', 'site-group-filter']);
 window.renderOtherCoGroups = createGroupRenderer('otherCompanyGroups', 'currentOtherCoGroups', 'otherco-group-list', ['otherco-group-select', 'otherco-group-filter']);
