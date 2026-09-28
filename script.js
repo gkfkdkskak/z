@@ -100,7 +100,7 @@ try {
         firebase.initializeApp(firebaseConfig); 
     }
     window.db = firebase.firestore();
-    window.db.settings({ experimentalForceLongPolling: true, merge: true });
+    window.db.settings({ experimentalForceLongPolling: true });
 } catch (e) {
     console.error("Firebase Init Error:", e);
 }
@@ -2622,49 +2622,97 @@ window.renderEquips = window.renderSimpleList('currentEquips', null, 'equip-list
 window.initFirebaseListeners = function() {
     try {
         const oneYearAgo = Date.now() - (365 * 24 * 60 * 60 * 1000);
-        let teamSnapshotReceived = false;
-        const loginSelect = document.getElementById('login-user-select');
-        const teamLoadTimeout = setTimeout(function() {
-            if (!teamSnapshotReceived && loginSelect) {
-                loginSelect.innerHTML = '<option value="">팀원 목록 확인 지연 — 아래에서 직접 등록하세요</option>';
-            }
-        }, 8000);
 
-        window.db.collection("team").onSnapshot(function(s) { 
+        // 팀원 목록 실시간 연결
+        // 오류 콜백을 반드시 지정해 두어 Firestore 권한/네트워크 문제로
+        // 로그인 선택창이 "데이터 연결 중"에서 무한 대기하지 않도록 합니다.
+        const loginSelect = document.getElementById('login-user-select');
+        const setLoginStatus = function(message, disabled) {
+            const el = document.getElementById('login-user-select');
+            if (!el) return;
+            el.innerHTML = '<option value="">' + message + '</option>';
+            el.disabled = !!disabled;
+        };
+
+        setLoginStatus('데이터 연결 중입니다 (잠시만 대기)...', true);
+
+        let teamSnapshotReceived = false;
+        const teamConnectionTimer = setTimeout(function() {
+            if (!teamSnapshotReceived) {
+                setLoginStatus('팀원 목록을 불러오지 못했습니다. 아래에서 직접 등록하세요.', false);
+                console.warn('팀원 목록 수신 지연: Firestore team 리스너 응답을 기다리는 중입니다.');
+            }
+        }, 10000);
+
+        window.db.collection("team").onSnapshot(function(s) {
             teamSnapshotReceived = true;
-            clearTimeout(teamLoadTimeout);
-            window.teamMembers = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); }); 
-            window.teamMembers.sort(function(a, b){ return (a.createdAt || 0) - (b.createdAt || 0); }); 
-            const loginSelect = document.getElementById('login-user-select'); 
-            if(loginSelect) { loginSelect.innerHTML = '<option value="">이름 선택 (팀원이 없다면 직접 등록하세요)</option>' + window.teamMembers.map(function(m){ return `<option value="${m.name}">${m.name}</option>`; }).join(''); } 
-            
-            // ★ 변경: 퇴사자(유령 계정) 확인 및 강제 로그아웃 방어 로직
+            clearTimeout(teamConnectionTimer);
+
+            window.teamMembers = s.docs.map(function(d){
+                return Object.assign({ id: d.id }, d.data());
+            });
+            window.teamMembers.sort(function(a, b){
+                return (a.createdAt || 0) - (b.createdAt || 0);
+            });
+
+            const el = document.getElementById('login-user-select');
+            if (el) {
+                el.disabled = false;
+                if (window.teamMembers.length === 0) {
+                    el.innerHTML = '<option value="">등록된 팀원이 없습니다 (아래에서 직접 등록)</option>';
+                } else {
+                    el.innerHTML = '<option value="">이름 선택 (팀원이 없다면 직접 등록하세요)</option>' +
+                        window.teamMembers.map(function(m){
+                            const safeName = String(m.name || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+                            return '<option value="' + safeName + '">' + safeName + '</option>';
+                        }).join('');
+                }
+            }
+
+            // 저장된 사용자가 현재 팀원 목록에 있으면 자동 로그인 상태를 유지합니다.
             if(window.loggedInUser) {
                 const isUserValid = window.teamMembers.find(function(m){ return m.name === window.loggedInUser; });
-                if(isUserValid) { 
+                if(isUserValid) {
                     const overlay = document.getElementById('login-overlay');
-                    if (overlay.style.display !== 'none') {
-                        overlay.style.display = 'none'; 
-                        document.getElementById('header-user-name').innerText = window.loggedInUser + ' 님'; 
+                    if (overlay && overlay.style.display !== 'none') {
+                        overlay.style.display = 'none';
+                        const headerEl = document.getElementById('header-user-name');
+                        if (headerEl) headerEl.innerText = window.loggedInUser + ' 님';
                         if (!window.hasShownBriefing) {
                             window.showDailyBriefing();
                             window.hasShownBriefing = true;
                         }
                     }
                 } else {
-                    // 팀원 명단에서 삭제된 경우 접속 차단
-                    alert("⚠️ 관리자에 의해 팀원 목록에서 삭제되었습니다.\n다시 로그인해주세요.");
-                    window.logoutUser();
+                    // 저장된 사용자가 삭제된 경우에는 자동 로그인을 해제합니다.
+                    if (typeof window.logoutUser === 'function') {
+                        alert("⚠️ 관리자에 의해 팀원 목록에서 삭제되었습니다.\n다시 로그인해주세요.");
+                        window.logoutUser();
+                    }
                 }
-            } 
-            window.renderTeam(); window.updateUI(); 
-            if(document.getElementById('briefing-modal').style.display === 'block') window.showDailyBriefing();
+            }
+
+            if (typeof window.renderTeam === 'function') window.renderTeam();
+            if (typeof window.updateUI === 'function') window.updateUI();
+            const briefingModal = document.getElementById('briefing-modal');
+            if (briefingModal && briefingModal.style.display === 'block' && typeof window.showDailyBriefing === 'function') {
+                window.showDailyBriefing();
+            }
         }, function(error) {
             teamSnapshotReceived = true;
-            clearTimeout(teamLoadTimeout);
-            console.error('팀원 목록 불러오기 실패:', error);
-            if (loginSelect) {
-                loginSelect.innerHTML = '<option value="">팀원 목록 오류 — 아래에서 직접 등록하세요</option>';
+            clearTimeout(teamConnectionTimer);
+            console.error('팀원 목록 Firestore 수신 오류:', error);
+
+            const el = document.getElementById('login-user-select');
+            if (el) {
+                el.disabled = false;
+                if (error && error.code === 'permission-denied') {
+                    el.innerHTML = '<option value="">Firestore 권한이 없어 팀원 목록을 읽을 수 없습니다</option>';
+                } else if (error && error.code === 'unavailable') {
+                    el.innerHTML = '<option value="">Firebase 연결이 일시적으로 불안정합니다</option>';
+                } else {
+                    el.innerHTML = '<option value="">팀원 목록 연결 실패 - 아래에서 직접 등록하세요</option>';
+                }
             }
         });
 
