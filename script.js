@@ -1496,7 +1496,15 @@ window.showDailyBriefing = function() {
         if (unackedContainer) {
             let unackedHtml = '';
             if (window.teamMembers && window.teamMembers.length > 0) {
-                window.teamMembers.forEach(function(m) {
+                // ★ [수정] 전체 팀원 중 '관리자팀' 또는 이름에 '관리자'가 포함된 팀원만 추출
+                const adminMembers = window.teamMembers.filter(function(m) {
+                    return m.name === '관리자팀' || m.name.includes('관리자');
+                });
+
+                // 명단에 '관리자팀'이 별도 등록되어 있지 않은 경우 '관리자팀' 명칭으로 자동 기본 검색
+                const targetMembers = adminMembers.length > 0 ? adminMembers : [{ name: '관리자팀' }];
+
+                targetMembers.forEach(function(m) {
                     const memberName = m.name;
                     const unackedTasks = window.currentTasks.filter(function(t) {
                         if (!t || t.status === 'deleted' || t.status === 'done' || t.status === 'mat-delivered' || t.status === 'worklog') return false;
@@ -1521,7 +1529,7 @@ window.showDailyBriefing = function() {
             }
             
             if (unackedHtml === '') {
-                unackedContainer.innerHTML = '<div style="color:#aaa; text-align:center; padding:5px 0;">모든 인원이 담당 항목을 확인했습니다. 🎉</div>';
+                unackedContainer.innerHTML = '<div style="color:#aaa; text-align:center; padding:5px 0;">관리자팀의 미확인 항목이 없습니다. 🎉</div>';
             } else {
                 unackedContainer.innerHTML = unackedHtml;
             }
@@ -1580,7 +1588,6 @@ window.showDailyBriefing = function() {
         document.getElementById('briefing-modal').style.display = 'block'; 
     } catch (err) { alert("브리핑을 불러오는 중 오류가 발생했습니다."); } 
 };
-
 window.openReportModal = function() { 
     try { 
         const today = window.getLocalDateString(); 
