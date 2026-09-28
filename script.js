@@ -630,25 +630,24 @@ window.renderTeam = function() {
     list.innerHTML = html;
 };
 
-window.addTeamMember = async function() {
-    const nameInput = document.getElementById('new-member-name');
-    const name = nameInput.value.trim();
-    if(!name) return alert('추가할 팀원 이름을 입력해주세요.');
-    if(window.teamMembers.some(m => m.name === name)) return alert('이미 등록된 이름입니다.');
-    await window.db.collection("team").add({ name: name, createdAt: Date.now() });
-    nameInput.value = '';
-};
+window.editTeamMember = async function(id, currentName, currentGroup) {
+    const newName = prompt('수정할 팀원 이름을 입력하세요:', currentName);
+    if(newName === null) return;
 
-window.editTeamMember = async function(id, currentName) {
-    const newName = prompt('수정할 이름을 입력하세요:', currentName);
-    if(!newName || newName.trim() === '' || newName.trim() === currentName) return;
-    if(window.teamMembers.some(m => m.name === newName.trim())) return alert('이미 존재하는 이름입니다.');
-    await window.db.collection("team").doc(id).update({ name: newName.trim() });
-    
+    const nameToSave = newName.trim() || currentName;
+    const newGroup = prompt('소속 팀명을 입력하세요.\n(예: 관리자팀, 시공팀 / 팀에서 빼려면 빈칸 그대로 확인):', currentGroup || '');
+    if(newGroup === null) return;
+
+    await window.db.collection("team").doc(id).update({
+        name: nameToSave,
+        group: newGroup.trim()
+    });
+
     if(currentName === window.loggedInUser) {
-        window.setLocalUser(newName.trim());
-        window.loggedInUser = newName.trim();
-        document.getElementById('header-user-name').innerText = window.loggedInUser + ' 님';
+        window.setLocalUser(nameToSave);
+        window.loggedInUser = nameToSave;
+        const headerEl = document.getElementById('header-user-name');
+        if(headerEl) headerEl.innerText = window.loggedInUser + ' 님';
     }
 };
 
@@ -2458,28 +2457,6 @@ window.executeInit = async function() {
     }
 };
 
-window.editTeamMember = async function(id, currentName, currentGroup) {
-    const newName = prompt('수정할 팀원 이름을 입력하세요:', currentName);
-    if(newName === null) return; // 취소 클릭 시 종료
-    
-    const nameToSave = newName.trim() || currentName;
-    
-    // 💡 빈칸으로 두면 '미지정' 처리되어 팀에서 빠집니다.
-    const newGroup = prompt('소속 팀명을 입력하세요.\n(예: 관리자팀, 시공팀 / 팀에서 빼려면 빈칸 그대로 확인):', currentGroup || '');
-    if(newGroup === null) return; // 취소 클릭 시 종료
-    
-    await window.db.collection("team").doc(id).update({ 
-        name: nameToSave,
-        group: newGroup.trim() // 빈칸이면 '' (미지정)으로 저장됨
-    });
-    
-    if(currentName === window.loggedInUser) {
-        window.setLocalUser(nameToSave);
-        window.loggedInUser = nameToSave;
-        const headerEl = document.getElementById('header-user-name');
-        if(headerEl) headerEl.innerText = window.loggedInUser + ' 님';
-    }
-};
 // 🟢 [추가] createGroupRenderer 함수 정의 (아래 render... 코드보다 위에 있어야 에러가 안 납니다)
 window.createGroupRenderer = function(collectionName, arrName, listId, selectIds) {
     return function() {
@@ -2507,18 +2484,12 @@ window.createGroupRenderer = function(collectionName, arrName, listId, selectIds
     };
 };
 
-// 기존 그룹 렌더러 등록 부분 (+ renderTeamGroups 추가)
+// 그룹 렌더러 등록 (중복 제거)
 window.renderTeamGroups = window.createGroupRenderer('teamGroups', 'currentTeamGroups', 'team-group-list', ['team-group-select', 'team-group-filter']);
 window.renderContactGroups = window.createGroupRenderer('contactGroups', 'currentContactGroups', 'contact-group-list', ['contact-group-select', 'contact-group-filter']);
 window.renderSiteGroups = window.createGroupRenderer('siteGroups', 'currentSiteGroups', 'site-group-list', ['site-group-select', 'site-group-filter']);
 window.renderOtherCoGroups = window.createGroupRenderer('otherCompanyGroups', 'currentOtherCoGroups', 'otherco-group-list', ['otherco-group-select', 'otherco-group-filter']);
 window.renderWarehouseGroups = window.createGroupRenderer('warehouseGroups', 'currentWarehouseGroups', 'warehouse-group-list', ['wh-location-select', 'wh-group-filter']);
-window.renderContactGroups = window.createGroupRenderer('contactGroups', 'currentContactGroups', 'contact-group-list', ['contact-group-select', 'contact-group-filter']);
-window.renderSiteGroups = window.createGroupRenderer('siteGroups', 'currentSiteGroups', 'site-group-list', ['site-group-select', 'site-group-filter']);
-window.renderOtherCoGroups = window.createGroupRenderer('otherCompanyGroups', 'currentOtherCoGroups', 'otherco-group-list', ['otherco-group-select', 'otherco-group-filter']);
-window.renderWarehouseGroups = window.createGroupRenderer('warehouseGroups', 'currentWarehouseGroups', 'warehouse-group-list', ['wh-location-select', 'wh-group-filter']);
-// 🟢 [이 위치에 추가] 팀 그룹 렌더러 및 팀 추가 함수
-window.renderTeamGroups = window.createGroupRenderer('teamGroups', 'currentTeamGroups', 'team-group-list', ['team-group-select', 'team-group-filter']);
 
 window.addTeamGroup = async function() {
     const nameInput = document.getElementById('new-team-group');
@@ -2526,6 +2497,27 @@ window.addTeamGroup = async function() {
     if(name) { 
         await window.db.collection('teamGroups').add({ name: name, createdAt: Date.now() }); 
         if(nameInput) nameInput.value = ''; 
+    }
+};
+
+window.editGroup = async function(col, id, currentName) {
+    const newName = prompt("수정할 팀(그룹)명을 입력하세요:", currentName);
+    if (!newName || newName.trim() === '' || newName.trim() === currentName) return;
+    try {
+        await window.db.collection(col).doc(id).update({ name: newName.trim() });
+    } catch (e) {
+        console.error("그룹 수정 오류:", e);
+        alert("그룹 수정 실패: " + e.message);
+    }
+};
+
+window.deleteGroup = async function(col, id) {
+    if (!confirm("이 그룹을 삭제하시겠습니까? (하위 내용은 미지정으로 변경됩니다)")) return;
+    try {
+        await window.db.collection(col).doc(id).delete();
+    } catch (e) {
+        console.error("그룹 삭제 오류:", e);
+        alert("그룹 삭제 실패: " + e.message);
     }
 };
 window.addContactGroup = async function() {
@@ -3030,96 +3022,5 @@ window.renderRequests = function() {
                 </div>
             </div>`;
         }).join('');
-    }
-};
-/* ==========================================
-   👥 팀 및 팀원 관리 전용 추가 기능 (맨 아래 추가)
-   ========================================== */
-
-// 1. 그룹 렌더러 생성 함수 (안전 정의)
-if (typeof window.createGroupRenderer === 'undefined') {
-    window.createGroupRenderer = function(collectionName, arrName, listId, selectIds) {
-        return function() {
-            const list = document.getElementById(listId);
-            const groups = window[arrName] || [];
-            if(list) {
-                list.innerHTML = groups.map(function(g) {
-                    return `<div style="display:flex; justify-content:space-between; align-items:center; padding:6px; border-bottom:1px solid #eee; font-size:0.85rem;">
-                        <strong>${g.name}</strong>
-                        <div style="display:flex; gap:4px;">
-                            <button onclick="window.editGroup('${collectionName}', '${g.id}', '${g.name}')" style="background:none; border:none; color:#0052cc; cursor:pointer; font-weight:bold; font-size:0.75rem;">수정</button>
-                            <button onclick="window.deleteGroup('${collectionName}', '${g.id}')" style="background:none; border:none; color:#bf2600; cursor:pointer; font-weight:bold; font-size:0.75rem;">✕</button>
-                        </div>
-                    </div>`;
-                }).join('');
-            }
-            selectIds.forEach(function(selectId) {
-                const sel = document.getElementById(selectId);
-                if(sel) {
-                    const currentVal = sel.value;
-                    sel.innerHTML = '<option value="">📁 전체보기 / 미지정</option>' + groups.map(function(g) {
-                        return `<option value="${g.name}">${g.name}</option>`;
-                    }).join('');
-                    sel.value = currentVal;
-                }
-            });
-        };
-    };
-}
-
-// 2. 팀(그룹) 추가 함수
-window.addTeamGroup = async function() {
-    try {
-        const nameInput = document.getElementById('new-team-group');
-        if (!nameInput) return alert("❌ HTML에서 'new-team-group' 입력창을 찾을 수 없습니다. index.html을 확인해주세요.");
-        const name = nameInput.value.trim();
-        if (!name) return alert("팀명을 입력해주세요.");
-        if (!window.db) return alert("❌ 데이터베이스(Firebase)가 연결되지 않았습니다.");
-        
-        await window.db.collection('teamGroups').add({ name: name, createdAt: Date.now() });
-        nameInput.value = '';
-        alert("✅ 팀이 생성되었습니다!");
-    } catch(e) {
-        console.error("팀 추가 에러:", e);
-        alert("팀 추가 실패: " + e.message);
-    }
-};
-
-// 3. 팀 그룹 렌더러 등록
-window.renderTeamGroups = window.createGroupRenderer('teamGroups', 'currentTeamGroups', 'team-group-list', ['team-group-select', 'team-group-filter']);
-
-// 4. 팀(그룹) 이름 수정 함수
-window.editGroup = async function(col, id, currentName) {
-    const newName = prompt("수정할 팀(그룹)명을 입력하세요:", currentName);
-    if (!newName || newName.trim() === '' || newName.trim() === currentName) return;
-    await window.db.collection(col).doc(id).update({ name: newName.trim() });
-};
-
-// 5. 팀(그룹) 삭제 함수
-window.deleteGroup = async function(col, id) {
-    if(confirm("이 그룹을 삭제하시겠습니까? (하위 내용은 미지정으로 변경됩니다)")) {
-        await window.db.collection(col).doc(id).delete();
-    }
-};
-
-// 6. 팀원 이름 및 소속 팀 수정 함수 (넣기 / 빼기)
-window.editTeamMember = async function(id, currentName, currentGroup) {
-    const newName = prompt('수정할 팀원 이름을 입력하세요:', currentName);
-    if(newName === null) return;
-    
-    const nameToSave = newName.trim() || currentName;
-    const newGroup = prompt('소속 팀명을 입력하세요.\n(예: 관리자팀, 시공팀 / 팀에서 빼려면 빈칸 그대로 확인):', currentGroup || '');
-    if(newGroup === null) return;
-    
-    await window.db.collection("team").doc(id).update({ 
-        name: nameToSave,
-        group: newGroup.trim()
-    });
-    
-    if(currentName === window.loggedInUser) {
-        window.setLocalUser(nameToSave);
-        window.loggedInUser = nameToSave;
-        const headerEl = document.getElementById('header-user-name');
-        if(headerEl) headerEl.innerText = window.loggedInUser + ' 님';
     }
 };
