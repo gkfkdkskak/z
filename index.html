@@ -394,20 +394,22 @@
 <!-- 팀원 및 팀(그룹) 관리 모달 -->
 <div id="team-modal" class="modal" style="display:none;">
     <div class="modal-content" style="max-width:450px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
             <h3 style="margin:0; font-size:1.1rem; color:#172b4d;">👥 팀원 및 팀 관리</h3>
             <span onclick="document.getElementById('team-modal').style.display='none'" style="cursor:pointer; font-size:1.2rem; font-weight:bold;">✕</span>
         </div>
-<!-- 🟢 [신규 추가] 내 소속 팀 안내 박스 -->
+
+        <!-- 내 소속 팀 안내 박스 -->
         <div id="my-team-info" style="background:#e6effc; border:1px solid #b3d4ff; padding:8px 12px; border-radius:6px; font-size:0.85rem; font-weight:bold; color:#0052cc; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between;">
             <span>🙋‍♂️ 현재 접속: <strong id="my-team-info-text">확인 중...</strong></span>
         </div>
+
         <!-- 1. 팀(그룹) 추가 영역 -->
         <div style="background:#f4f5f7; padding:10px; border-radius:6px; margin-bottom:12px;">
             <div style="font-size:0.8rem; font-weight:bold; color:#0052cc; margin-bottom:6px;">➕ 팀 추가</div>
             <div style="display:flex; gap:6px;">
                 <input type="text" id="new-team-group" placeholder="팀명 입력 (예: 관리자팀, 시공팀)" style="flex:1; padding:6px; border:1px solid #ccc; border-radius:4px; font-size:0.85rem;">
-                <button onclick="window.addTeamGroup()" style="background:#0052cc; color:white; border:none; padding:6px 12px; border-radius:4px; font-size:0.8rem; font-weight:bold; cursor:pointer;">팀 생성</button>
+                <button type="button" onclick="window.addTeamGroup()" style="background:#0052cc; color:white; border:none; padding:6px 12px; border-radius:4px; font-size:0.8rem; font-weight:bold; cursor:pointer;">팀 생성</button>
             </div>
             <div id="team-group-list" style="margin-top:8px;"></div>
         </div>
@@ -421,7 +423,7 @@
                 </select>
                 <input type="text" id="new-member-name" placeholder="팀원 이름" style="flex:1; padding:6px; border:1px solid #ccc; border-radius:4px; font-size:0.85rem;">
             </div>
-            <button onclick="window.addTeamMember()" style="background:#00875a; color:white; border:none; padding:6px; border-radius:4px; font-size:0.85rem; font-weight:bold; width:100%; cursor:pointer;">팀원 추가</button>
+            <button type="button" onclick="window.addTeamMember()" style="background:#00875a; color:white; border:none; padding:6px; border-radius:4px; font-size:0.85rem; font-weight:bold; width:100%; cursor:pointer;">팀원 추가</button>
         </div>
 
         <!-- 3. 팀원 필터 및 목록 영역 -->
