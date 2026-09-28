@@ -2480,68 +2480,32 @@ window.editTeamMember = async function(id, currentName, currentGroup) {
         if(headerEl) headerEl.innerText = window.loggedInUser + ' 님';
     }
 };
+// 🟢 [추가] createGroupRenderer 함수 정의 (아래 render... 코드보다 위에 있어야 에러가 안 납니다)
 window.createGroupRenderer = function(collectionName, arrName, listId, selectIds) {
     return function() {
-        try {
-            const arr = window[arrName] || [];
-            const listEl = document.getElementById(listId);
-
-            if (!listEl) return;
-
-            const selects = (selectIds || [])
-                .map(function(id) {
-                    return document.getElementById(id);
-                })
-                .filter(Boolean);
-
-            const groups = Array.from(
-                new Set(
-                    arr
-                        .map(function(item) {
-                            return item && item.group ? item.group : '';
-                        })
-                        .filter(Boolean)
-                )
-            );
-
-            if (selects.length) {
-                selects.forEach(function(select) {
-                    const currentValue = select.value;
-
-                    select.innerHTML =
-                        '<option value="">전체</option>' +
-                        groups.map(function(group) {
-                            return '<option value="' +
-                                String(group).replace(/"/g, '&quot;') +
-                                '">' +
-                                String(group).replace(/</g, '&lt;') +
-                                '</option>';
-                        }).join('');
-
-                    if (groups.includes(currentValue)) {
-                        select.value = currentValue;
-                    }
-                });
-            }
-
-            listEl.innerHTML = arr.map(function(item) {
-                if (!item) return '';
-
-                const group = item.group || '미지정';
-                const name = item.name || item.text || '';
-
-                return '<div class="group-item">' +
-                    '<span>' + group + '</span>' +
-                    '<strong>' + name + '</strong>' +
-                    '</div>';
-            }).join('');
-
-        } catch (e) {
-            console.error('그룹 렌더링 오류:', e);
+        const list = document.getElementById(listId);
+        const groups = window[arrName] || [];
+        if(list) {
+            list.innerHTML = groups.map(g => `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:6px; border-bottom:1px solid #eee; font-size:0.85rem;">
+                    <strong>${g.name}</strong>
+                    <div style="display:flex; gap:4px;">
+                        <button onclick="window.editGroup('${collectionName}', '${g.id}', '${g.name}')" style="background:none; border:none; color:#0052cc; cursor:pointer; font-weight:bold; font-size:0.75rem;">수정</button>
+                        <button onclick="window.deleteGroup('${collectionName}', '${g.id}')" style="background:none; border:none; color:#bf2600; cursor:pointer; font-weight:bold; font-size:0.75rem;">✕</button>
+                    </div>
+                </div>
+            `).join('');
         }
+        selectIds.forEach(selectId => {
+            const sel = document.getElementById(selectId);
+            if(sel) {
+                const currentVal = sel.value;
+                sel.innerHTML = '<option value="">📁 전체보기 / 미지정</option>' + groups.map(g => `<option value="${g.name}">${g.name}</option>`).join('');
+                sel.value = currentVal;
+            }
+        });
     };
 };
-
 
 // 기존 그룹 렌더러 등록 부분 (+ renderTeamGroups 추가)
 window.renderTeamGroups = window.createGroupRenderer('teamGroups', 'currentTeamGroups', 'team-group-list', ['team-group-select', 'team-group-filter']);
@@ -2581,7 +2545,7 @@ window.addWarehouseGroup = async function() {
     if(name) { await window.db.collection('warehouseGroups').add({name: name, createdAt: Date.now()}); document.getElementById('new-warehouse-group').value=''; }
 };
 
-const renderSimpleList = (arrName, filterId, listId, htmlMapper) => {
+window.renderSimpleList = function(arrName, filterId, listId, htmlMapper) {
     return function() {
         const list = document.getElementById(listId);
         const filterVal = document.getElementById(filterId) ? document.getElementById(filterId).value : '';
@@ -2591,10 +2555,10 @@ const renderSimpleList = (arrName, filterId, listId, htmlMapper) => {
         
         if(filtered.length === 0) list.innerHTML = '<div style="padding:15px; text-align:center; color:#999; font-size:0.85rem;">항목이 없습니다.</div>';
         else list.innerHTML = filtered.map(htmlMapper).join('');
-    }
+    };
 };
 
-window.renderContacts = renderSimpleList('currentContacts', 'contact-group-filter', 'contact-list', c => `
+window.renderContacts = window.renderSimpleList('currentContacts', 'contact-group-filter', 'contact-list', c => `
     <div style="border:1px solid #ddd; padding:8px; border-radius:4px; display:flex; justify-content:space-between; align-items:center; background:#fff;">
         <div>
             <div style="font-size:0.75rem; color:#009688; font-weight:bold;">${c.group || '미지정'}</div>
@@ -2610,7 +2574,7 @@ window.renderContacts = renderSimpleList('currentContacts', 'contact-group-filte
     </div>
 `);
 
-window.renderSites = renderSimpleList('currentSites', 'site-group-filter', 'site-list', s => `
+window.renderSites = window.renderSimpleList('currentSites', 'site-group-filter', 'site-list', s => `
     <div style="border:1px solid #ddd; padding:8px; border-radius:4px; display:flex; justify-content:space-between; align-items:center; background:#fff;">
         <div style="overflow:hidden;">
             <div style="font-size:0.75rem; color:#607d8b; font-weight:bold;">${s.group || '미지정'}</div>
@@ -2624,7 +2588,7 @@ window.renderSites = renderSimpleList('currentSites', 'site-group-filter', 'site
     </div>
 `);
 
-window.renderOtherCos = renderSimpleList('currentOtherCos', 'otherco-group-filter', 'otherco-list', o => `
+window.renderOtherCos = window.renderSimpleList('currentOtherCos', 'otherco-group-filter', 'otherco-list', o => `
     <div style="border:1px solid #ddd; padding:8px; border-radius:4px; display:flex; justify-content:space-between; align-items:center; background:#fff;">
         <div>
             <div style="font-size:0.75rem; color:#d35400; font-weight:bold;">${o.group || '미지정'}</div>
@@ -2641,7 +2605,7 @@ window.renderOtherCos = renderSimpleList('currentOtherCos', 'otherco-group-filte
     </div>
 `);
 
-window.renderEquips = renderSimpleList('currentEquips', null, 'equip-list', e => `
+window.renderEquips = window.renderSimpleList('currentEquips', null, 'equip-list', e => `
     <div style="border:1px solid #ddd; padding:8px; border-radius:4px; display:flex; justify-content:space-between; align-items:center; background:#fff;">
         <div>
             <div style="font-size:0.9rem; font-weight:bold; color:${e.status === '대여중' ? 'var(--warning-color)' : '#00875a'}">[${e.status}] ${e.name}</div>
@@ -3058,7 +3022,7 @@ window.addTeamGroup = async function() {
 };
 
 // 3. 팀 그룹 렌더러 등록
-window.renderTeamGroups = window.window.createGroupRenderer('teamGroups', 'currentTeamGroups', 'team-group-list', ['team-group-select', 'team-group-filter']);
+window.renderTeamGroups = window.createGroupRenderer('teamGroups', 'currentTeamGroups', 'team-group-list', ['team-group-select', 'team-group-filter']);
 
 // 4. 팀(그룹) 이름 수정 함수
 window.editGroup = async function(col, id, currentName) {
