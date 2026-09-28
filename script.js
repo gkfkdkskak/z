@@ -513,21 +513,61 @@ window.showNonWorkersModal = function(taskId) {
 
 window.renderTeam = function() {
     const list = document.getElementById('team-list');
+    
+    // 🟢 [추가] 내 소속 팀 정보 상단 표시 로직
+    const myInfoEl = document.getElementById('my-team-info-text');
+    if (myInfoEl && window.loggedInUser) {
+        const myObj = window.teamMembers.find(m => m.name === window.loggedInUser);
+        const myGroup = (myObj && myObj.group) ? myObj.group : '팀 미지정';
+        myInfoEl.innerHTML = `${window.loggedInUser} 님 <span style="background:#0052cc; color:#fff; padding:2px 8px; border-radius:12px; font-size:0.75rem; margin-left:4px;">소속: ${myGroup}</span>`;
+    }
+
     if(!list) return;
+    
+    const filterEl = document.getElementById('team-group-filter');
+    const groupFilter = filterEl ? filterEl.value : '';
+    
     if(!window.teamMembers || window.teamMembers.length === 0) {
         list.innerHTML = '<div style="color:#999; font-size:0.8rem; text-align:center; padding:10px;">등록된 팀원이 없습니다.</div>';
         return;
     }
+
+    const filtered = groupFilter ? window.teamMembers.filter(m => (m.group || '') === groupFilter) : window.teamMembers;
+
+    if (filtered.length === 0) {
+        list.innerHTML = '<div style="color:#999; font-size:0.8rem; text-align:center; padding:10px;">해당 팀에 속한 팀원이 없습니다.</div>';
+        return;
+    }
+
+    const grouped = {};
+    filtered.forEach(m => {
+        const g = m.group || '미지정';
+        if(!grouped[g]) grouped[g] = [];
+        grouped[g].push(m);
+    });
+
     let html = '';
-    window.teamMembers.forEach(function(m) {
-        html += `
-        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px; border:1px solid #ddd; border-radius:4px; background:#fff;">
-            <span style="font-weight:bold; font-size:0.9rem; color:#172b4d;">${m.name}</span>
-            <div style="display:flex; gap:4px;">
-                <button onclick="window.editTeamMember('${m.id}', '${m.name}')" style="background:#e6effc; color:#0052cc; border:none; padding:4px 8px; border-radius:4px; font-size:0.75rem; cursor:pointer; font-weight:bold;">수정</button>
-                <button onclick="window.deleteTeamMember('${m.id}')" style="background:#ffebe6; color:#bf2600; border:none; padding:4px 8px; border-radius:4px; font-size:0.75rem; cursor:pointer; font-weight:bold;">삭제</button>
-            </div>
-        </div>`;
+    Object.keys(grouped).sort().forEach(g => {
+        html += `<div style="font-size:0.8rem; font-weight:bold; color:#0052cc; margin-top:10px; margin-bottom:4px; border-bottom:1px solid #eee; padding-bottom:3px;">📁 ${g} (${grouped[g].length}명)</div>`;
+        grouped[g].forEach(m => {
+            // 본인 계정 여부 확인
+            const isMe = m.name === window.loggedInUser;
+            const meBadge = isMe ? `<span style="background:#ff9f43; color:white; padding:1px 5px; border-radius:3px; font-size:0.7rem; font-weight:bold; margin-left:4px;">나</span>` : '';
+            const rowBg = isMe ? '#fff9e6' : '#fff';
+            const rowBorder = isMe ? '1px solid #ffe0b2' : '1px solid #ddd';
+
+            html += `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:8px; border:${rowBorder}; border-radius:4px; background:${rowBg}; margin-bottom:4px;">
+                <div>
+                    <span style="font-weight:bold; font-size:0.9rem; color:#172b4d;">${m.name}</span>${meBadge}
+                    <span style="font-size:0.75rem; color:#888; margin-left:6px;">(${m.group || '미지정'})</span>
+                </div>
+                <div style="display:flex; gap:4px;">
+                    <button onclick="window.editTeamMember('${m.id}', '${m.name}', '${m.group||''}')" style="background:#e6effc; color:#0052cc; border:none; padding:4px 8px; border-radius:4px; font-size:0.75rem; cursor:pointer; font-weight:bold;">수정</button>
+                    <button onclick="window.deleteTeamMember('${m.id}')" style="background:#ffebe6; color:#bf2600; border:none; padding:4px 8px; border-radius:4px; font-size:0.75rem; cursor:pointer; font-weight:bold;">삭제</button>
+                </div>
+            </div>`;
+        });
     });
     list.innerHTML = html;
 };
