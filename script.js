@@ -1,3 +1,25 @@
+// 전역 변수 선언부에 추가
+window.currentTeamGroups = [];
+
+// [수정] 팀원 추가 함수 (소속 팀 지정 포함)
+window.addTeamMember = async function() {
+    const groupSelect = document.getElementById('team-group-select');
+    const group = groupSelect ? groupSelect.value : '';
+    const nameInput = document.getElementById('new-member-name');
+    const name = nameInput.value.trim();
+    
+    if(!name) return alert('추가할 팀원 이름을 입력해주세요.');
+    if(window.teamMembers.some(m => m.name === name)) return alert('이미 등록된 이름입니다.');
+    
+    await window.db.collection("team").add({ 
+        group: group, 
+        name: name, 
+        createdAt: Date.now() 
+    });
+    
+    nameInput.value = '';
+};
+
 // 스텔스 자동 클라우드 백업 기능
 window.autoCloudBackup = function() {
     const fullData = {
@@ -1496,16 +1518,16 @@ window.showDailyBriefing = function() {
         if (unackedContainer) {
             let unackedHtml = '';
             if (window.teamMembers && window.teamMembers.length > 0) {
-                // ★ [수정] 전체 팀원 중 '관리자팀' 또는 이름에 '관리자'가 포함된 팀원만 추출
+                // 🔗 [핵심 연동] 소속 팀(group)이 '관리자팀'이거나 이름/팀에 '관리자'가 포함된 팀원만 추출
                 const adminMembers = window.teamMembers.filter(function(m) {
-                    return m.name === '관리자팀' || m.name.includes('관리자');
+                    const groupName = m.group || '';
+                    const memberName = m.name || '';
+                    return groupName === '관리자팀' || groupName.includes('관리자') || memberName === '관리자팀' || memberName.includes('관리자');
                 });
 
-                // 명단에 '관리자팀'이 별도 등록되어 있지 않은 경우 '관리자팀' 명칭으로 자동 기본 검색
-                const targetMembers = adminMembers.length > 0 ? adminMembers : [{ name: '관리자팀' }];
-
-                targetMembers.forEach(function(m) {
+                adminMembers.forEach(function(m) {
                     const memberName = m.name;
+                    // 관리자팀 인원에게 할당되거나(담당/요청/발주) 관련된 항목 중 확인(ack) 안 한 건 검색
                     const unackedTasks = window.currentTasks.filter(function(t) {
                         if (!t || t.status === 'deleted' || t.status === 'done' || t.status === 'mat-delivered' || t.status === 'worklog') return false;
                         const isRelevant = (t.assignee === memberName) || (t.requester === memberName) || (t.orderer === memberName);
@@ -1515,7 +1537,7 @@ window.showDailyBriefing = function() {
 
                     if (unackedTasks.length > 0) {
                         unackedHtml += `<div style="margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px dashed #eee;">`;
-                        unackedHtml += `<div style="font-weight:bold; color:#e91e63; font-size:0.85rem; margin-bottom:4px;">👤 ${memberName} <span style="font-size:0.75rem; color:#666; font-weight:normal;">(미확인 ${unackedTasks.length}건)</span></div>`;
+                        unackedHtml += `<div style="font-weight:bold; color:#e91e63; font-size:0.85rem; margin-bottom:4px;">👤 ${memberName} <span style="font-size:0.75rem; color:#888; font-weight:normal;">(${m.group || '관리자팀'})</span> <span style="font-size:0.75rem; color:#bf2600; font-weight:bold;">- 미확인 ${unackedTasks.length}건</span></div>`;
                         unackedTasks.forEach(function(t) {
                             const statusMap = { 'todo':'할일', 'inprogress':'진행중', 'mat-request':'발주요청', 'mat-ordered':'발주완료' };
                             const sName = statusMap[t.status] || t.status;
@@ -1529,7 +1551,7 @@ window.showDailyBriefing = function() {
             }
             
             if (unackedHtml === '') {
-                unackedContainer.innerHTML = '<div style="color:#aaa; text-align:center; padding:5px 0;">관리자팀의 미확인 항목이 없습니다. 🎉</div>';
+                unackedContainer.innerHTML = '<div style="color:#aaa; text-align:center; padding:5px 0;">관리자팀 인원의 미확인 항목이 없습니다. 🎉</div>';
             } else {
                 unackedContainer.innerHTML = unackedHtml;
             }
@@ -1569,7 +1591,7 @@ window.showDailyBriefing = function() {
             reqContainer.innerHTML = matRequests.map(function(t){ return `<div class="brief-item"><strong>${t.text || '품명없음'}</strong><div class="brief-meta">요청일: ${t.startDate || '-'} | 요청자: ${t.requester || '-'}</div></div>`; }).join(''); 
         } else {
             reqContainer.innerHTML = '<div style="color:#aaa; text-align:center; padding:5px 0;">발주 대기 중인 자재가 없습니다.</div>'; 
-        }
+        } 
         
         if(matOrdereds.length > 0) {
             ordContainer.innerHTML = matOrdereds.map(function(t){ return `<div class="brief-item"><strong>${t.text || '품명없음'}</strong><div class="brief-meta">반입예정: ${t.dueDate || '-'} | 발주자: ${t.orderer || '-'}</div></div>`; }).join(''); 
@@ -1588,6 +1610,7 @@ window.showDailyBriefing = function() {
         document.getElementById('briefing-modal').style.display = 'block'; 
     } catch (err) { alert("브리핑을 불러오는 중 오류가 발생했습니다."); } 
 };
+
 window.openReportModal = function() { 
     try { 
         const today = window.getLocalDateString(); 
@@ -2334,7 +2357,17 @@ window.renderContactGroups = createGroupRenderer('contactGroups', 'currentContac
 window.renderSiteGroups = createGroupRenderer('siteGroups', 'currentSiteGroups', 'site-group-list', ['site-group-select', 'site-group-filter']);
 window.renderOtherCoGroups = createGroupRenderer('otherCompanyGroups', 'currentOtherCoGroups', 'otherco-group-list', ['otherco-group-select', 'otherco-group-filter']);
 window.renderWarehouseGroups = createGroupRenderer('warehouseGroups', 'currentWarehouseGroups', 'warehouse-group-list', ['wh-location-select', 'wh-group-filter']);
+// 🟢 [이 위치에 추가] 팀 그룹 렌더러 및 팀 추가 함수
+window.renderTeamGroups = createGroupRenderer('teamGroups', 'currentTeamGroups', 'team-group-list', ['team-group-select', 'team-group-filter']);
 
+window.addTeamGroup = async function() {
+    const nameInput = document.getElementById('new-team-group');
+    const name = nameInput ? nameInput.value.trim() : '';
+    if(name) { 
+        await window.db.collection('teamGroups').add({ name: name, createdAt: Date.now() }); 
+        if(nameInput) nameInput.value = ''; 
+    }
+};
 window.addContactGroup = async function() {
     const name = document.getElementById('new-contact-group').value.trim();
     if(name) { await window.db.collection('contactGroups').add({name: name, createdAt: Date.now()}); document.getElementById('new-contact-group').value=''; }
@@ -2536,7 +2569,11 @@ window.initFirebaseListeners = function() {
             window.currentWarehouseGroups = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); });
             window.renderWarehouseGroups();
         });
-
+// 🟢 [이 위치에 추가] 팀 그룹 실시간 리스너
+        window.db.collection("teamGroups").onSnapshot(function(s) {
+            window.currentTeamGroups = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); });
+            window.renderTeamGroups();
+        });
         window.db.collection("settings").doc("expense").onSnapshot(function(doc) {
             if(doc.exists) {
                 window.expenseCutoffDate = doc.data().cutoffDate || 25;
