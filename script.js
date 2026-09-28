@@ -150,24 +150,66 @@ window.updateClock = function() {
     } 
 };
 
-window.fetchWeather = async function() { 
-    try { 
-        const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=36.7836&longitude=127.0041&current_weather=true'); 
-        const data = await res.json(); 
-        const temp = data.current_weather.temperature; 
-        const code = data.current_weather.weathercode; 
-        let icon = '☀️'; 
-        if ([1,2,3].includes(code)) icon = '⛅'; 
-        else if ([45,48].includes(code)) icon = '🌫️'; 
-        else if ([51,53,55,56,57,61,63,65,66,67,80,81,82].includes(code)) icon = '🌧️'; 
-        else if ([71,73,75,77,85,86].includes(code)) icon = '❄️'; 
-        else if ([95,96,99].includes(code)) icon = '⛈️'; 
-        const wEl = document.getElementById('weather-widget'); 
-        if(wEl) wEl.innerText = `${icon} 아산시 ${temp}℃`; 
-    } catch(e) { 
-        const wEl = document.getElementById('weather-widget'); 
-        if(wEl) wEl.innerText = `☀️ 아산시 (날씨 확인불가)`; 
-    } 
+window.fetchWeather = async function() {
+    const wEl = document.getElementById('weather-widget');
+    if (!wEl) return;
+
+    const loadWeather = async function(latitude, longitude, locationName) {
+        try {
+            const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`);
+            if (!res.ok) throw new Error('날씨 API 응답 오류');
+            const data = await res.json();
+            const temp = data.current_weather.temperature;
+            const code = data.current_weather.weathercode;
+            let icon = '☀️';
+            if ([1,2,3].includes(code)) icon = '⛅';
+            else if ([45,48].includes(code)) icon = '🌫️';
+            else if ([51,53,55,56,57,61,63,65,66,67,80,81,82].includes(code)) icon = '🌧️';
+            else if ([71,73,75,77,85,86].includes(code)) icon = '❄️';
+            else if ([95,96,99].includes(code)) icon = '⛈️';
+            wEl.innerText = `${icon} ${locationName} ${temp}℃`;
+        } catch(e) {
+            console.error('날씨 조회 오류:', e);
+            wEl.innerText = '🌤️ 현재 위치 날씨 확인불가';
+        }
+    };
+
+    const getLocationName = async function(latitude, longitude) {
+        try {
+            const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=ko`);
+            if (!res.ok) throw new Error('주소 조회 오류');
+            const data = await res.json();
+            return data.city || data.locality || data.principalSubdivision || '현재 위치';
+        } catch(e) {
+            console.warn('현재 위치 지역명 조회 실패:', e);
+            return '현재 위치';
+        }
+    };
+
+    if (!navigator.geolocation) {
+        wEl.innerText = '🌤️ 위치 기능을 지원하지 않는 브라우저';
+        return;
+    }
+
+    wEl.innerText = '📍 현재 위치 확인 중...';
+
+    navigator.geolocation.getCurrentPosition(
+        async function(position) {
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+            const locationName = await getLocationName(latitude, longitude);
+            await loadWeather(latitude, longitude, locationName);
+        },
+        function(error) {
+            console.warn('위치 권한/조회 실패:', error);
+            if (error.code === error.PERMISSION_DENIED) {
+                wEl.innerText = '📍 위치 권한을 허용하면 현재 지역 날씨가 표시됩니다';
+            } else {
+                wEl.innerText = '🌤️ 현재 위치를 확인할 수 없습니다';
+            }
+        },
+        { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+    );
 };
 
 window.sendLineNotificationProxy = function(messageText) { 
