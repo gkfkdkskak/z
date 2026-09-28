@@ -676,14 +676,25 @@ window.loginUser = function() {
 window.registerAndLogin = async function() { 
     var newName = document.getElementById('login-new-user').value.trim(); 
     if (!newName) return alert("본인 이름을 입력해주세요."); 
-    await window.db.collection("team").add({ name: newName, createdAt: Date.now() }); 
-    window.setLocalUser(newName); 
-    window.loggedInUser = newName; 
-    document.getElementById('login-overlay').style.display = 'none'; 
-    document.getElementById('header-user-name').innerText = window.loggedInUser + ' 님'; 
-    window.updateUI(); 
-    window.showDailyBriefing();
-    window.hasShownBriefing = true;
+
+    try {
+        const duplicateCheck = await window.db.collection("team").where("name", "==", newName).limit(1).get();
+        if (!duplicateCheck.empty) {
+            return alert("이미 등록된 이름입니다.\n기존 팀원 목록에서 이름을 선택해주세요.");
+        }
+
+        await window.db.collection("team").add({ name: newName, createdAt: Date.now() }); 
+        window.setLocalUser(newName); 
+        window.loggedInUser = newName; 
+        document.getElementById('login-overlay').style.display = 'none'; 
+        document.getElementById('header-user-name').innerText = window.loggedInUser + ' 님'; 
+        window.updateUI(); 
+        window.showDailyBriefing();
+        window.hasShownBriefing = true;
+    } catch(e) {
+        console.error('팀원 등록/로그인 실패:', e);
+        alert('팀원 등록 중 오류가 발생했습니다.\n' + (e && e.message ? e.message : '잠시 후 다시 시도해주세요.'));
+    }
 };
 
 window.logoutUser = function() { 
@@ -1256,57 +1267,60 @@ window.updateUI = function() {
         const nextWeekStr = window.getLocalDateString(nextWeek); 
         const wlViewYm = (window.worklogViewDate || todayStr).substring(0, 7); 
         
-        const baseOptions = window.teamMembers.map(function(m){ return `<option value="${m.name}">${m.name}</option>`; }).join(''); 
+        const escapeHtml = function(value) {
+            return String(value == null ? '' : value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/\"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        };
+        const baseOptions = window.teamMembers.map(function(m){
+            const name = String(m.name || '');
+            return '<option value=\"' + escapeHtml(name) + '\">' + escapeHtml(name) + '</option>';
+        }).join(''); 
         
         try {
             const loggedUser = window.loggedInUser || '';
 
-            // 로그인한 사용자를 기본 담당자로 자동 선택하되,
-            // 사용자가 다른 사람으로 바꿔둔 값은 이후 updateUI에서 덮어쓰지 않습니다.
-            ['todo', 'inprogress', 'done'].forEach(function(s){
-                const el = document.getElementById(`${s}-assignee`);
+            // 팀원 목록을 항상 최신 상태로 반영하되,
+            // 사용자가 직접 선택한 값은 유지하고 자동 선택된 값만
+            // 로그인 사용자가 바뀌면 새 로그인 사용자로 전환합니다.
+            const fillUserSelect = function(id, placeholder) {
+                const el = document.getElementById(id);
                 if(!el) return;
-                if(el.options.length <= 1) {
-                    const previousValue = el.value || '';
-                    el.innerHTML = '<option value="">담당자</option>' + baseOptions;
-                    if(previousValue) el.value = previousValue;
-                    if(!el.value && loggedUser && el.querySelector(`option[value="${loggedUser.replace(/"/g, '\\"')}"]`)) {
-                        el.value = loggedUser;
-                    }
+
+                const currentValue = el.value || '';
+                const autoUser = el.dataset.autoUser || '';
+                const currentStillExists = currentValue && window.teamMembers.some(function(m){ return m.name === currentValue; });
+                const shouldUseLoggedUser = !currentStillExists || !currentValue || currentValue === autoUser;
+
+                el.innerHTML = '<option value=\"\">' + placeholder + '</option>' + baseOptions;
+
+                const desiredValue = shouldUseLoggedUser ? loggedUser : currentValue;
+                const desiredExists = desiredValue && window.teamMembers.some(function(m){ return m.name === desiredValue; });
+
+                if(desiredExists) {
+                    el.value = desiredValue;
+                    if(shouldUseLoggedUser) el.dataset.autoUser = desiredValue;
+                    else el.dataset.autoUser = '';
+                } else {
+                    el.value = '';
+                    el.dataset.autoUser = '';
                 }
+            };
+
+            ['todo', 'inprogress', 'done'].forEach(function(s){
+                fillUserSelect(`${s}-assignee`, '담당자');
             });
 
             ['mat-request', 'mat-ordered', 'mat-delivered'].forEach(function(s){
-                const r = document.getElementById(`${s}-requester`);
-                if(r && r.options.length <= 1) {
-                    const previousRequester = r.value || '';
-                    r.innerHTML = '<option value="">요청자</option>' + baseOptions;
-                    if(previousRequester) r.value = previousRequester;
-                    if(!r.value && loggedUser && r.querySelector(`option[value="${loggedUser.replace(/"/g, '\\"')}"]`)) {
-                        r.value = loggedUser;
-                    }
-                }
-
-                const o = document.getElementById(`${s}-orderer`);
-                if(o && o.options.length <= 1) {
-                    const previousOrderer = o.value || '';
-                    o.innerHTML = '<option value="">발주자</option>' + baseOptions;
-                    if(previousOrderer) o.value = previousOrderer;
-                    if(!o.value && loggedUser && o.querySelector(`option[value="${loggedUser.replace(/"/g, '\\"')}"]`)) {
-                        o.value = loggedUser;
-                    }
-                }
+                fillUserSelect(`${s}-requester`, '요청자');
+                fillUserSelect(`${s}-orderer`, '발주자');
             });
 
-            const expSpender = document.getElementById('exp-spender');
-            if(expSpender && expSpender.options.length <= 1) {
-                expSpender.innerHTML = '<option value="">지출자</option>' + baseOptions;
-                if(loggedUser && expSpender.querySelector(`option[value="${loggedUser.replace(/"/g, '\\"')}"]`)) {
-                    expSpender.value = loggedUser;
-                }
-            }
+            fillUserSelect('exp-spender', '지출자');
         } catch(e) { console.error(e); }
-
         const searchEl = document.getElementById('main-search-input'); 
         const search = searchEl ? searchEl.value.toLowerCase() : ''; 
 
@@ -2570,10 +2584,6 @@ window.addContactGroup = async function() {
 window.addSiteGroup = async function() {
     const name = document.getElementById('new-site-group').value.trim();
     if(name) { await window.db.collection('siteGroups').add({name: name, createdAt: Date.now()}); document.getElementById('new-site-group').value=''; }
-};
-window.addOtherCoGroup = async function() { 
-    const name = document.getElementById('new-otherco-group').value.trim(); 
-    if(name) { await window.db.collection("otherCompanyGroups").add({ name: name, createdAt: Date.now() }); document.getElementById('new-otherco-group').value = ''; }
 };
 window.addWarehouseGroup = async function() {
     const name = document.getElementById('new-warehouse-group').value.trim();
