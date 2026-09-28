@@ -2622,8 +2622,17 @@ window.renderEquips = window.renderSimpleList('currentEquips', null, 'equip-list
 window.initFirebaseListeners = function() {
     try {
         const oneYearAgo = Date.now() - (365 * 24 * 60 * 60 * 1000);
+        let teamSnapshotReceived = false;
+        const loginSelect = document.getElementById('login-user-select');
+        const teamLoadTimeout = setTimeout(function() {
+            if (!teamSnapshotReceived && loginSelect) {
+                loginSelect.innerHTML = '<option value="">팀원 목록 확인 지연 — 아래에서 직접 등록하세요</option>';
+            }
+        }, 8000);
 
         window.db.collection("team").onSnapshot(function(s) { 
+            teamSnapshotReceived = true;
+            clearTimeout(teamLoadTimeout);
             window.teamMembers = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); }); 
             window.teamMembers.sort(function(a, b){ return (a.createdAt || 0) - (b.createdAt || 0); }); 
             const loginSelect = document.getElementById('login-user-select'); 
@@ -2650,6 +2659,13 @@ window.initFirebaseListeners = function() {
             } 
             window.renderTeam(); window.updateUI(); 
             if(document.getElementById('briefing-modal').style.display === 'block') window.showDailyBriefing();
+        }, function(error) {
+            teamSnapshotReceived = true;
+            clearTimeout(teamLoadTimeout);
+            console.error('팀원 목록 불러오기 실패:', error);
+            if (loginSelect) {
+                loginSelect.innerHTML = '<option value="">팀원 목록 오류 — 아래에서 직접 등록하세요</option>';
+            }
         });
 
         window.db.collection("tasks").where("createdAt", ">=", oneYearAgo).onSnapshot(function(s) { 
