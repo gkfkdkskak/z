@@ -221,6 +221,18 @@ window.sendLineNotificationProxy = function(messageText) {
     fetch(gasUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ messages: [{ type: "text", text: messageText }] }) }).catch(function(e){}); 
 };
 
+// 🟦 창고 ↔ Google Sheets 양방향 동기화 브리지
+window.syncWarehouseToGoogleSheet = function(action, itemOrItems) {
+    var gasUrl = "https://script.google.com/macros/s/AKfycbyXn99LNYF-MgSEylL3PmcIgt0UaapVhiHXeexHfJCLHIGl5jj4nNRwwoSw0v5u-OgnJA/exec";
+    if (!gasUrl || gasUrl.includes("YOUR_GAS_WEB_APP_URL")) return;
+    var payload = { event: "warehouse_sync", action: action, source: "webapp", items: Array.isArray(itemOrItems) ? itemOrItems : undefined, item: Array.isArray(itemOrItems) ? undefined : itemOrItems };
+    fetch(gasUrl, {
+        method: 'POST', mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify(payload)
+    }).catch(function(e) { console.warn('Google Sheets 창고 동기화 요청 실패:', e); });
+};
+
 window.resetDates = function() { 
     const today = window.getLocalDateString(); 
     const dateInputs = ['exp-date', 'todo-start', 'todo-due', 'inprogress-start', 'inprogress-due', 'done-start', 'done-due', 'mat-request-start', 'mat-request-due', 'mat-ordered-start', 'mat-ordered-due', 'mat-delivered-start', 'mat-delivered-due', 'worklog-start', 'worklog-view-date', 'eq-due']; 
@@ -301,6 +313,7 @@ window.uploadWarehouseExcel = function(event) {
 
             // 2단계: 엑셀 파일의 새 데이터 추가 예약
             let count = 0;
+            const syncRecords = [];
             json.forEach(row => {
                 const loc = row['위치'] || row['창고'] || row['위치/창고'] || row['그룹'] || '미지정';
                 const item = row['품명'] || row['이름'] || row['자재명'] || '';
@@ -312,9 +325,13 @@ window.uploadWarehouseExcel = function(event) {
                 if(item) {
                     count++;
                     const newDocRef = window.db.collection("warehouse").doc();
-                    currentBatch.set(newDocRef, {
-                        location: loc, item: item, spec: spec, unit: unit, qty: qty, note: note, createdAt: Date.now()
-                    });
+                    const now = Date.now();
+                    const record = {
+                        id: newDocRef.id, location: loc, item: item, spec: spec, unit: unit, qty: qty, note: note,
+                        createdAt: now, updatedAt: now, updatedBy: window.loggedInUser || '웹앱'
+                    };
+                    currentBatch.set(newDocRef, record);
+                    syncRecords.push(record);
                     operationCount++;
                     if(operationCount === 490) {
                         batches.push(currentBatch);
@@ -331,7 +348,10 @@ window.uploadWarehouseExcel = function(event) {
                 await batches[i].commit();
             }
 
-            alert(`✅ 총 ${count}개의 자재 데이터가 성공적으로 덮어쓰기 되었습니다!`);
+            window.syncWarehouseToGoogleSheet('replace_all', syncRecords);
+            alert(`✅ 총 ${count}개의 자재 데이터가 성공적으로 덮어쓰기 되었습니다!
+
+구글 스프레드시트에도 동기화 요청했습니다.`);
             event.target.value = '';
         } catch(err) {
             console.error("Excel Upload Error:", err);
@@ -360,16 +380,28 @@ window.addWarehouseItem = async function() {
     if(!loc) return alert("창고(위치)를 선택해주세요.");
     if(!item) return alert("품명을 입력해주세요.");
 
+    const now = Date.now();
+    const updatedBy = window.loggedInUser || '웹앱';
+
     if (window.editWarehouseId) {
-        await window.db.collection("warehouse").doc(window.editWarehouseId).update({
-            location: loc, item: item, spec: spec, unit: unit, qty: Number(qty)||0, note: note
-        });
+        const id = window.editWarehouseId;
+        const updateData = {
+            location: loc, item: item, spec: spec, unit: unit, qty: Number(qty)||0, note: note,
+            updatedAt: now, updatedBy: updatedBy
+        };
+        await window.db.collection("warehouse").doc(id).update(updateData);
+        window.syncWarehouseToGoogleSheet('upsert', Object.assign({ id: id, createdAt: (window.currentWarehouseItems.find(function(x){ return x.id === id; }) || {}).createdAt || now }, updateData));
         window.editWarehouseId = null;
         const btn = document.getElementById('wh-submit-btn');
         btn.innerText = "등록"; btn.style.background = "#2ecc71";
     } else {
-        await window.db.collection("warehouse").add({
-            location: loc, item: item, spec: spec, unit: unit, qty: Number(qty)||0, note: note, createdAt: Date.now()
+        const docRef = await window.db.collection("warehouse").add({
+            location: loc, item: item, spec: spec, unit: unit, qty: Number(qty)||0, note: note,
+            createdAt: now, updatedAt: now, updatedBy: updatedBy
+        });
+        window.syncWarehouseToGoogleSheet('upsert', {
+            id: docRef.id, location: loc, item: item, spec: spec, unit: unit, qty: Number(qty)||0, note: note,
+            createdAt: now, updatedAt: now, updatedBy: updatedBy
         });
     }
     document.getElementById('wh-item').value = '';
@@ -396,6 +428,7 @@ window.editWarehouseItem = function(id) {
 window.deleteWarehouseItem = async function(id) {
     if(confirm("이 창고 자재 기록을 삭제하시겠습니까?")) {
         await window.db.collection("warehouse").doc(id).delete();
+        window.syncWarehouseToGoogleSheet('delete', { id: id });
     }
 };
 
@@ -404,8 +437,10 @@ window.deleteSelectedWarehouseItems = async function() {
     if (checkboxes.length === 0) return alert("삭제할 항목을 선택해주세요.");
     if (!confirm(`선택한 ${checkboxes.length}개의 창고 자재를 삭제하시겠습니까?`)) return;
     
-    const promises = Array.from(checkboxes).map(cb => window.db.collection("warehouse").doc(cb.value).delete());
+    const ids = Array.from(checkboxes).map(cb => cb.value);
+    const promises = ids.map(id => window.db.collection("warehouse").doc(id).delete());
     await Promise.all(promises);
+    ids.forEach(function(id){ window.syncWarehouseToGoogleSheet('delete', { id: id }); });
     alert("선택한 항목이 삭제되었습니다.");
 };
 
@@ -414,8 +449,10 @@ window.deleteAllWarehouseItems = async function() {
     if (!confirm("⚠️ 정말로 모든 창고 자재 기록을 삭제하시겠습니까?\n이 작업은 복구할 수 없습니다!")) return;
     if (!confirm("다시 한 번 확인합니다. 모든 창고 자재를 완전히 삭제하시겠습니까?")) return;
 
-    const promises = window.currentWarehouseItems.map(w => window.db.collection("warehouse").doc(w.id).delete());
+    const ids = window.currentWarehouseItems.map(w => w.id);
+    const promises = ids.map(id => window.db.collection("warehouse").doc(id).delete());
     await Promise.all(promises);
+    window.syncWarehouseToGoogleSheet('replace_all', []);
     alert("모든 창고 자재가 삭제되었습니다.");
 };
 
