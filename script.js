@@ -3032,7 +3032,8 @@ window.addRequest = async function() {
             author: window.loggedInUser,
             createdAt: Date.now(),
             completed: false,
-            completedAt: null
+            completedAt: null,
+            acks: {}
         });
         input.value = '';
         if (typeof window.sendLineNotificationProxy === 'function') {
@@ -3055,7 +3056,33 @@ window.toggleRequestComplete = async function(id, status) {
     }
 };
 
-// 3. 요청사항 삭제
+// 3. 확인자 / 확인시간 기록 토글 (할일/자재와 동일한 방식)
+window.toggleRequestAckRecord = async function(id) {
+    if(!window.loggedInUser) return alert("로그인 후 사용해주세요.");
+
+    try {
+        const snap = await window.db.collection("requests").doc(id).get();
+        if(!snap.exists) return;
+
+        const data = snap.data() || {};
+        let acks = data.acks || {};
+        if (typeof acks !== 'object' || Array.isArray(acks)) acks = {};
+
+        if (acks[window.loggedInUser]) {
+            delete acks[window.loggedInUser];
+        } else {
+            const now = new Date();
+            const timeStr = `${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+            acks[window.loggedInUser] = timeStr;
+        }
+
+        await window.db.collection("requests").doc(id).update({ acks: acks });
+    } catch(e) {
+        alert("확인 상태 변경 실패: " + e.message);
+    }
+};
+
+// 4. 요청사항 삭제
 window.deleteRequest = async function(id) {
     if (confirm("이 요청사항을 삭제하시겠습니까?")) {
         try {
@@ -3134,6 +3161,21 @@ window.renderRequests = function() {
                 let d = new Date(req.createdAt);
                 regTimeStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
             }
+
+            let ackDisplayHtml = '';
+            let hasIHaveAcked = false;
+            const reqAcks = req.acks && typeof req.acks === 'object' && !Array.isArray(req.acks) ? req.acks : {};
+            const ackNames = Object.keys(reqAcks);
+            if (ackNames.length > 0) {
+                ackDisplayHtml = `<div class="ack-box" style="margin-top:8px;">`;
+                ackNames.forEach(function(name) {
+                    if (name === window.loggedInUser) hasIHaveAcked = true;
+                    ackDisplayHtml += `<div>✓ 확인: ${name} (${reqAcks[name]})</div>`;
+                });
+                ackDisplayHtml += `</div>`;
+            }
+
+            const ackBtn = `<button class="${hasIHaveAcked ? 'btn-unack' : 'btn-ack'}" onclick="window.toggleRequestAckRecord('${req.id}')">${hasIHaveAcked ? '확인취소' : '확인'}</button>`;
             const delBtn = (req.author === window.loggedInUser) ? `<button onclick="window.deleteRequest('${req.id}')" style="background:#ffebe6; color:#bf2600; border:none; padding:6px 10px; border-radius:4px; font-size:0.75rem; font-weight:bold; cursor:pointer;">🗑️ 삭제</button>` : '';
 
             return `
@@ -3143,8 +3185,12 @@ window.renderRequests = function() {
                     <span style="font-size:0.75rem; color:#888;">⏱️ ${regTimeStr}</span>
                 </div>
                 <div style="font-size:0.95rem; color:#333; line-height:1.4; white-space:pre-wrap;">${req.text}</div>
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; border-top:1px dashed #eee; padding-top:10px;">
-                    <button onclick="window.toggleRequestComplete('${req.id}', true)" style="background:#00b894; color:white; border:none; padding:6px 12px; border-radius:4px; font-size:0.8rem; font-weight:bold; cursor:pointer;">✅ 처리 완료</button>
+                ${ackDisplayHtml}
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; border-top:1px dashed #eee; padding-top:10px; gap:5px;">
+                    <div style="display:flex; gap:5px; flex-wrap:wrap;">
+                        ${ackBtn}
+                        <button onclick="window.toggleRequestComplete('${req.id}', true)" style="background:#00b894; color:white; border:none; padding:6px 12px; border-radius:4px; font-size:0.8rem; font-weight:bold; cursor:pointer;">✅ 처리 완료</button>
+                    </div>
                     ${delBtn}
                 </div>
             </div>`;
@@ -3160,20 +3206,39 @@ window.renderRequests = function() {
         completedListEl.innerHTML = completedRequests.map(req => {
             const completedDateStr = req.completedAt ? new Date(req.completedAt).toLocaleDateString() : '완료됨';
             const oldBadge = req.isOld ? '<span style="background:#ffebe6; color:#bf2600; padding:2px 5px; border-radius:3px; font-size:0.65rem; margin-left:5px;">30일 이전</span>' : '';
+
+            let ackDisplayHtml = '';
+            let hasIHaveAcked = false;
+            const reqAcks = req.acks && typeof req.acks === 'object' && !Array.isArray(req.acks) ? req.acks : {};
+            const ackNames = Object.keys(reqAcks);
+            if (ackNames.length > 0) {
+                ackDisplayHtml = `<div class="ack-box" style="margin-top:6px;">`;
+                ackNames.forEach(function(name) {
+                    if (name === window.loggedInUser) hasIHaveAcked = true;
+                    ackDisplayHtml += `<div>✓ 확인: ${name} (${reqAcks[name]})</div>`;
+                });
+                ackDisplayHtml += `</div>`;
+            }
+
+            const ackBtn = `<button class="${hasIHaveAcked ? 'btn-unack' : 'btn-ack'}" onclick="window.toggleRequestAckRecord('${req.id}')">${hasIHaveAcked ? '확인취소' : '확인'}</button>`;
             const delBtn = (req.author === window.loggedInUser) ? `<button onclick="window.deleteRequest('${req.id}')" style="background:#ffebe6; color:#bf2600; border:none; padding:5px 8px; border-radius:4px; font-size:0.7rem; font-weight:bold; cursor:pointer;">🗑️ 삭제</button>` : '';
 
             return `
-            <div style="display:flex; justify-content:space-between; align-items:center; background:#f9f9fa; padding:8px 12px; border:1px dashed #ccc; border-radius:6px; opacity:0.85;">
-                <div style="flex:1; margin-root:10px; margin-right:10px;">
-                    <div style="font-size:0.85rem; color:#666; text-decoration:line-through; word-break:break-all;">${req.text}</div>
-                    <div style="font-size:0.7rem; color:#888; margin-top:3px;">
-                        <span>👤 ${req.author || '익명'}</span> | <span>완료: ${completedDateStr}</span> ${oldBadge}
+            <div style="display:block; background:#f9f9fa; padding:8px 12px; border:1px dashed #ccc; border-radius:6px; opacity:0.85;">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                    <div style="flex:1; min-width:0;">
+                        <div style="font-size:0.85rem; color:#666; text-decoration:line-through; word-break:break-all;">${req.text}</div>
+                        <div style="font-size:0.7rem; color:#888; margin-top:3px;">
+                            <span>👤 ${req.author || '익명'}</span> | <span>완료: ${completedDateStr}</span> ${oldBadge}
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:5px; white-space:nowrap;">
+                        ${ackBtn}
+                        <button onclick="window.toggleRequestComplete('${req.id}', false)" style="background:#e0e0e0; color:#333; border:none; padding:5px 8px; border-radius:4px; font-size:0.7rem; font-weight:bold; cursor:pointer;">↩️ 완료 취소</button>
+                        ${delBtn}
                     </div>
                 </div>
-                <div style="display:flex; gap:5px; white-space:nowrap;">
-                    <button onclick="window.toggleRequestComplete('${req.id}', false)" style="background:#e0e0e0; color:#333; border:none; padding:5px 8px; border-radius:4px; font-size:0.7rem; font-weight:bold; cursor:pointer;">↩️ 완료 취소</button>
-                    ${delBtn}
-                </div>
+                ${ackDisplayHtml}
             </div>`;
         }).join('');
     }
