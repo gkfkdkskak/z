@@ -221,17 +221,37 @@ window.sendLineNotificationProxy = function(messageText) {
     fetch(gasUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ messages: [{ type: "text", text: messageText }] }) }).catch(function(e){}); 
 };
 
-// 🟦 창고 ↔ Google Sheets 양방향 동기화 브리지
-window.syncWarehouseToGoogleSheet = function(action, itemOrItems) {
-    var gasUrl = "https://script.google.com/macros/s/AKfycbyXn99LNYF-MgSEylL3PmcIgt0UaapVhiHXeexHfJCLHIGl5jj4nNRwwoSw0v5u-OgnJA/exec";
-    if (!gasUrl || gasUrl.includes("YOUR_GAS_WEB_APP_URL")) return;
-    var payload = { event: "warehouse_sync", action: action, source: "webapp", items: Array.isArray(itemOrItems) ? itemOrItems : undefined, item: Array.isArray(itemOrItems) ? undefined : itemOrItems };
-    fetch(gasUrl, {
-        method: 'POST', mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify(payload)
-    }).catch(function(e) { console.warn('Google Sheets 창고 동기화 요청 실패:', e); });
+// 🏬 창고 ↔ Google Sheets 양방향 동기화 요청
+window.sendWarehouseSync = function(action, item, items) {
+    try {
+        var gasUrl = "https://script.google.com/macros/s/AKfycbyXn99LNYF-MgSEylL3PmcIgt0UaapVhiHXeexHfJCLHIGl5jj4nNRwwoSw0v5u-OgnJA/exec";
+        if (!gasUrl || gasUrl.includes("YOUR_GAS_WEB_APP_URL")) return;
+
+        var payload = {
+            event: "warehouse_sync",
+            action: action,
+            item: item || null
+        };
+
+        if (Array.isArray(items)) payload.items = items;
+
+        // 선택사항: Apps Script에서 WAREHOUSE_SYNC_SECRET을 설정했을 때만 동일한 값을 입력합니다.
+        var warehouseSyncSecret = "";
+        if (warehouseSyncSecret) payload.secret = warehouseSyncSecret;
+
+        fetch(gasUrl, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "text/plain" },
+            body: JSON.stringify(payload)
+        }).catch(function(err) {
+            console.warn("창고 Google Sheets 동기화 요청 실패:", err);
+        });
+    } catch (e) {
+        console.warn("창고 동기화 호출 오류:", e);
+    }
 };
+
 
 window.resetDates = function() { 
     const today = window.getLocalDateString(); 
@@ -277,7 +297,7 @@ window.downloadWarehouseTemplate = function() {
 window.uploadWarehouseExcel = function(event) {
     const file = event.target.files[0];
     if (!file) return;
-    
+
     const reader = new FileReader();
     reader.onload = async function(e) {
         try {
@@ -294,26 +314,24 @@ window.uploadWarehouseExcel = function(event) {
             }
 
             alert("기존 데이터를 삭제하고 엑셀 업로드를 시작합니다.\n인터넷 환경에 따라 시간이 걸릴 수 있으니 창을 닫지 말고 잠시만 기다려주세요...");
-            
-            // ★ 변경: 네트워크 불안정 시 데이터 꼬임 방지를 위한 Batch(일괄 처리) 로직 적용
+
             let batches = [];
             let currentBatch = window.db.batch();
             let operationCount = 0;
+            const now = Date.now();
+            const newWarehouseItems = [];
 
-            // 1단계: 기존 자재 데이터 전체 삭제 예약
             window.currentWarehouseItems.forEach(w => {
                 currentBatch.delete(window.db.collection("warehouse").doc(w.id));
                 operationCount++;
-                if(operationCount === 490) { // Firebase Batch 한도(500) 방지
+                if(operationCount === 490) {
                     batches.push(currentBatch);
                     currentBatch = window.db.batch();
                     operationCount = 0;
                 }
             });
 
-            // 2단계: 엑셀 파일의 새 데이터 추가 예약
             let count = 0;
-            const syncRecords = [];
             json.forEach(row => {
                 const loc = row['위치'] || row['창고'] || row['위치/창고'] || row['그룹'] || '미지정';
                 const item = row['품명'] || row['이름'] || row['자재명'] || '';
@@ -325,13 +343,33 @@ window.uploadWarehouseExcel = function(event) {
                 if(item) {
                     count++;
                     const newDocRef = window.db.collection("warehouse").doc();
-                    const now = Date.now();
-                    const record = {
-                        id: newDocRef.id, location: loc, item: item, spec: spec, unit: unit, qty: qty, note: note,
-                        createdAt: now, updatedAt: now, updatedBy: window.loggedInUser || '웹앱'
+                    const warehouseItem = {
+                        id: newDocRef.id,
+                        location: loc,
+                        item: item,
+                        spec: spec,
+                        unit: unit,
+                        qty: qty,
+                        note: note,
+                        createdAt: now,
+                        updatedAt: now,
+                        updatedBy: window.loggedInUser || "Excel"
                     };
-                    currentBatch.set(newDocRef, record);
-                    syncRecords.push(record);
+
+                    newWarehouseItems.push(warehouseItem);
+
+                    currentBatch.set(newDocRef, {
+                        location: warehouseItem.location,
+                        item: warehouseItem.item,
+                        spec: warehouseItem.spec,
+                        unit: warehouseItem.unit,
+                        qty: warehouseItem.qty,
+                        note: warehouseItem.note,
+                        createdAt: warehouseItem.createdAt,
+                        updatedAt: warehouseItem.updatedAt,
+                        updatedBy: warehouseItem.updatedBy
+                    });
+
                     operationCount++;
                     if(operationCount === 490) {
                         batches.push(currentBatch);
@@ -340,18 +378,16 @@ window.uploadWarehouseExcel = function(event) {
                     }
                 }
             });
-            
+
             if (operationCount > 0) batches.push(currentBatch);
 
-            // 3단계: 예약된 모든 작업을 순차적으로 서버에 전송 (모두 성공하거나, 모두 취소됨)
             for(let i=0; i<batches.length; i++) {
                 await batches[i].commit();
             }
 
-            window.syncWarehouseToGoogleSheet('replace_all', syncRecords);
-            alert(`✅ 총 ${count}개의 자재 데이터가 성공적으로 덮어쓰기 되었습니다!
+            window.sendWarehouseSync("replace_all", null, newWarehouseItems);
 
-구글 스프레드시트에도 동기화 요청했습니다.`);
+            alert(`✅ 총 ${count}개의 자재 데이터가 성공적으로 덮어쓰기 되었습니다!`);
             event.target.value = '';
         } catch(err) {
             console.error("Excel Upload Error:", err);
@@ -381,29 +417,57 @@ window.addWarehouseItem = async function() {
     if(!item) return alert("품명을 입력해주세요.");
 
     const now = Date.now();
-    const updatedBy = window.loggedInUser || '웹앱';
+    const user = window.loggedInUser || "웹앱";
 
     if (window.editWarehouseId) {
         const id = window.editWarehouseId;
         const updateData = {
-            location: loc, item: item, spec: spec, unit: unit, qty: Number(qty)||0, note: note,
-            updatedAt: now, updatedBy: updatedBy
+            location: loc,
+            item: item,
+            spec: spec,
+            unit: unit,
+            qty: Number(qty)||0,
+            note: note,
+            updatedAt: now,
+            updatedBy: user
         };
+
         await window.db.collection("warehouse").doc(id).update(updateData);
-        window.syncWarehouseToGoogleSheet('upsert', Object.assign({ id: id, createdAt: (window.currentWarehouseItems.find(function(x){ return x.id === id; }) || {}).createdAt || now }, updateData));
+        window.sendWarehouseSync("upsert", Object.assign({id: id}, updateData));
+
         window.editWarehouseId = null;
         const btn = document.getElementById('wh-submit-btn');
         btn.innerText = "등록"; btn.style.background = "#2ecc71";
     } else {
-        const docRef = await window.db.collection("warehouse").add({
-            location: loc, item: item, spec: spec, unit: unit, qty: Number(qty)||0, note: note,
-            createdAt: now, updatedAt: now, updatedBy: updatedBy
+        const newDocRef = window.db.collection("warehouse").doc();
+        const newItem = {
+            id: newDocRef.id,
+            location: loc,
+            item: item,
+            spec: spec,
+            unit: unit,
+            qty: Number(qty)||0,
+            note: note,
+            createdAt: now,
+            updatedAt: now,
+            updatedBy: user
+        };
+
+        await newDocRef.set({
+            location: newItem.location,
+            item: newItem.item,
+            spec: newItem.spec,
+            unit: newItem.unit,
+            qty: newItem.qty,
+            note: newItem.note,
+            createdAt: newItem.createdAt,
+            updatedAt: newItem.updatedAt,
+            updatedBy: newItem.updatedBy
         });
-        window.syncWarehouseToGoogleSheet('upsert', {
-            id: docRef.id, location: loc, item: item, spec: spec, unit: unit, qty: Number(qty)||0, note: note,
-            createdAt: now, updatedAt: now, updatedBy: updatedBy
-        });
+
+        window.sendWarehouseSync("upsert", newItem);
     }
+
     document.getElementById('wh-item').value = '';
     document.getElementById('wh-spec').value = '';
     document.getElementById('wh-unit').value = '';
@@ -428,7 +492,7 @@ window.editWarehouseItem = function(id) {
 window.deleteWarehouseItem = async function(id) {
     if(confirm("이 창고 자재 기록을 삭제하시겠습니까?")) {
         await window.db.collection("warehouse").doc(id).delete();
-        window.syncWarehouseToGoogleSheet('delete', { id: id });
+        window.sendWarehouseSync("delete", { id: id });
     }
 };
 
@@ -436,11 +500,11 @@ window.deleteSelectedWarehouseItems = async function() {
     const checkboxes = document.querySelectorAll('.wh-delete-cb:checked');
     if (checkboxes.length === 0) return alert("삭제할 항목을 선택해주세요.");
     if (!confirm(`선택한 ${checkboxes.length}개의 창고 자재를 삭제하시겠습니까?`)) return;
-    
+
     const ids = Array.from(checkboxes).map(cb => cb.value);
-    const promises = ids.map(id => window.db.collection("warehouse").doc(id).delete());
-    await Promise.all(promises);
-    ids.forEach(function(id){ window.syncWarehouseToGoogleSheet('delete', { id: id }); });
+    await Promise.all(ids.map(id => window.db.collection("warehouse").doc(id).delete()));
+    ids.forEach(id => window.sendWarehouseSync("delete", { id: id }));
+
     alert("선택한 항목이 삭제되었습니다.");
 };
 
@@ -450,9 +514,9 @@ window.deleteAllWarehouseItems = async function() {
     if (!confirm("다시 한 번 확인합니다. 모든 창고 자재를 완전히 삭제하시겠습니까?")) return;
 
     const ids = window.currentWarehouseItems.map(w => w.id);
-    const promises = ids.map(id => window.db.collection("warehouse").doc(id).delete());
-    await Promise.all(promises);
-    window.syncWarehouseToGoogleSheet('replace_all', []);
+    await Promise.all(ids.map(id => window.db.collection("warehouse").doc(id).delete()));
+    window.sendWarehouseSync("replace_all", null, []);
+
     alert("모든 창고 자재가 삭제되었습니다.");
 };
 
