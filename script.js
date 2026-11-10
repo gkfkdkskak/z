@@ -66,6 +66,7 @@ window.currentContactGroups = [];
 window.currentSiteGroups = []; 
 window.currentOtherCoGroups = [];
 window.currentWarehouseGroups = [];
+window.currentWarehouseCategories = [];
 window.currentWarehouseItems = [];  
 window.editWarehouseId = null;
 window.editingContactId = null; 
@@ -282,6 +283,7 @@ window.downloadWarehouseTemplate = function() {
     const wb = XLSX.utils.book_new();
     const templateData = [{
         '위치/창고': 'A창고 (또는 그룹명)',
+        '대분류': '전선',
         '품명': '철근',
         '규격': '10mm',
         '단위': 'EA',
@@ -289,7 +291,7 @@ window.downloadWarehouseTemplate = function() {
         '비고': '추가 설명 작성 가능'
     }];
     const ws = XLSX.utils.json_to_sheet(templateData);
-    ws['!cols'] = [{wch: 15}, {wch: 20}, {wch: 15}, {wch: 10}, {wch: 10}, {wch: 25}];
+    ws['!cols'] = [{wch: 15}, {wch: 16}, {wch: 20}, {wch: 15}, {wch: 10}, {wch: 10}, {wch: 25}];
     XLSX.utils.book_append_sheet(wb, ws, "창고자재_업로드양식");
     XLSX.writeFile(wb, `창고자재_업로드양식.xlsx`);
 };
@@ -334,6 +336,7 @@ window.uploadWarehouseExcel = function(event) {
             let count = 0;
             json.forEach(row => {
                 const loc = row['위치'] || row['창고'] || row['위치/창고'] || row['그룹'] || '미지정';
+                const category = String(row['대분류'] || row['분류'] || '').trim();
                 const item = row['품명'] || row['이름'] || row['자재명'] || '';
                 const spec = row['규격'] || row['스펙'] || '';
                 const unit = row['단위'] || '';
@@ -346,6 +349,7 @@ window.uploadWarehouseExcel = function(event) {
                     const warehouseItem = {
                         id: newDocRef.id,
                         location: loc,
+                        category: category,
                         item: item,
                         spec: spec,
                         unit: unit,
@@ -360,6 +364,7 @@ window.uploadWarehouseExcel = function(event) {
 
                     currentBatch.set(newDocRef, {
                         location: warehouseItem.location,
+                        category: warehouseItem.category,
                         item: warehouseItem.item,
                         spec: warehouseItem.spec,
                         unit: warehouseItem.unit,
@@ -401,12 +406,14 @@ window.uploadWarehouseExcel = function(event) {
 window.openWarehouseModal = function() { 
     const searchInput = document.getElementById('wh-search-input');
     if(searchInput) searchInput.value = '';
+    window.updateWarehouseCategoryOptions();
     try { window.renderWarehouse(); } catch(e){} 
     document.getElementById('warehouse-modal').style.display = 'block'; 
 };
 
 window.addWarehouseItem = async function() {
     const loc = document.getElementById('wh-location-select').value;
+    const category = document.getElementById('wh-category-select').value;
     const item = document.getElementById('wh-item').value.trim();
     const spec = document.getElementById('wh-spec').value.trim();
     const unit = document.getElementById('wh-unit').value.trim();
@@ -423,6 +430,7 @@ window.addWarehouseItem = async function() {
         const id = window.editWarehouseId;
         const updateData = {
             location: loc,
+            category: category,
             item: item,
             spec: spec,
             unit: unit,
@@ -433,7 +441,8 @@ window.addWarehouseItem = async function() {
         };
 
         await window.db.collection("warehouse").doc(id).update(updateData);
-        window.sendWarehouseSync("upsert", Object.assign({id: id}, updateData));
+        const previousItem = (window.currentWarehouseItems || []).find(x => x.id === id);
+        window.sendWarehouseSync("upsert", Object.assign({id: id, createdAt: previousItem?.createdAt || now}, updateData));
 
         window.editWarehouseId = null;
         const btn = document.getElementById('wh-submit-btn');
@@ -443,6 +452,7 @@ window.addWarehouseItem = async function() {
         const newItem = {
             id: newDocRef.id,
             location: loc,
+            category: category,
             item: item,
             spec: spec,
             unit: unit,
@@ -455,6 +465,7 @@ window.addWarehouseItem = async function() {
 
         await newDocRef.set({
             location: newItem.location,
+            category: newItem.category,
             item: newItem.item,
             spec: newItem.spec,
             unit: newItem.unit,
@@ -473,12 +484,15 @@ window.addWarehouseItem = async function() {
     document.getElementById('wh-unit').value = '';
     document.getElementById('wh-qty').value = '';
     document.getElementById('wh-note').value = '';
+    document.getElementById('wh-category-select').value = '';
 };
 
 window.editWarehouseItem = function(id) {
     const w = window.currentWarehouseItems.find(x => x.id === id);
     if(!w) return;
     document.getElementById('wh-location-select').value = w.location || '';
+    window.updateWarehouseCategoryOptions();
+    document.getElementById('wh-category-select').value = w.category || '';
     document.getElementById('wh-item').value = w.item || '';
     document.getElementById('wh-spec').value = w.spec || '';
     document.getElementById('wh-unit').value = w.unit || '';
@@ -522,67 +536,39 @@ window.deleteAllWarehouseItems = async function() {
 
 window.renderWarehouse = function() {
     const list = document.getElementById('warehouse-list');
-    if(!list) return;
-
-    const searchInput = document.getElementById('wh-search-input');
-    const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
-    const groupFilter = document.getElementById('wh-group-filter') ? document.getElementById('wh-group-filter').value : '';
-
-    if(!window.currentWarehouseItems || window.currentWarehouseItems.length === 0) {
-        list.innerHTML = '<div style="text-align:center; padding:20px; color:#999; font-size:0.85rem;">등록된 창고 자재가 없습니다.</div>';
-        return;
-    }
-
-    const filteredItems = window.currentWarehouseItems.filter(w => {
-        if (searchTerm) {
-            const textToSearch = `${w.location||''} ${w.item||''} ${w.spec||''} ${w.note||''}`.toLowerCase();
-            if (!textToSearch.includes(searchTerm)) return false;
-        }
-        if (groupFilter && (w.location || '미지정') !== groupFilter) return false;
-        return true;
+    if (!list) return;
+    const searchTerm = (document.getElementById('wh-search-input')?.value || '').toLocaleLowerCase('ko');
+    const groupFilter = document.getElementById('wh-group-filter')?.value || '';
+    const categoryFilter = document.getElementById('wh-category-filter')?.value || '';
+    const sortField = document.getElementById('wh-sort-field')?.value === 'spec' ? 'spec' : 'item';
+    const sortDir = document.getElementById('wh-sort-direction')?.value === 'desc' ? -1 : 1;
+    const escapeHTML = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const filtered = (window.currentWarehouseItems || []).filter(w => {
+        const text = `${w.location||''} ${w.category||''} ${w.item||''} ${w.spec||''} ${w.note||''}`.toLocaleLowerCase('ko');
+        return (!searchTerm || text.includes(searchTerm)) && (!groupFilter || w.location === groupFilter) && (!categoryFilter || (w.category || '') === categoryFilter);
     });
-
-    if (filteredItems.length === 0) {
-        list.innerHTML = '<div style="text-align:center; padding:20px; color:#999; font-size:0.85rem;">검색(필터) 결과가 없습니다.</div>';
-        return;
-    }
-
+    if (!filtered.length) { list.innerHTML = '<div style="text-align:center;padding:20px;color:#999;">해당 자재가 없습니다.</div>'; return; }
+    const comparator = (a,b) => String(a[sortField] || '').localeCompare(String(b[sortField] || ''),'ko',{numeric:true,sensitivity:'base'}) * sortDir || String(a.item||'').localeCompare(String(b.item||''),'ko',{numeric:true});
     const grouped = {};
-    filteredItems.forEach(w => {
-        const g = w.location || '미지정';
-        if(!grouped[g]) grouped[g] = [];
-        grouped[g].push(w);
+    filtered.forEach(w => {
+        const location = w.location || '미지정';
+        const category = w.category || '미분류';
+        if (!grouped[location]) grouped[location] = {};
+        if (!grouped[location][category]) grouped[location][category] = [];
+        grouped[location][category].push(w);
     });
-
-    let html = `<table style="width:100%; border-collapse:collapse; font-size:0.75rem; text-align:center; background:#fff; table-layout:fixed;">
-        <thead>
-            <tr style="background:#f4f5f7; border-bottom:1px solid #ddd; color:#333; height:32px;">
-                <th style="width:9%;">선택</th><th style="width:21%;">품명</th><th style="width:14%;">규격</th>
-                <th style="width:17%;">수량(단위)</th><th style="width:21%;">비고</th><th style="width:18%;">관리</th>
-            </tr>
-        </thead><tbody>`;
-
-    Object.keys(grouped).sort().forEach(g => {
-        html += `<tr style="background:#e6effc; border-bottom:1px solid #c1d4f0;"><td colspan="6" style="text-align:left; padding:8px 10px; font-weight:bold; color:#0052cc; font-size:0.85rem;">🏢 ${g}</td></tr>`;
-        grouped[g].forEach(w => {
-            html += `
-            <tr style="border-bottom:1px dashed #eee; transition: background 0.2s;" onmouseover="this.style.background='#f9f9fa'" onmouseout="this.style.background='#fff'">
-                <td style="padding:6px 2px;"><input type="checkbox" class="wh-delete-cb" value="${w.id}" style="cursor:pointer; accent-color:#ff5630;" title="삭제 선택"></td>
-                <td style="padding:6px 4px; font-weight:bold; color:#333; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${w.item || '-'}">${w.item || '-'}</td>
-                <td style="padding:6px 4px; color:#555; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${w.spec || '-'}">${w.spec || '-'}</td>
-                <td style="padding:6px 4px; color:#0052cc; font-weight:bold;">${w.qty || 0} <span style="font-size:0.65rem; color:#888; font-weight:normal;">${w.unit || ''}</span></td>
-                <td style="padding:6px 4px; color:#888; font-size:0.7rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${w.note || '-'}">${w.note || '-'}</td>
-                <td style="padding:6px 2px;">
-                    <div style="display:flex; gap:2px; justify-content:center; flex-wrap:wrap;">
-                        <button onclick="window.editWarehouseItem('${w.id}')" style="background:#e6effc; color:#0052cc; border:none; padding:4px 6px; border-radius:3px; font-size:0.7rem; cursor:pointer; font-weight:bold; white-space:nowrap;">수정</button>
-                        <button onclick="window.deleteWarehouseItem('${w.id}')" style="background:#ffebe6; color:#bf2600; border:none; padding:4px 6px; border-radius:3px; font-size:0.7rem; cursor:pointer; font-weight:bold; white-space:nowrap;">삭제</button>
-                    </div>
-                </td>
-            </tr>`;
+    let html = `<table style="width:100%;border-collapse:collapse;font-size:0.75rem;text-align:center;background:#fff;table-layout:fixed;"><thead><tr style="background:#f4f5f7;height:32px;"><th style="width:9%">선택</th><th style="width:21%">품명</th><th style="width:14%">규격</th><th style="width:17%">수량(단위)</th><th style="width:21%">비고</th><th style="width:18%">관리</th></tr></thead><tbody>`;
+    Object.keys(grouped).sort((a,b)=>a.localeCompare(b,'ko')).forEach(location => {
+        html += `<tr style="background:#e6effc;"><td colspan="6" style="text-align:left;padding:9px;font-weight:bold;color:#0052cc;">🏢 ${escapeHTML(location)}</td></tr>`;
+        Object.keys(grouped[location]).sort((a,b)=>a.localeCompare(b,'ko')).forEach(category => {
+            html += `<tr style="background:#edf8f0;"><td colspan="6" style="text-align:left;padding:7px 18px;font-weight:bold;color:#187245;">📁 ${escapeHTML(category)} (${grouped[location][category].length}건)</td></tr>`;
+            grouped[location][category].sort(comparator).forEach(w => {
+                const safeId = JSON.stringify(String(w.id)).replace(/</g,'\\u003c').replace(/'/g,'\\u0027');
+                html += `<tr style="border-bottom:1px dashed #eee;"><td style="padding:6px 2px;"><input type="checkbox" class="wh-delete-cb" value="${escapeHTML(w.id)}"></td><td title="${escapeHTML(w.item||'-')}" style="padding:6px 4px;font-weight:bold;word-break:break-all;">${escapeHTML(w.item||'-')}</td><td title="${escapeHTML(w.spec||'-')}" style="padding:6px 4px;word-break:break-all;">${escapeHTML(w.spec||'-')}</td><td style="padding:6px 4px;color:#0052cc;font-weight:bold;">${escapeHTML(w.qty||0)} <small>${escapeHTML(w.unit||'')}</small></td><td style="padding:6px 4px;word-break:break-all;">${escapeHTML(w.note||'-')}</td><td><button onclick='window.editWarehouseItem(${safeId})' style="border:none;color:#0052cc;cursor:pointer;">수정</button> <button onclick='window.deleteWarehouseItem(${safeId})' style="border:none;color:#bf2600;cursor:pointer;">삭제</button></td></tr>`;
+            });
         });
     });
-    html += `</tbody></table>`;
-    list.innerHTML = html;
+    list.innerHTML = html + '</tbody></table>';
 };
 
 window.openTrashModal = function() { try { window.renderTrash(); } catch(e){} document.getElementById('trash-modal').style.display = 'block'; };
@@ -2489,6 +2475,7 @@ window.downloadExcel = function() {
     if (window.currentWarehouseItems && window.currentWarehouseItems.length > 0) {
         const whData = window.currentWarehouseItems.map(w => ({
             '위치/창고': w.location || '',
+            '대분류': w.category || '',
             '품명': w.item || '',
             '규격': w.spec || '',
             '단위': w.unit || '',
@@ -2647,6 +2634,58 @@ window.renderTeamGroups = window.createGroupRenderer('teamGroups', 'currentTeamG
 window.renderContactGroups = window.createGroupRenderer('contactGroups', 'currentContactGroups', 'contact-group-list', ['contact-group-select', 'contact-group-filter']);
 window.renderSiteGroups = window.createGroupRenderer('siteGroups', 'currentSiteGroups', 'site-group-list', ['site-group-select', 'site-group-filter']);
 window.renderOtherCoGroups = window.createGroupRenderer('otherCompanyGroups', 'currentOtherCoGroups', 'otherco-group-list', ['otherco-group-select', 'otherco-group-filter']);
+window.updateWarehouseCategoryOptions = function() {
+    const categories = window.currentWarehouseCategories || [];
+    const warehouse = document.getElementById('wh-location-select')?.value || '';
+    const filterWarehouse = document.getElementById('wh-group-filter')?.value || '';
+    const input = document.getElementById('wh-category-select');
+    const filter = document.getElementById('wh-category-filter');
+    const manager = document.getElementById('wh-category-warehouse');
+    const groups = window.currentWarehouseGroups || [];
+    if (manager) {
+        const prev = manager.value || warehouse;
+        manager.innerHTML = '<option value="">창고 선택</option>' + groups.map(g => `<option value="${window.whEscape(g.name)}">${window.whEscape(g.name)}</option>`).join('');
+        manager.value = prev;
+    }
+    function refresh(sel, wh, placeholder) {
+        if (!sel) return;
+        const prev = sel.value;
+        const vals = [...new Set([...categories.filter(c => !wh || c.location === wh).map(c => c.name), ...(window.currentWarehouseItems||[]).filter(w => (!wh || w.location === wh) && w.category).map(w => w.category)])].sort((a,b)=>a.localeCompare(b,'ko'));
+        sel.innerHTML = `<option value="">${placeholder}</option>` + vals.map(n => `<option value="${window.whEscape(n)}">${window.whEscape(n)}</option>`).join('');
+        sel.value = vals.includes(prev) ? prev : '';
+    }
+    refresh(input,warehouse,'대분류 선택 (미분류)');
+    refresh(filter,filterWarehouse,'📁 전체 대분류 보기');
+};
+window.whEscape = function(value) { return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); };
+window.renderWarehouseCategories = function() {
+    window.updateWarehouseCategoryOptions();
+    const loc = document.getElementById('wh-category-warehouse')?.value || '';
+    const list = document.getElementById('warehouse-category-list');
+    if (!list) return;
+    list.innerHTML = !loc ? '<div style="color:#777;padding:8px;">창고를 먼저 선택하세요.</div>' :
+      (window.currentWarehouseCategories || []).filter(x=>x.location===loc).sort((a,b)=>a.name.localeCompare(b.name,'ko')).map(x=>{
+        const id = JSON.stringify(x.id).replace(/'/g,'\\u0027');
+        return `<div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee;padding:8px;"><strong>${window.whEscape(x.name)}</strong><button onclick='window.deleteWarehouseCategory(${id})' style="background:none;border:none;color:#bf2600;cursor:pointer;">삭제</button></div>`;
+      }).join('') || '<div style="color:#777;padding:8px;">등록된 대분류가 없습니다.</div>';
+};
+window.addWarehouseCategory = async function() {
+    const loc = document.getElementById('wh-category-warehouse')?.value || '';
+    const inp = document.getElementById('new-warehouse-category');
+    const name = inp?.value.trim() || '';
+    if (!loc || !name) return alert('창고와 대분류 이름을 입력하세요.');
+    if ((window.currentWarehouseCategories||[]).some(x=>x.location===loc && x.name===name)) return alert('이미 등록된 대분류입니다.');
+    try { await window.db.collection('warehouseCategories').add({location:loc,name,createdAt:Date.now()}); inp.value=''; }
+    catch(e) { alert('대분류 추가 실패: '+e.message); }
+};
+window.deleteWarehouseCategory = async function(id) {
+    const x = (window.currentWarehouseCategories||[]).find(y=>y.id===id);
+    if (!x) return;
+    if ((window.currentWarehouseItems||[]).some(w=>w.location===x.location && w.category===x.name)) return alert('이 대분류를 사용하는 자재가 있습니다. 자재를 먼저 다른 대분류로 옮기세요.');
+    if (!confirm('대분류 '+x.name+'을(를) 삭제하시겠습니까?')) return;
+    try { await window.db.collection('warehouseCategories').doc(id).delete(); }
+    catch(e) { alert('삭제 실패: '+e.message); }
+};
 window.renderWarehouseGroups = window.createGroupRenderer('warehouseGroups', 'currentWarehouseGroups', 'warehouse-group-list', ['wh-location-select', 'wh-group-filter']);
 
 window.addTeamGroup = async function() {
@@ -2935,9 +2974,16 @@ window.initFirebaseListeners = function() {
             window.currentOtherCoGroups = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); });
             window.renderOtherCoGroups();
         });
+        window.db.collection("warehouseCategories").onSnapshot(function(s) {
+            window.currentWarehouseCategories = s.docs.map(function(d){ return Object.assign({id:d.id},d.data()); });
+            window.updateWarehouseCategoryOptions();
+            window.renderWarehouseCategories();
+            if(document.getElementById('warehouse-modal').style.display === 'block') window.renderWarehouse();
+        });
         window.db.collection("warehouseGroups").onSnapshot(function(s) {
             window.currentWarehouseGroups = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); });
             window.renderWarehouseGroups();
+            window.updateWarehouseCategoryOptions();
         });
 // 🟢 [추가] 팀 그룹(teamGroups) 실시간 감시 리스너
     window.db.collection("teamGroups").onSnapshot(function(s) {
