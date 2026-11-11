@@ -664,20 +664,20 @@ window.renderWarehouse = function() {
         grouped[location][category].push(w);
     });
     const fold = window.warehouseFoldState;
-    let html = `<table style="width:100%;min-width:740px;border-collapse:collapse;font-size:0.75rem;text-align:center;background:#fff;table-layout:fixed;"><thead><tr style="background:#f4f5f7;height:32px;"><th style="width:5%">선택</th><th style="width:17%">품명</th><th style="width:11%">규격</th><th style="width:12%">반입</th><th style="width:12%">누적사용량</th><th style="width:12%">현재고</th><th style="width:12%">비고</th><th style="width:19%">관리</th></tr></thead><tbody>`;
+    let html = `<table style="width:100%;min-width:740px;border-collapse:collapse;font-size:0.75rem;text-align:center;background:#fff;table-layout:fixed;"><thead><tr style="background:#f4f5f7;height:32px;"><th style="width:23%">품명</th><th style="width:14%">규격</th><th style="width:13%">반입</th><th style="width:13%">누적사용량</th><th style="width:13%">현재고</th><th style="width:24%">비고</th></tr></thead><tbody>`;
     Object.keys(grouped).sort(collator.compare).forEach(location => {
         const locationClosed = !!fold.locations[location];
         const n = Object.values(grouped[location]).reduce((total,arr)=>total+arr.length,0);
-        html += `<tr style="background:#e6effc;"><td colspan="8" style="text-align:left;padding:0;font-weight:bold;color:#0052cc;"><button type="button" data-wh-fold="location" data-wh-key="${escapeHTML(location)}" aria-expanded="${!locationClosed}" style="display:block;width:100%;background:none;border:0;text-align:left;padding:10px;color:inherit;font-weight:bold;cursor:pointer;">${locationClosed ? '▶' : '▼'} 🏢 ${escapeHTML(location)} (${n}건)</button></td></tr>`;
+        html += `<tr style="background:#e6effc;"><td colspan="6" style="text-align:left;padding:0;font-weight:bold;color:#0052cc;"><button type="button" data-wh-fold="location" data-wh-key="${escapeHTML(location)}" aria-expanded="${!locationClosed}" style="display:block;width:100%;background:none;border:0;text-align:left;padding:10px;color:inherit;font-weight:bold;cursor:pointer;">${locationClosed ? '▶' : '▼'} 🏢 ${escapeHTML(location)} (${n}건)</button></td></tr>`;
         if (locationClosed) return;
         Object.keys(grouped[location]).sort(collator.compare).forEach(category => {
             const key = JSON.stringify([location,category]);
             const categoryClosed = !!fold.categories[key];
-            html += `<tr style="background:#edf8f0;"><td colspan="8" style="text-align:left;padding:0;font-weight:bold;color:#187245;"><button type="button" data-wh-fold="category" data-wh-key="${escapeHTML(key)}" aria-expanded="${!categoryClosed}" style="display:block;width:100%;background:none;border:0;text-align:left;padding:8px 20px;color:inherit;font-weight:bold;cursor:pointer;">${categoryClosed ? '▶' : '▼'} 📁 ${escapeHTML(category)} (${grouped[location][category].length}건)</button></td></tr>`;
+            html += `<tr style="background:#edf8f0;"><td colspan="6" style="text-align:left;padding:0;font-weight:bold;color:#187245;"><button type="button" data-wh-fold="category" data-wh-key="${escapeHTML(key)}" aria-expanded="${!categoryClosed}" style="display:block;width:100%;background:none;border:0;text-align:left;padding:8px 20px;color:inherit;font-weight:bold;cursor:pointer;">${categoryClosed ? '▶' : '▼'} 📁 ${escapeHTML(category)} (${grouped[location][category].length}건)</button></td></tr>`;
             if (categoryClosed) return;
             grouped[location][category].sort(comparator).forEach(w => {
                 const safeId = JSON.stringify(String(w.id)).replace(/</g,'\\u003c').replace(/'/g,'\\u0027');
-                html += `<tr style="border-bottom:1px dashed #eee;"><td style="padding:6px 2px;"><input type="checkbox" class="wh-delete-cb" value="${escapeHTML(w.id)}"></td><td title="${escapeHTML(w.item||'-')}" style="padding:6px 4px;font-weight:bold;word-break:break-all;">${escapeHTML(w.item||'-')}</td><td title="${escapeHTML(w.spec||'-')}" style="padding:6px 4px;word-break:break-all;">${escapeHTML(w.spec||'-')}</td><td style="padding:6px 2px;">${escapeHTML(window.warehouseStock(w).inbound)} <small>${escapeHTML(w.unit||'')}</small></td><td style="padding:6px 2px;">${escapeHTML(window.warehouseStock(w).used)} <small>${escapeHTML(w.unit||'')}</small></td><td style="padding:6px 2px;color:#0052cc;font-weight:bold;">${escapeHTML(window.warehouseStock(w).qty)} <small>${escapeHTML(w.unit||'')}</small></td><td style="padding:6px 4px;word-break:break-all;">${escapeHTML(w.note||'-')}</td><td><button onclick='window.changeWarehouseStock(${safeId},"inbound")' style="border:0;color:#00875a;cursor:pointer;">+입고</button> <button onclick='window.changeWarehouseStock(${safeId},"used")' style="border:0;color:#d35400;cursor:pointer;">-사용</button> <button onclick='window.undoWarehouseMovement(${safeId})' style="border:0;color:#795548;cursor:pointer;">↶되돌리기</button> <button onclick='window.showWarehouseHistory(${safeId})' style="border:0;color:#555;cursor:pointer;">내역</button> <button onclick='window.editWarehouseItem(${safeId})' style="border:0;color:#0052cc;cursor:pointer;">수정</button> <button onclick='window.deleteWarehouseItem(${safeId})' style="border:0;color:#bf2600;cursor:pointer;">삭제</button></td></tr>`;
+                html += `<tr style="border-bottom:1px dashed #eee;"><td title="${escapeHTML(w.item||'-')}" style="padding:6px 4px;font-weight:bold;word-break:break-all;">${escapeHTML(w.item||'-')}</td><td title="${escapeHTML(w.spec||'-')}" style="padding:6px 4px;word-break:break-all;">${escapeHTML(w.spec||'-')}</td><td style="padding:6px 2px;">${escapeHTML(window.warehouseStock(w).inbound)} <small>${escapeHTML(w.unit||'')}</small></td><td style="padding:6px 2px;">${escapeHTML(window.warehouseStock(w).used)} <small>${escapeHTML(w.unit||'')}</small></td><td style="padding:6px 2px;color:#0052cc;font-weight:bold;">${escapeHTML(window.warehouseStock(w).qty)} <small>${escapeHTML(w.unit||'')}</small></td><td style="padding:6px 4px;word-break:break-all;">${escapeHTML(w.note||'-')}</td></tr>`;
             });
         });
     });
@@ -3406,4 +3406,28 @@ window.renderRequests = function() {
             </div>`;
         }).join('');
     }
+};
+
+// ===== 창고 웹앱 조회 전용 정책 =====
+// 데이터 변경은 별도 Google Sheets / Apps Script에서만 수행합니다.
+// 기존 조회/실시간 Firestore onSnapshot 리스너는 유지합니다.
+const warehouseReadOnlyAlert = () => { alert('창고는 조회 전용입니다. 자재 수정·입출고는 구글 시트에서 처리해주세요.'); };
+[
+  'uploadWarehouseExcel', 'addWarehouseItem', 'editWarehouseItem',
+  'changeWarehouseStock', 'commitWarehouseMovement', 'undoWarehouseMovement',
+  'deleteWarehouseItem', 'deleteSelectedWarehouseItems', 'deleteAllWarehouseItems',
+  'addWarehouseCategory', 'deleteWarehouseCategory', 'addWarehouseGroup'
+].forEach(name => { window[name] = warehouseReadOnlyAlert; });
+// 웹앱의 창고 데이터 쓰기용 Apps Script 호출도 막습니다.
+window.sendWarehouseSync = function() {};
+// 다른 그룹(팀/연락처/사이트)의 수정 기능은 그대로 보존.
+const originalEditGroup = window.editGroup;
+const originalDeleteGroup = window.deleteGroup;
+window.editGroup = function(collection, ...args) {
+  if (collection === 'warehouseGroups' || collection === 'warehouseCategories') return warehouseReadOnlyAlert();
+  return originalEditGroup.apply(this,[collection,...args]);
+};
+window.deleteGroup = function(collection, ...args) {
+  if (collection === 'warehouseGroups' || collection === 'warehouseCategories') return warehouseReadOnlyAlert();
+  return originalDeleteGroup.apply(this,[collection,...args]);
 };
