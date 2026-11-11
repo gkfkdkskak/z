@@ -79,3 +79,31 @@ header { display: flex; justify-content: space-between; align-items: center; pad
 @media (min-width: 768px) { .summary-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (min-width: 900px) { .dashboard-layout { flex-direction: row; align-items: flex-start; } .board { flex-direction: row; align-items: flex-start; } }
 @media (min-width: 1400px) { .side-panel { display: flex; } }
+
+/* 창고 자재 관리 버튼 - 한 줄 유지 */
+#warehouse-modal .modal-content { max-width:1100px !important; margin:3vh auto; }
+#warehouse-list { max-height:55vh !important; }
+#warehouse-list table { min-width:790px; }
+#warehouse-list th { padding:9px 5px; white-space:nowrap; font-size:0.76rem; }
+#warehouse-list td { padding:7px 5px !important; vertical-align:middle; }
+#warehouse-list tbody tr:hover { background-color:#f8faff; }
+#warehouse-list .wh-action-cell { text-align:center; white-space:nowrap; }
+.wh-manage-btn { border:1px solid #ccd5e1; background:#f8fafc; color:#344054; border-radius:6px; padding:7px 11px; font-size:0.78rem; font-weight:700; cursor:pointer; white-space:nowrap; }
+.wh-manage-btn:hover { background:#eaf1fb; border-color:#9ab9e9; }
+.wh-floating-menu { position:fixed; z-index:20000; width:174px; display:flex; flex-direction:column; gap:2px; padding:6px; border:1px solid #d7dce4; background:white; box-shadow:0 10px 30px rgba(16,24,40,.22); border-radius:10px; }
+.wh-floating-menu button { text-align:left; background:transparent; border:0; padding:10px 12px; border-radius:6px; font-size:0.83rem; color:#344054; cursor:pointer; }
+.wh-floating-menu button:hover { background:#f0f5ff; }
+.wh-floating-menu .wh-action-inbound { color:#067647; font-weight:700; }
+.wh-floating-menu .wh-action-used { color:#b54708; font-weight:700; }
+.wh-floating-menu .wh-action-delete { color:#b42318; border-top:1px solid #eee; border-radius:0; }
+
+/* 창고 조회 전용 */
+#warehouse-modal .modal-content { max-width:1100px !important; }
+#warehouse-list table { min-width:650px; }
+.wh-view-filters { display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 10px; }
+.wh-view-filters input, .wh-view-filters select { border:1px solid #d8dee5;border-radius:6px;padding:9px 10px;font-size:.83rem;background:#fff;box-sizing:border-box;flex:1;min-width:130px; }
+.wh-view-filters label { display:flex;align-items:center;gap:6px;font-size:.79rem;color:#5a6678;font-weight:600; }
+.wh-view-filters label select { min-width:100px;padding:7px; }
+.wh-view-filters button { border:1px solid #d8dee5;background:#fff;color:#34435b;border-radius:6px;padding:8px 11px;cursor:pointer;font-size:.78rem; }
+#warehouse-list td { font-variant-numeric:tabular-nums; }
+#warehouse-list tbody tr:hover { background:#f3f8fd; }
