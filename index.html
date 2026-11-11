@@ -323,10 +323,23 @@
                     <select id="wh-group-filter" onchange="window.updateWarehouseCategoryOptions();window.renderWarehouse()" style="flex:1; min-width:125px; padding:8px; border:1px solid #2ecc71; border-radius:4px;"><option value="">📂 전체 창고 보기</option></select>
                     <select id="wh-category-filter" onchange="window.renderWarehouse()" style="flex:1; min-width:125px; padding:8px; border:1px solid #2ecc71; border-radius:4px;"><option value="">📁 전체 대분류 보기</option></select>
                 </div>
-                <div style="display:flex; gap:6px; align-items:center; margin-top:7px; flex-wrap:wrap;">
-                    <label for="wh-sort-field" style="font-size:0.78rem; font-weight:bold;">정렬</label>
-                    <select id="wh-sort-field" onchange="window.renderWarehouse()" style="flex:1; min-width:90px; padding:7px; border:1px solid #ccc; border-radius:4px;"><option value="item">품명</option><option value="spec">규격</option></select>
-                    <select id="wh-sort-direction" onchange="window.renderWarehouse()" style="flex:1; min-width:110px; padding:7px; border:1px solid #ccc; border-radius:4px;"><option value="asc">▲ 오름차순</option><option value="desc">▼ 내림차순</option></select>
+                <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap;">
+                    <label for="wh-sort-item-direction" style="font-size:0.78rem;font-weight:bold;">품명 정렬</label>
+                    <select id="wh-sort-item-direction" onchange="window.renderWarehouse()" style="flex:1;min-width:112px;padding:7px;border:1px solid #ccc;border-radius:4px;">
+                        <option value="asc">▲ 오름차순</option><option value="desc">▼ 내림차순</option><option value="none">정렬 안 함</option>
+                    </select>
+                    <label for="wh-sort-spec-direction" style="font-size:0.78rem;font-weight:bold;">규격 정렬</label>
+                    <select id="wh-sort-spec-direction" onchange="window.renderWarehouse()" style="flex:1;min-width:112px;padding:7px;border:1px solid #ccc;border-radius:4px;">
+                        <option value="asc">▲ 오름차순</option><option value="desc">▼ 내림차순</option><option value="none">정렬 안 함</option>
+                    </select>
+                    <label for="wh-sort-priority" style="font-size:0.78rem;font-weight:bold;">우선 기준</label>
+                    <select id="wh-sort-priority" onchange="window.renderWarehouse()" style="flex:1;min-width:106px;padding:7px;border:1px solid #ccc;border-radius:4px;">
+                        <option value="item">품명 먼저</option><option value="spec">규격 먼저</option>
+                    </select>
+                </div>
+                <div style="display:flex;gap:6px;margin-top:7px;justify-content:flex-end;">
+                    <button type="button" onclick="window.setWarehouseFoldAll(false)" style="padding:5px 9px;border:1px solid #bbb;border-radius:4px;background:white;cursor:pointer;">모두 펼치기</button>
+                    <button type="button" onclick="window.setWarehouseFoldAll(true)" style="padding:5px 9px;border:1px solid #bbb;border-radius:4px;background:white;cursor:pointer;">모두 접기</button>
                 </div>
             </div>
             
