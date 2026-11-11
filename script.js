@@ -287,11 +287,13 @@ window.downloadWarehouseTemplate = function() {
         '품명': '철근',
         '규격': '10mm',
         '단위': 'EA',
-        '수량': 100,
+        '반입': 100,
+        '사용량': 0,
+        '현재고': 100,
         '비고': '추가 설명 작성 가능'
     }];
     const ws = XLSX.utils.json_to_sheet(templateData);
-    ws['!cols'] = [{wch: 15}, {wch: 16}, {wch: 20}, {wch: 15}, {wch: 10}, {wch: 10}, {wch: 25}];
+    ws['!cols'] = [{wch: 15}, {wch: 16}, {wch: 20}, {wch: 15}, {wch: 10}, {wch: 10}, {wch: 10}, {wch: 10}, {wch: 25}];
     XLSX.utils.book_append_sheet(wb, ws, "창고자재_업로드양식");
     XLSX.writeFile(wb, `창고자재_업로드양식.xlsx`);
 };
@@ -340,7 +342,9 @@ window.uploadWarehouseExcel = function(event) {
                 const item = row['품명'] || row['이름'] || row['자재명'] || '';
                 const spec = row['규격'] || row['스펙'] || '';
                 const unit = row['단위'] || '';
-                const qty = Number(row['수량']) || 0;
+                const inbound = Number(row['반입'] ?? row['입고'] ?? row['누적반입'] ?? row['수량'] ?? 0);
+                const used = Number(row['사용량'] ?? row['누적사용량'] ?? 0);
+                if (!Number.isFinite(inbound) || !Number.isFinite(used) || inbound < 0 || used < 0 || used > inbound) throw new Error('반입·사용량이 잘못된 행: ' + item);
                 const note = row['비고'] || row['설명'] || '';
 
                 if(item) {
@@ -353,7 +357,9 @@ window.uploadWarehouseExcel = function(event) {
                         item: item,
                         spec: spec,
                         unit: unit,
-                        qty: qty,
+                        qty: inbound - used,
+                        inbound: inbound,
+                        used: used,
                         note: note,
                         createdAt: now,
                         updatedAt: now,
@@ -369,6 +375,8 @@ window.uploadWarehouseExcel = function(event) {
                         spec: warehouseItem.spec,
                         unit: warehouseItem.unit,
                         qty: warehouseItem.qty,
+                        inbound: warehouseItem.inbound,
+                        used: warehouseItem.used,
                         note: warehouseItem.note,
                         createdAt: warehouseItem.createdAt,
                         updatedAt: warehouseItem.updatedAt,
@@ -411,96 +419,167 @@ window.openWarehouseModal = function() {
     document.getElementById('warehouse-modal').style.display = 'block'; 
 };
 
-window.addWarehouseItem = async function() {
-    const loc = document.getElementById('wh-location-select').value;
-    const category = document.getElementById('wh-category-select').value;
-    const item = document.getElementById('wh-item').value.trim();
-    const spec = document.getElementById('wh-spec').value.trim();
-    const unit = document.getElementById('wh-unit').value.trim();
-    const qty = document.getElementById('wh-qty').value.trim();
-    const note = document.getElementById('wh-note').value.trim();
-
-    if(!loc) return alert("창고(위치)를 선택해주세요.");
-    if(!item) return alert("품명을 입력해주세요.");
-
-    const now = Date.now();
-    const user = window.loggedInUser || "웹앱";
-
-    if (window.editWarehouseId) {
-        const id = window.editWarehouseId;
-        const updateData = {
-            location: loc,
-            category: category,
-            item: item,
-            spec: spec,
-            unit: unit,
-            qty: Number(qty)||0,
-            note: note,
-            updatedAt: now,
-            updatedBy: user
-        };
-
-        await window.db.collection("warehouse").doc(id).update(updateData);
-        const previousItem = (window.currentWarehouseItems || []).find(x => x.id === id);
-        window.sendWarehouseSync("upsert", Object.assign({id: id, createdAt: previousItem?.createdAt || now}, updateData));
-
-        window.editWarehouseId = null;
-        const btn = document.getElementById('wh-submit-btn');
-        btn.innerText = "등록"; btn.style.background = "#2ecc71";
-    } else {
-        const newDocRef = window.db.collection("warehouse").doc();
-        const newItem = {
-            id: newDocRef.id,
-            location: loc,
-            category: category,
-            item: item,
-            spec: spec,
-            unit: unit,
-            qty: Number(qty)||0,
-            note: note,
-            createdAt: now,
-            updatedAt: now,
-            updatedBy: user
-        };
-
-        await newDocRef.set({
-            location: newItem.location,
-            category: newItem.category,
-            item: newItem.item,
-            spec: newItem.spec,
-            unit: newItem.unit,
-            qty: newItem.qty,
-            note: newItem.note,
-            createdAt: newItem.createdAt,
-            updatedAt: newItem.updatedAt,
-            updatedBy: newItem.updatedBy
-        });
-
-        window.sendWarehouseSync("upsert", newItem);
-    }
-
-    document.getElementById('wh-item').value = '';
-    document.getElementById('wh-spec').value = '';
-    document.getElementById('wh-unit').value = '';
-    document.getElementById('wh-qty').value = '';
-    document.getElementById('wh-note').value = '';
-    document.getElementById('wh-category-select').value = '';
+window.warehouseStock = function(w) {
+    const inbound = Number(w.inbound ?? w.qty ?? 0);
+    const used = Number(w.used ?? 0);
+    return { inbound, used, qty: inbound - used };
+};
+window.updateWarehouseStockPreview = function() {
+    const inbound = Number(document.getElementById('wh-inbound')?.value || 0);
+    const used = Number(document.getElementById('wh-used')?.value || 0);
+    const useNow = Number(document.getElementById('wh-use-now')?.value || 0);
+    const n = document.getElementById('wh-stock-preview');
+    if (n) n.textContent = (inbound - used - useNow).toLocaleString('ko-KR');
+    const msg = document.getElementById('wh-stock-warning');
+    if (msg) msg.textContent = (inbound < 0 || used < 0 || useNow < 0 || !Number.isFinite(useNow) || used + useNow > inbound) ? '⚠ 사용량이 현재고보다 많거나 입력값이 잘못되었습니다.' : '';
 };
 
+// 변경할 수량만 입력하면 실제 재고와 이력을 하나의 Firestore 트랜잭션으로 저장합니다.
+window.commitWarehouseMovement = async function(id,kind,amount,metadata) {
+    if (!Number.isFinite(amount) || amount <= 0) throw Error('수량은 0보다 커야 합니다.');
+    const ref = window.db.collection('warehouse').doc(id);
+    const eventRef = ref.collection('movements').doc();
+    const now=Date.now(), user=window.loggedInUser||'웹앱';
+    const result = await window.db.runTransaction(async tx => {
+        const snap = await tx.get(ref);
+        if (!snap.exists) throw Error('자재가 삭제되었거나 존재하지 않습니다.');
+        const current=snap.data(), stock=window.warehouseStock(current);
+        const inbound=stock.inbound + (kind==='inbound'?amount:0);
+        const used=stock.used + (kind==='used'?amount:0);
+        if (used>inbound) throw Error('현재고보다 많은 수량은 사용할 수 없습니다.');
+        const fields={...(metadata||{}), inbound,used,qty:inbound-used,updatedAt:now,updatedBy:user,
+           lastMovementId:eventRef.id,lastMovementKind:kind,lastMovementAmount:amount};
+        tx.update(ref,fields);
+        tx.set(eventRef,{kind,amount,createdAt:now,createdBy:user,beforeInbound:stock.inbound,beforeUsed:stock.used,afterInbound:inbound,afterUsed:used,reverted:false});
+        return {id,createdAt:current.createdAt||now,...current,...fields};
+    });
+    window.sendWarehouseSync('upsert',result);
+    return result;
+};
+
+window.addWarehouseItem = async function() {
+    const loc=document.getElementById('wh-location-select').value;
+    const category=document.getElementById('wh-category-select').value;
+    const item=document.getElementById('wh-item').value.trim();
+    const spec=document.getElementById('wh-spec').value.trim();
+    const unit=document.getElementById('wh-unit').value.trim();
+    const inboundEl=document.getElementById('wh-inbound');
+    const useEl=document.getElementById('wh-use-now');
+    const inbound=Number(inboundEl.value), useNow=Number(useEl.value||0);
+    const note=document.getElementById('wh-note').value.trim();
+    if(!loc||!item) return alert('창고와 품명을 입력해주세요.');
+    if(!inboundEl.value||!Number.isFinite(inbound)||inbound<0||!Number.isFinite(useNow)||useNow<0)
+        return alert('반입과 사용량을 확인해주세요.');
+    const now=Date.now(), user=window.loggedInUser||'웹앱';
+    const metadata={location:loc,category,item,spec,unit,note};
+    try {
+        if (window.editWarehouseId) {
+            const id=window.editWarehouseId;
+            if (useNow>0) {
+                // 수정 시 반입량 변경은 별도 +입고 버튼 사용 권장. 무의식적인 덮어쓰기를 방지합니다.
+                const original=(window.currentWarehouseItems||[]).find(x=>x.id===id);
+                if(original && inbound!==window.warehouseStock(original).inbound) return alert('이번 사용량을 저장할 때 반입 수량은 변경하지 마세요. +입고 버튼을 이용해 주세요.');
+                await window.commitWarehouseMovement(id,'used',useNow,metadata);
+            } else {
+                const original=(window.currentWarehouseItems||[]).find(x=>x.id===id);
+                const stock=window.warehouseStock(original||{});
+                if (inbound<stock.used) return alert('반입량은 누적사용량보다 작을 수 없습니다.');
+                const ref=window.db.collection('warehouse').doc(id);
+                const fields={...metadata,inbound,used:stock.used,qty:inbound-stock.used,updatedAt:now,updatedBy:user};
+                await ref.update(fields);
+                window.sendWarehouseSync('upsert',{...original,...fields,id});
+            }
+            window.editWarehouseId=null;
+            const btn=document.getElementById('wh-submit-btn');
+            btn.innerText='등록';btn.style.background='#2ecc71';
+        } else {
+            if(useNow>inbound) return alert('사용량은 반입 수량을 넘을 수 없습니다.');
+            const ref=window.db.collection('warehouse').doc();
+            const data={...metadata,inbound,used:useNow,qty:inbound-useNow,createdAt:now,updatedAt:now,updatedBy:user};
+            if(useNow>0) {
+                const eventRef=ref.collection('movements').doc();
+                data.lastMovementId=eventRef.id;data.lastMovementKind='used';data.lastMovementAmount=useNow;
+                const batch=window.db.batch();
+                batch.set(ref,data);
+                batch.set(eventRef,{kind:'used',amount:useNow,createdAt:now,createdBy:user,beforeInbound:inbound,beforeUsed:0,afterInbound:inbound,afterUsed:useNow,reverted:false});
+                await batch.commit();
+            } else await ref.set(data);
+            window.sendWarehouseSync('upsert',{id:ref.id,...data});
+        }
+        ['wh-item','wh-spec','wh-unit','wh-note'].forEach(k=>document.getElementById(k).value='');
+        inboundEl.value='0';document.getElementById('wh-used').value='0';useEl.value='0';
+        document.getElementById('wh-category-select').value='';
+        window.updateWarehouseStockPreview();
+    } catch(e) {console.error(e);alert('자재 저장 실패: '+e.message);}
+};
 window.editWarehouseItem = function(id) {
-    const w = window.currentWarehouseItems.find(x => x.id === id);
-    if(!w) return;
-    document.getElementById('wh-location-select').value = w.location || '';
+    const w=(window.currentWarehouseItems||[]).find(x=>x.id===id);
+    if(!w)return;
+    document.getElementById('wh-location-select').value=w.location||'';
     window.updateWarehouseCategoryOptions();
-    document.getElementById('wh-category-select').value = w.category || '';
-    document.getElementById('wh-item').value = w.item || '';
-    document.getElementById('wh-spec').value = w.spec || '';
-    document.getElementById('wh-unit').value = w.unit || '';
-    document.getElementById('wh-qty').value = w.qty || '';
-    document.getElementById('wh-note').value = w.note || '';
-    window.editWarehouseId = id;
-    const btn = document.getElementById('wh-submit-btn');
-    btn.innerText = "수정 저장"; btn.style.background = "#ff9f43";
+    document.getElementById('wh-category-select').value=w.category||'';
+    document.getElementById('wh-item').value=w.item||'';
+    document.getElementById('wh-spec').value=w.spec||'';
+    document.getElementById('wh-unit').value=w.unit||'';
+    const stock=window.warehouseStock(w);
+    document.getElementById('wh-inbound').value=stock.inbound;
+    document.getElementById('wh-used').value=stock.used;
+    document.getElementById('wh-use-now').value='0';
+    document.getElementById('wh-note').value=w.note||'';
+    window.editWarehouseId=id;
+    const btn=document.getElementById('wh-submit-btn');btn.innerText='수정 저장';btn.style.background='#ff9f43';
+    window.updateWarehouseStockPreview();
+};
+window.changeWarehouseStock=async function(id,kind) {
+    const w=(window.currentWarehouseItems||[]).find(x=>x.id===id);
+    if(!w)return alert('자재를 찾을 수 없습니다.');
+    const val=prompt((kind==='inbound'?'이번 입고':'이번 사용량')+' 입력 ('+(w.unit||'단위')+')');
+    if(val===null)return;
+    const amount=Number(val);
+    if(!String(val).trim()||!Number.isFinite(amount)||amount<=0)return alert('0보다 큰 수량을 입력해주세요.');
+    try {await window.commitWarehouseMovement(id,kind,amount);}
+    catch(e){console.error(e);alert('재고 변경 실패: '+e.message);}
+};
+
+// 마지막 재고 증감 한 건만 되돌릴 수 있습니다. 동시 수정이나 이후 수량 변경이 있으면 차단합니다.
+window.undoWarehouseMovement=async function(id) {
+    const ref=window.db.collection('warehouse').doc(id);
+    try {
+        const snap=await ref.get();
+        if(!snap.exists||!snap.data().lastMovementId)return alert('되돌릴 입출고 기록이 없습니다.');
+        const w=snap.data(), mid=w.lastMovementId;
+        if(!confirm((w.item||'자재')+'의 마지막 '+(w.lastMovementKind==='used'?'사용':'입고')+' '+w.lastMovementAmount+'을(를) 되돌릴까요?'))return;
+        const mref=ref.collection('movements').doc(mid),now=Date.now();
+        const result=await window.db.runTransaction(async tx=>{
+            const ws=await tx.get(ref), ms=await tx.get(mref);
+            if(!ws.exists||!ms.exists)throw Error('되돌리기 기록을 찾을 수 없습니다.');
+            const cur=ws.data(),mov=ms.data(),stock=window.warehouseStock(cur);
+            if(cur.lastMovementId!==mid||mov.reverted)throw Error('이미 취소되었거나 더 최근 입출고가 있습니다.');
+            if(stock.inbound!==mov.afterInbound||stock.used!==mov.afterUsed)throw Error('이후 재고가 변경되어 자동 되돌리기가 제한됩니다.');
+            const fields={inbound:mov.beforeInbound,used:mov.beforeUsed,qty:mov.beforeInbound-mov.beforeUsed,updatedAt:now,updatedBy:window.loggedInUser||'웹앱',lastMovementId:'',lastMovementKind:'',lastMovementAmount:0};
+            tx.update(ref,fields);
+            tx.update(mref,{reverted:true,revertedAt:now,revertedBy:window.loggedInUser||'웹앱'});
+            return {id,createdAt:cur.createdAt||now,...cur,...fields};
+        });
+        window.sendWarehouseSync('upsert',result);
+        alert('마지막 입출고를 되돌렸습니다.');
+    }catch(e){console.error(e);alert('되돌리기 실패: '+e.message);}
+};
+window.showWarehouseHistory=async function(id) {
+    const w=(window.currentWarehouseItems||[]).find(x=>x.id===id);
+    const modal=document.getElementById('warehouse-history-modal');
+    const list=document.getElementById('warehouse-history-list');
+    if(!modal||!list)return;
+    document.getElementById('warehouse-history-title').textContent=(w?.item||'자재')+' '+(w?.spec||'')+' 입출고 내역';
+    modal.style.display='block';list.textContent='기록 불러오는 중...';
+    try {
+        const snap=await window.db.collection('warehouse').doc(id).collection('movements').orderBy('createdAt','desc').limit(30).get();
+        const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        list.innerHTML=snap.empty?'저장된 입출고 이력이 없습니다.':snap.docs.map(doc=>{
+            const d=doc.data(),date=new Date(d.createdAt).toLocaleString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+            return `<div style="padding:10px;border-bottom:1px solid #ddd;${d.reverted?'opacity:.55;':''}"><strong>${d.kind==='used'?'사용':'입고'} ${esc(d.amount)} ${esc(w?.unit||'')}</strong> · ${esc(d.createdBy||'')}<div style="color:#555;font-size:12px">${esc(date)} ${d.reverted?'· 취소됨':''}</div></div>`;
+        }).join('');
+    }catch(e){list.textContent='내역 조회 실패: '+e.message;}
 };
 
 window.deleteWarehouseItem = async function(id) {
@@ -585,20 +664,20 @@ window.renderWarehouse = function() {
         grouped[location][category].push(w);
     });
     const fold = window.warehouseFoldState;
-    let html = `<table style="width:100%;border-collapse:collapse;font-size:0.75rem;text-align:center;background:#fff;table-layout:fixed;"><thead><tr style="background:#f4f5f7;height:32px;"><th style="width:9%">선택</th><th style="width:21%">품명</th><th style="width:14%">규격</th><th style="width:17%">수량(단위)</th><th style="width:21%">비고</th><th style="width:18%">관리</th></tr></thead><tbody>`;
+    let html = `<table style="width:100%;min-width:740px;border-collapse:collapse;font-size:0.75rem;text-align:center;background:#fff;table-layout:fixed;"><thead><tr style="background:#f4f5f7;height:32px;"><th style="width:5%">선택</th><th style="width:17%">품명</th><th style="width:11%">규격</th><th style="width:12%">반입</th><th style="width:12%">누적사용량</th><th style="width:12%">현재고</th><th style="width:12%">비고</th><th style="width:19%">관리</th></tr></thead><tbody>`;
     Object.keys(grouped).sort(collator.compare).forEach(location => {
         const locationClosed = !!fold.locations[location];
         const n = Object.values(grouped[location]).reduce((total,arr)=>total+arr.length,0);
-        html += `<tr style="background:#e6effc;"><td colspan="6" style="text-align:left;padding:0;font-weight:bold;color:#0052cc;"><button type="button" data-wh-fold="location" data-wh-key="${escapeHTML(location)}" aria-expanded="${!locationClosed}" style="display:block;width:100%;background:none;border:0;text-align:left;padding:10px;color:inherit;font-weight:bold;cursor:pointer;">${locationClosed ? '▶' : '▼'} 🏢 ${escapeHTML(location)} (${n}건)</button></td></tr>`;
+        html += `<tr style="background:#e6effc;"><td colspan="8" style="text-align:left;padding:0;font-weight:bold;color:#0052cc;"><button type="button" data-wh-fold="location" data-wh-key="${escapeHTML(location)}" aria-expanded="${!locationClosed}" style="display:block;width:100%;background:none;border:0;text-align:left;padding:10px;color:inherit;font-weight:bold;cursor:pointer;">${locationClosed ? '▶' : '▼'} 🏢 ${escapeHTML(location)} (${n}건)</button></td></tr>`;
         if (locationClosed) return;
         Object.keys(grouped[location]).sort(collator.compare).forEach(category => {
             const key = JSON.stringify([location,category]);
             const categoryClosed = !!fold.categories[key];
-            html += `<tr style="background:#edf8f0;"><td colspan="6" style="text-align:left;padding:0;font-weight:bold;color:#187245;"><button type="button" data-wh-fold="category" data-wh-key="${escapeHTML(key)}" aria-expanded="${!categoryClosed}" style="display:block;width:100%;background:none;border:0;text-align:left;padding:8px 20px;color:inherit;font-weight:bold;cursor:pointer;">${categoryClosed ? '▶' : '▼'} 📁 ${escapeHTML(category)} (${grouped[location][category].length}건)</button></td></tr>`;
+            html += `<tr style="background:#edf8f0;"><td colspan="8" style="text-align:left;padding:0;font-weight:bold;color:#187245;"><button type="button" data-wh-fold="category" data-wh-key="${escapeHTML(key)}" aria-expanded="${!categoryClosed}" style="display:block;width:100%;background:none;border:0;text-align:left;padding:8px 20px;color:inherit;font-weight:bold;cursor:pointer;">${categoryClosed ? '▶' : '▼'} 📁 ${escapeHTML(category)} (${grouped[location][category].length}건)</button></td></tr>`;
             if (categoryClosed) return;
             grouped[location][category].sort(comparator).forEach(w => {
                 const safeId = JSON.stringify(String(w.id)).replace(/</g,'\\u003c').replace(/'/g,'\\u0027');
-                html += `<tr style="border-bottom:1px dashed #eee;"><td style="padding:6px 2px;"><input type="checkbox" class="wh-delete-cb" value="${escapeHTML(w.id)}"></td><td title="${escapeHTML(w.item||'-')}" style="padding:6px 4px;font-weight:bold;word-break:break-all;">${escapeHTML(w.item||'-')}</td><td title="${escapeHTML(w.spec||'-')}" style="padding:6px 4px;word-break:break-all;">${escapeHTML(w.spec||'-')}</td><td style="padding:6px 4px;color:#0052cc;font-weight:bold;">${escapeHTML(w.qty||0)} <small>${escapeHTML(w.unit||'')}</small></td><td style="padding:6px 4px;word-break:break-all;">${escapeHTML(w.note||'-')}</td><td><button onclick='window.editWarehouseItem(${safeId})' style="border:none;color:#0052cc;cursor:pointer;">수정</button> <button onclick='window.deleteWarehouseItem(${safeId})' style="border:none;color:#bf2600;cursor:pointer;">삭제</button></td></tr>`;
+                html += `<tr style="border-bottom:1px dashed #eee;"><td style="padding:6px 2px;"><input type="checkbox" class="wh-delete-cb" value="${escapeHTML(w.id)}"></td><td title="${escapeHTML(w.item||'-')}" style="padding:6px 4px;font-weight:bold;word-break:break-all;">${escapeHTML(w.item||'-')}</td><td title="${escapeHTML(w.spec||'-')}" style="padding:6px 4px;word-break:break-all;">${escapeHTML(w.spec||'-')}</td><td style="padding:6px 2px;">${escapeHTML(window.warehouseStock(w).inbound)} <small>${escapeHTML(w.unit||'')}</small></td><td style="padding:6px 2px;">${escapeHTML(window.warehouseStock(w).used)} <small>${escapeHTML(w.unit||'')}</small></td><td style="padding:6px 2px;color:#0052cc;font-weight:bold;">${escapeHTML(window.warehouseStock(w).qty)} <small>${escapeHTML(w.unit||'')}</small></td><td style="padding:6px 4px;word-break:break-all;">${escapeHTML(w.note||'-')}</td><td><button onclick='window.changeWarehouseStock(${safeId},"inbound")' style="border:0;color:#00875a;cursor:pointer;">+입고</button> <button onclick='window.changeWarehouseStock(${safeId},"used")' style="border:0;color:#d35400;cursor:pointer;">-사용</button> <button onclick='window.undoWarehouseMovement(${safeId})' style="border:0;color:#795548;cursor:pointer;">↶되돌리기</button> <button onclick='window.showWarehouseHistory(${safeId})' style="border:0;color:#555;cursor:pointer;">내역</button> <button onclick='window.editWarehouseItem(${safeId})' style="border:0;color:#0052cc;cursor:pointer;">수정</button> <button onclick='window.deleteWarehouseItem(${safeId})' style="border:0;color:#bf2600;cursor:pointer;">삭제</button></td></tr>`;
             });
         });
     });
@@ -2516,7 +2595,9 @@ window.downloadExcel = function() {
             '품명': w.item || '',
             '규격': w.spec || '',
             '단위': w.unit || '',
-            '수량': w.qty || 0,
+            '반입': window.warehouseStock(w).inbound,
+            '누적사용량': window.warehouseStock(w).used,
+            '현재고': window.warehouseStock(w).qty,
             '비고': w.note || ''
         }));
         const wsWh = XLSX.utils.json_to_sheet(whData);
