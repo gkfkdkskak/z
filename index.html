@@ -272,85 +272,32 @@
     </div>
 
     <!-- 모달창 모음 -->
+    <!-- 창고: 조회 전용 화면 (모든 수량 변경은 Google Sheets에서 처리) -->
     <div id="warehouse-modal" class="modal" onclick="this.style.display='none'">
-        <div class="modal-content" style="max-width:950px;" onclick="event.stopPropagation()">
-            <h3 style="margin:0 0 15px 0; color:#2ecc71; display:flex; justify-content:space-between; align-items:center;">
-                <span>🏢 창고 자재 관리</span>
-                <button onclick="document.getElementById('warehouse-modal').style.display='none'" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:#666;">×</button>
-            </h3>
-            
-            <div style="display:flex; justify-content:flex-end; gap:5px; margin-bottom:10px;">
-                <button onclick="window.downloadWarehouseTemplate()" style="background:#34495e; color:white; padding:6px 12px; border:none; border-radius:4px; font-size:0.8rem; font-weight:bold; cursor:pointer;">📥 양식 다운</button>
-                <label style="background:#217346; color:white; padding:6px 12px; border-radius:4px; font-size:0.8rem; font-weight:bold; cursor:pointer; margin:0;">
-                    📊 엑셀 덮어쓰기
-                    <input type="file" style="display:none;" accept=".xlsx, .xls" onchange="window.uploadWarehouseExcel(event)">
-                </label>
-            </div>
-
-            <div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:10px; align-items:center;">
-                <select id="wh-location-select" onchange="window.updateWarehouseCategoryOptions()" style="flex:1; min-width:100px; padding:8px; border:1px solid #ddd; border-radius:4px;">
-                    <option value="">창고 선택</option>
-                </select>
-                <button onclick="document.getElementById('warehouse-group-modal').style.display='block'" style="padding:8px; background:#e0e0e0; border:none; border-radius:4px; cursor:pointer; font-weight:bold; color:#333;">⚙️ 관리</button>
-            </div>
-            
-            <div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:10px; align-items:center;">
-                <select id="wh-category-select" style="flex:1; min-width:160px; padding:8px; border:1px solid #ddd; border-radius:4px;"><option value="">대분류 선택 (미분류)</option></select>
-                <button onclick="document.getElementById('warehouse-category-modal').style.display='block'; window.renderWarehouseCategories()" style="padding:8px; background:#e0e0e0; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">⚙️ 대분류 관리</button>
-            </div>
-            <div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:10px;">
-                <input type="text" id="wh-item" placeholder="품명" style="flex:2; min-width:120px; padding:8px; border:1px solid #ddd; border-radius:4px;">
-                <input type="text" id="wh-spec" placeholder="규격" style="flex:1.5; min-width:80px; padding:8px; border:1px solid #ddd; border-radius:4px;">
-            </div>
-            
-            <div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:15px; align-items:center;">
-                <input type="text" id="wh-unit" placeholder="단위 (EA, m 등)" style="flex:1; min-width:60px; padding:8px; border:1px solid #ddd; border-radius:4px;">
-                <label for="wh-inbound" style="font-size:0.75rem;font-weight:bold;">반입</label><input type="number" id="wh-inbound" min="0" step="any" value="0" placeholder="누적 반입" oninput="window.updateWarehouseStockPreview()" title="지금까지 반입된 총 수량" style="flex:1; min-width:75px; padding:8px; border:1px solid #ddd; border-radius:4px;">
-                <label for="wh-used" style="font-size:0.75rem;font-weight:bold;">누적사용량</label><input type="number" id="wh-used" min="0" step="any" value="0" readonly title="누적 사용량은 사용량 저장 시 자동 증가합니다" style="flex:1; min-width:75px; padding:8px; border:1px solid #ddd; border-radius:4px;background:#f1f3f5;">
-                <label for="wh-use-now" style="font-size:0.75rem;font-weight:bold;">사용량 입력</label><input type="number" id="wh-use-now" min="0" step="any" value="0" placeholder="이번 사용" oninput="window.updateWarehouseStockPreview()" style="flex:1;min-width:85px;padding:8px;border:1px solid #ffa34d;border-radius:4px;">
-                <input type="text" id="wh-note" placeholder="비고" style="flex:2; min-width:100px; padding:8px; border:1px solid #ddd; border-radius:4px;">
-                <button id="wh-submit-btn" onclick="window.addWarehouseItem()" style="background:#2ecc71; color:white; border:none; padding:8px 15px; border-radius:4px; font-weight:bold; cursor:pointer;">등록</button>
-            </div>
-            
-            <div style="font-size:0.82rem;background:#f0f7ff;border-radius:5px;padding:8px;margin-top:-9px;margin-bottom:12px;">반입 − (누적사용량 + 이번 사용량) = <strong>저장 후 현재고 <span id="wh-stock-preview">0</span></strong> <span id="wh-stock-warning" style="color:#bf2600;font-weight:bold;"></span></div>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:10px; flex-wrap:wrap;">
-                <input type="text" id="wh-search-input" placeholder="🔍 품명, 규격, 창고, 대분류 검색..." onkeyup="window.debouncedRenderWarehouse ? window.debouncedRenderWarehouse() : window.renderWarehouse()" style="flex:1; min-width:150px; box-sizing:border-box; padding:8px; border:1px solid #ddd; border-radius:4px; font-size:0.85rem;">
-                <div style="display:flex; gap:5px;">
-                    <button onclick="window.deleteSelectedWarehouseItems()" style="background:#ff5630; color:white; border:none; padding:6px 10px; border-radius:4px; font-size:0.75rem; font-weight:bold; cursor:pointer; white-space:nowrap;">☑️ 선택 삭제</button>
-                    <button onclick="window.deleteAllWarehouseItems()" style="background:#bf2600; color:white; border:none; padding:6px 10px; border-radius:4px; font-size:0.75rem; font-weight:bold; cursor:pointer; white-space:nowrap;">🗑️ 전체 삭제</button>
-                </div>
-            </div>
-            
-            <div style="margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid #eee;">
-                <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                    <select id="wh-group-filter" onchange="window.updateWarehouseCategoryOptions();window.renderWarehouse()" style="flex:1; min-width:125px; padding:8px; border:1px solid #2ecc71; border-radius:4px;"><option value="">📂 전체 창고 보기</option></select>
-                    <select id="wh-category-filter" onchange="window.renderWarehouse()" style="flex:1; min-width:125px; padding:8px; border:1px solid #2ecc71; border-radius:4px;"><option value="">📁 전체 대분류 보기</option></select>
-                </div>
-                <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap;">
-                    <label for="wh-sort-item-direction" style="font-size:0.78rem;font-weight:bold;">품명 정렬</label>
-                    <select id="wh-sort-item-direction" onchange="window.renderWarehouse()" style="flex:1;min-width:112px;padding:7px;border:1px solid #ccc;border-radius:4px;">
-                        <option value="asc">▲ 오름차순</option><option value="desc">▼ 내림차순</option><option value="none">정렬 안 함</option>
-                    </select>
-                    <label for="wh-sort-spec-direction" style="font-size:0.78rem;font-weight:bold;">규격 정렬</label>
-                    <select id="wh-sort-spec-direction" onchange="window.renderWarehouse()" style="flex:1;min-width:112px;padding:7px;border:1px solid #ccc;border-radius:4px;">
-                        <option value="asc">▲ 오름차순</option><option value="desc">▼ 내림차순</option><option value="none">정렬 안 함</option>
-                    </select>
-                    <label for="wh-sort-priority" style="font-size:0.78rem;font-weight:bold;">우선 기준</label>
-                    <select id="wh-sort-priority" onchange="window.renderWarehouse()" style="flex:1;min-width:106px;padding:7px;border:1px solid #ccc;border-radius:4px;">
-                        <option value="item">품명 먼저</option><option value="spec">규격 먼저</option>
-                    </select>
-                </div>
-                <div style="display:flex;gap:6px;margin-top:7px;justify-content:flex-end;">
-                    <button type="button" onclick="window.setWarehouseFoldAll(false)" style="padding:5px 9px;border:1px solid #bbb;border-radius:4px;background:white;cursor:pointer;">모두 펼치기</button>
-                    <button type="button" onclick="window.setWarehouseFoldAll(true)" style="padding:5px 9px;border:1px solid #bbb;border-radius:4px;background:white;cursor:pointer;">모두 접기</button>
-                </div>
-            </div>
-            
-            <div id="warehouse-history-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:15000;overflow:auto;padding:12px;box-sizing:border-box;"><div style="background:white;max-width:570px;margin:6vh auto;padding:20px;border-radius:10px;"><button type="button" onclick="document.getElementById('warehouse-history-modal').style.display='none'" style="float:right">닫기 ×</button><h3 id="warehouse-history-title">재고 입출고 이력</h3><div id="warehouse-history-list" style="max-height:65vh;overflow:auto"></div></div></div>
-            <div id="warehouse-list" style="max-height:480px; overflow:auto; padding-right:5px;"></div>
+      <div class="modal-content" style="max-width:1100px;margin:3vh auto;" onclick="event.stopPropagation()">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;">
+          <h3 style="margin:0;color:#16834b;">🏢 창고 재고 조회 <span style="font-size:.7rem;background:#e7f6ec;border-radius:15px;padding:4px 9px;color:#16834b;vertical-align:middle;">조회 전용</span></h3>
+          <button type="button" onclick="document.getElementById('warehouse-modal').style.display='none'" style="background:none;border:0;cursor:pointer;font-size:1.4rem;">×</button>
         </div>
+        <p style="color:#666;font-size:.79rem;margin:0 0 12px;">자재 등록·수정·삭제 및 반입·사용량 처리는 구글 시트에서만 진행합니다. 이 화면은 재고 변경사항을 자동으로 표시합니다.</p>
+        <div class="wh-view-filters">
+          <input id="wh-search-input" type="search" placeholder="🔍 품명 · 규격 · 비고 검색" oninput="window.debouncedRenderWarehouse()" style="flex:2;min-width:180px;" />
+          <select id="wh-group-filter" onchange="window.updateWarehouseCategoryOptions();window.renderWarehouse()"><option value="">전체 창고</option></select>
+          <select id="wh-category-filter" onchange="window.renderWarehouse()"><option value="">전체 대분류</option></select>
+        </div>
+        <div class="wh-view-filters wh-view-sort">
+          <label>품명 <select id="wh-sort-item-direction" onchange="window.renderWarehouse()"><option value="asc">▲ 오름차순</option><option value="desc">▼ 내림차순</option><option value="none">정렬 안 함</option></select></label>
+          <label>규격 <select id="wh-sort-spec-direction" onchange="window.renderWarehouse()"><option value="asc">▲ 오름차순</option><option value="desc">▼ 내림차순</option><option value="none">정렬 안 함</option></select></label>
+          <label>우선 <select id="wh-sort-priority" onchange="window.renderWarehouse()"><option value="item">품명 먼저</option><option value="spec">규격 먼저</option></select></label>
+          <div style="display:flex;gap:5px;margin-left:auto;">
+            <button type="button" onclick="window.setWarehouseFoldAll(false)">모두 펼치기</button>
+            <button type="button" onclick="window.setWarehouseFoldAll(true)">모두 접기</button>
+          </div>
+        </div>
+        <div id="warehouse-list" style="max-height:64vh;overflow:auto;"></div>
+      </div>
     </div>
-    
+
     <div id="warehouse-group-modal" class="modal modal-sub" onclick="this.style.display='none'">
         <div class="modal-content" onclick="event.stopPropagation()">
             <h3 style="margin:0 0 15px 0; color:#2ecc71;">⚙️ 창고명(위치) 관리 <button onclick="document.getElementById('warehouse-group-modal').style.display='none'" style="float:right; background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button></h3>
@@ -580,6 +527,6 @@
     </div>
 
     <!-- ★ 기능 파일(JS) 연결 -->
-    <script src="script.js?v=20261111-category-1"></script>
+    <script src="script.js?v=20261111-warehouse-readonly"></script>
 </body>
 </html>
