@@ -534,21 +534,48 @@ window.deleteAllWarehouseItems = async function() {
     alert("모든 창고 자재가 삭제되었습니다.");
 };
 
+window.warehouseFoldState = window.warehouseFoldState || {locations:{}, categories:{}};
+window.toggleWarehouseFold = function(type, key) {
+    const store = type === 'location' ? window.warehouseFoldState.locations : window.warehouseFoldState.categories;
+    store[key] = !store[key];
+    window.renderWarehouse();
+};
+window.setWarehouseFoldAll = function(collapsed) {
+    const store = window.warehouseFoldState;
+    store.locations = {};
+    store.categories = {};
+    (window.currentWarehouseItems || []).forEach(w => {
+        const location = w.location || '미지정';
+        const category = w.category || '미분류';
+        store.locations[location] = collapsed;
+        store.categories[JSON.stringify([location,category])] = collapsed;
+    });
+    window.renderWarehouse();
+};
 window.renderWarehouse = function() {
     const list = document.getElementById('warehouse-list');
     if (!list) return;
-    const searchTerm = (document.getElementById('wh-search-input')?.value || '').toLocaleLowerCase('ko');
-    const groupFilter = document.getElementById('wh-group-filter')?.value || '';
-    const categoryFilter = document.getElementById('wh-category-filter')?.value || '';
-    const sortField = document.getElementById('wh-sort-field')?.value === 'spec' ? 'spec' : 'item';
-    const sortDir = document.getElementById('wh-sort-direction')?.value === 'desc' ? -1 : 1;
+    const getValue = (id, fallback) => document.getElementById(id)?.value ?? fallback;
+    const searchTerm = getValue('wh-search-input','').toLocaleLowerCase('ko');
+    const groupFilter = getValue('wh-group-filter','');
+    const categoryFilter = getValue('wh-category-filter','');
+    const itemDir = getValue('wh-sort-item-direction','asc');
+    const specDir = getValue('wh-sort-spec-direction','asc');
+    const priority = getValue('wh-sort-priority','item');
     const escapeHTML = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const filtered = (window.currentWarehouseItems || []).filter(w => {
         const text = `${w.location||''} ${w.category||''} ${w.item||''} ${w.spec||''} ${w.note||''}`.toLocaleLowerCase('ko');
         return (!searchTerm || text.includes(searchTerm)) && (!groupFilter || w.location === groupFilter) && (!categoryFilter || (w.category || '') === categoryFilter);
     });
     if (!filtered.length) { list.innerHTML = '<div style="text-align:center;padding:20px;color:#999;">해당 자재가 없습니다.</div>'; return; }
-    const comparator = (a,b) => String(a[sortField] || '').localeCompare(String(b[sortField] || ''),'ko',{numeric:true,sensitivity:'base'}) * sortDir || String(a.item||'').localeCompare(String(b.item||''),'ko',{numeric:true});
+    const collator = new Intl.Collator('ko',{numeric:true,sensitivity:'base'});
+    const compareField = (a,b,field,dir) => dir === 'none' ? 0 : collator.compare(String(a[field]||''), String(b[field]||'')) * (dir === 'desc' ? -1 : 1);
+    const comparator = (a,b) => {
+        const first = priority === 'spec' ? 'spec' : 'item';
+        const second = first === 'item' ? 'spec' : 'item';
+        const direction = f => f === 'item' ? itemDir : specDir;
+        return compareField(a,b,first,direction(first)) || compareField(a,b,second,direction(second));
+    };
     const grouped = {};
     filtered.forEach(w => {
         const location = w.location || '미지정';
@@ -557,11 +584,18 @@ window.renderWarehouse = function() {
         if (!grouped[location][category]) grouped[location][category] = [];
         grouped[location][category].push(w);
     });
+    const fold = window.warehouseFoldState;
     let html = `<table style="width:100%;border-collapse:collapse;font-size:0.75rem;text-align:center;background:#fff;table-layout:fixed;"><thead><tr style="background:#f4f5f7;height:32px;"><th style="width:9%">선택</th><th style="width:21%">품명</th><th style="width:14%">규격</th><th style="width:17%">수량(단위)</th><th style="width:21%">비고</th><th style="width:18%">관리</th></tr></thead><tbody>`;
-    Object.keys(grouped).sort((a,b)=>a.localeCompare(b,'ko')).forEach(location => {
-        html += `<tr style="background:#e6effc;"><td colspan="6" style="text-align:left;padding:9px;font-weight:bold;color:#0052cc;">🏢 ${escapeHTML(location)}</td></tr>`;
-        Object.keys(grouped[location]).sort((a,b)=>a.localeCompare(b,'ko')).forEach(category => {
-            html += `<tr style="background:#edf8f0;"><td colspan="6" style="text-align:left;padding:7px 18px;font-weight:bold;color:#187245;">📁 ${escapeHTML(category)} (${grouped[location][category].length}건)</td></tr>`;
+    Object.keys(grouped).sort(collator.compare).forEach(location => {
+        const locationClosed = !!fold.locations[location];
+        const n = Object.values(grouped[location]).reduce((total,arr)=>total+arr.length,0);
+        html += `<tr style="background:#e6effc;"><td colspan="6" style="text-align:left;padding:0;font-weight:bold;color:#0052cc;"><button type="button" data-wh-fold="location" data-wh-key="${escapeHTML(location)}" aria-expanded="${!locationClosed}" style="display:block;width:100%;background:none;border:0;text-align:left;padding:10px;color:inherit;font-weight:bold;cursor:pointer;">${locationClosed ? '▶' : '▼'} 🏢 ${escapeHTML(location)} (${n}건)</button></td></tr>`;
+        if (locationClosed) return;
+        Object.keys(grouped[location]).sort(collator.compare).forEach(category => {
+            const key = JSON.stringify([location,category]);
+            const categoryClosed = !!fold.categories[key];
+            html += `<tr style="background:#edf8f0;"><td colspan="6" style="text-align:left;padding:0;font-weight:bold;color:#187245;"><button type="button" data-wh-fold="category" data-wh-key="${escapeHTML(key)}" aria-expanded="${!categoryClosed}" style="display:block;width:100%;background:none;border:0;text-align:left;padding:8px 20px;color:inherit;font-weight:bold;cursor:pointer;">${categoryClosed ? '▶' : '▼'} 📁 ${escapeHTML(category)} (${grouped[location][category].length}건)</button></td></tr>`;
+            if (categoryClosed) return;
             grouped[location][category].sort(comparator).forEach(w => {
                 const safeId = JSON.stringify(String(w.id)).replace(/</g,'\\u003c').replace(/'/g,'\\u0027');
                 html += `<tr style="border-bottom:1px dashed #eee;"><td style="padding:6px 2px;"><input type="checkbox" class="wh-delete-cb" value="${escapeHTML(w.id)}"></td><td title="${escapeHTML(w.item||'-')}" style="padding:6px 4px;font-weight:bold;word-break:break-all;">${escapeHTML(w.item||'-')}</td><td title="${escapeHTML(w.spec||'-')}" style="padding:6px 4px;word-break:break-all;">${escapeHTML(w.spec||'-')}</td><td style="padding:6px 4px;color:#0052cc;font-weight:bold;">${escapeHTML(w.qty||0)} <small>${escapeHTML(w.unit||'')}</small></td><td style="padding:6px 4px;word-break:break-all;">${escapeHTML(w.note||'-')}</td><td><button onclick='window.editWarehouseItem(${safeId})' style="border:none;color:#0052cc;cursor:pointer;">수정</button> <button onclick='window.deleteWarehouseItem(${safeId})' style="border:none;color:#bf2600;cursor:pointer;">삭제</button></td></tr>`;
@@ -569,6 +603,9 @@ window.renderWarehouse = function() {
         });
     });
     list.innerHTML = html + '</tbody></table>';
+    list.querySelectorAll('[data-wh-fold]').forEach(button => button.addEventListener('click', () => {
+        window.toggleWarehouseFold(button.dataset.whFold, button.dataset.whKey);
+    }));
 };
 
 window.openTrashModal = function() { try { window.renderTrash(); } catch(e){} document.getElementById('trash-modal').style.display = 'block'; };
