@@ -273,7 +273,7 @@
 
     <!-- 모달창 모음 -->
     <div id="warehouse-modal" class="modal" onclick="this.style.display='none'">
-        <div class="modal-content" style="max-width:600px;" onclick="event.stopPropagation()">
+        <div class="modal-content" style="max-width:950px;" onclick="event.stopPropagation()">
             <h3 style="margin:0 0 15px 0; color:#2ecc71; display:flex; justify-content:space-between; align-items:center;">
                 <span>🏢 창고 자재 관리</span>
                 <button onclick="document.getElementById('warehouse-modal').style.display='none'" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:#666;">×</button>
@@ -303,13 +303,16 @@
                 <input type="text" id="wh-spec" placeholder="규격" style="flex:1.5; min-width:80px; padding:8px; border:1px solid #ddd; border-radius:4px;">
             </div>
             
-            <div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:15px;">
+            <div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:15px; align-items:center;">
                 <input type="text" id="wh-unit" placeholder="단위 (EA, m 등)" style="flex:1; min-width:60px; padding:8px; border:1px solid #ddd; border-radius:4px;">
-                <input type="number" id="wh-qty" placeholder="수량" style="flex:1; min-width:60px; padding:8px; border:1px solid #ddd; border-radius:4px;">
+                <label for="wh-inbound" style="font-size:0.75rem;font-weight:bold;">반입</label><input type="number" id="wh-inbound" min="0" step="any" value="0" placeholder="누적 반입" oninput="window.updateWarehouseStockPreview()" title="지금까지 반입된 총 수량" style="flex:1; min-width:75px; padding:8px; border:1px solid #ddd; border-radius:4px;">
+                <label for="wh-used" style="font-size:0.75rem;font-weight:bold;">누적사용량</label><input type="number" id="wh-used" min="0" step="any" value="0" readonly title="누적 사용량은 사용량 저장 시 자동 증가합니다" style="flex:1; min-width:75px; padding:8px; border:1px solid #ddd; border-radius:4px;background:#f1f3f5;">
+                <label for="wh-use-now" style="font-size:0.75rem;font-weight:bold;">사용량 입력</label><input type="number" id="wh-use-now" min="0" step="any" value="0" placeholder="이번 사용" oninput="window.updateWarehouseStockPreview()" style="flex:1;min-width:85px;padding:8px;border:1px solid #ffa34d;border-radius:4px;">
                 <input type="text" id="wh-note" placeholder="비고" style="flex:2; min-width:100px; padding:8px; border:1px solid #ddd; border-radius:4px;">
                 <button id="wh-submit-btn" onclick="window.addWarehouseItem()" style="background:#2ecc71; color:white; border:none; padding:8px 15px; border-radius:4px; font-weight:bold; cursor:pointer;">등록</button>
             </div>
             
+            <div style="font-size:0.82rem;background:#f0f7ff;border-radius:5px;padding:8px;margin-top:-9px;margin-bottom:12px;">반입 − (누적사용량 + 이번 사용량) = <strong>저장 후 현재고 <span id="wh-stock-preview">0</span></strong> <span id="wh-stock-warning" style="color:#bf2600;font-weight:bold;"></span></div>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:10px; flex-wrap:wrap;">
                 <input type="text" id="wh-search-input" placeholder="🔍 품명, 규격, 창고, 대분류 검색..." onkeyup="window.debouncedRenderWarehouse ? window.debouncedRenderWarehouse() : window.renderWarehouse()" style="flex:1; min-width:150px; box-sizing:border-box; padding:8px; border:1px solid #ddd; border-radius:4px; font-size:0.85rem;">
                 <div style="display:flex; gap:5px;">
@@ -343,7 +346,8 @@
                 </div>
             </div>
             
-            <div id="warehouse-list" style="max-height:350px; overflow-y:auto; padding-right:5px;"></div>
+            <div id="warehouse-history-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:15000;overflow:auto;padding:12px;box-sizing:border-box;"><div style="background:white;max-width:570px;margin:6vh auto;padding:20px;border-radius:10px;"><button type="button" onclick="document.getElementById('warehouse-history-modal').style.display='none'" style="float:right">닫기 ×</button><h3 id="warehouse-history-title">재고 입출고 이력</h3><div id="warehouse-history-list" style="max-height:65vh;overflow:auto"></div></div></div>
+            <div id="warehouse-list" style="max-height:480px; overflow:auto; padding-right:5px;"></div>
         </div>
     </div>
     
