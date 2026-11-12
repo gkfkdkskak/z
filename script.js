@@ -422,7 +422,8 @@ window.openWarehouseModal = function() {
 window.warehouseStock = function(w) {
     const inbound = Number(w.inbound ?? w.qty ?? 0);
     const used = Number(w.used ?? 0);
-    return { inbound, used, qty: inbound - used };
+    const adjustment = Number(w.adjustment ?? 0);
+    return { inbound, used, adjustment, qty: inbound - used + adjustment };
 };
 window.updateWarehouseStockPreview = function() {
     const inbound = Number(document.getElementById('wh-inbound')?.value || 0);
