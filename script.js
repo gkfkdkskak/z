@@ -3432,3 +3432,123 @@ window.deleteGroup = function(collection, ...args) {
   if (collection === 'warehouseGroups' || collection === 'warehouseCategories') return warehouseReadOnlyAlert();
   return originalDeleteGroup.apply(this,[collection,...args]);
 };
+
+// 회의/모니터용 전체화면 브리핑. 기존 실시간 브리핑 렌더러를 그대로 사용합니다.
+(() => {
+    let previousFocus = null;
+    let previousOverflow = '';
+    let textSize = 18;
+    const modal = () => document.getElementById('briefing-modal');
+    const originalShow = window.showDailyBriefing;
+    function initialize() {
+        const root = modal();
+        if (!root || root.dataset.briefingReady) return;
+        root.dataset.briefingReady = 'true';
+        root.setAttribute('role', 'dialog');
+        root.setAttribute('aria-modal', 'true');
+        root.setAttribute('aria-label', '일일 현황 브리핑');
+        const content = root.querySelector('.modal-content');
+        const header = document.createElement('div');
+        header.className = 'briefing-toolbar';
+        header.innerHTML = `<div><h2>일일 현황 브리핑</h2><p id="briefing-updated" aria-live="polite"></p></div>
+            <div class="briefing-controls"><span id="briefing-screen-status" role="status"></span>
+            <button type="button" onclick="window.resizeBriefingText(-2)" aria-label="글자 작게">가−</button>
+            <button type="button" onclick="window.resizeBriefingText(2)" aria-label="글자 크게">가＋</button>
+            <button type="button" id="briefing-fullscreen-btn" onclick="window.toggleBriefingFullscreen()">⛶ 전체화면</button>
+            <button type="button" onclick="window.closeDailyBriefing()">닫기</button></div>`;
+        content.firstElementChild.replaceWith(header);
+        const grid = document.createElement('div');
+        grid.className = 'briefing-grid';
+        Array.from(content.querySelectorAll('.brief-section-title')).forEach(title => {
+            const list = title.nextElementSibling;
+            const card = document.createElement('section');
+            card.className = 'briefing-section';
+            card.append(title);
+            if (list && list.classList.contains('brief-list-container')) card.append(list);
+            grid.append(card);
+        });
+        header.after(grid);
+        root.onclick = event => { if (event.target === root) window.closeDailyBriefing(); };
+        content.querySelectorAll('button').forEach(button => {
+            if ((button.getAttribute('onclick') || '').includes("style.display='none'")) button.onclick = window.closeDailyBriefing;
+        });
+    }
+    function setMode(enabled) {
+        const root = modal();
+        root.classList.toggle('briefing-presentation', enabled);
+        const button = document.getElementById('briefing-fullscreen-btn');
+        if (button) button.textContent = enabled ? '⛶ 일반 크기' : '⛶ 전체화면';
+        if (button) button.setAttribute('aria-pressed', String(enabled));
+    }
+    window.showDailyBriefing = function(...args) {
+        initialize();
+        const root = modal();
+        if (root && root.style.display !== 'block') {
+            previousFocus = document.activeElement;
+            previousOverflow = document.body.style.overflow;
+            document.body.style.overflow = 'hidden';
+        }
+        originalShow.apply(this, args);
+        const updated = document.getElementById('briefing-updated');
+        if (updated) updated.textContent = new Date().toLocaleString('ko-KR') + ' 기준 · 변경사항 자동 반영';
+        if (root) root.style.setProperty('--briefing-text-size', textSize + 'px');
+    };
+    window.resizeBriefingText = delta => {
+        textSize = Math.max(16, Math.min(30, textSize + delta));
+        modal()?.style.setProperty('--briefing-text-size', textSize + 'px');
+    };
+    window.toggleBriefingFullscreen = async function() {
+        const root = modal();
+        if (!root) return;
+        if (root.classList.contains('briefing-presentation')) {
+            if (document.fullscreenElement === root) {
+                try { await document.exitFullscreen(); } catch (_) {}
+            }
+            setMode(false);
+            return;
+        }
+        setMode(true);
+        document.getElementById('briefing-screen-status').textContent = '';
+        try {
+            if (!root.requestFullscreen) throw new Error('unsupported');
+            await root.requestFullscreen();
+        } catch (_) {
+            if (root.style.display === 'block') document.getElementById('briefing-screen-status').textContent = '창 크기로 확대 중';
+        }
+        if (root.style.display !== 'block' && document.fullscreenElement === root) {
+            try { await document.exitFullscreen(); } catch (_) {}
+        }
+    };
+    window.openBriefingPresentation = function() {
+        window.showDailyBriefing();
+        window.toggleBriefingFullscreen();
+    };
+    window.closeDailyBriefing = async function() {
+        const root = modal();
+        if (!root) return;
+        if (document.fullscreenElement === root) {
+            try { await document.exitFullscreen(); } catch (_) {}
+        }
+        setMode(false);
+        root.style.display = 'none';
+        document.body.style.overflow = previousOverflow;
+        if (previousFocus?.isConnected) previousFocus.focus();
+    };
+    document.addEventListener('fullscreenchange', () => {
+        if (!document.fullscreenElement && modal()?.classList.contains('briefing-presentation')) setMode(false);
+    });
+    document.addEventListener('keydown', event => {
+        const root = modal();
+        if (!root || root.style.display !== 'block') return;
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            window.closeDailyBriefing();
+        }
+        if (event.key === 'Tab') {
+            const controls = Array.from(root.querySelectorAll('button, a[href], input, select, textarea, [tabindex="0"]')).filter(el => el.getClientRects().length);
+            const first = controls[0], last = controls[controls.length - 1];
+            if (event.shiftKey && (document.activeElement === first || !root.contains(document.activeElement))) { event.preventDefault();last?.focus(); }
+            else if (!event.shiftKey && (document.activeElement === last || !root.contains(document.activeElement))) { event.preventDefault();first?.focus(); }
+        }
+    });
+})();
