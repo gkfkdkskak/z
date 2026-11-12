@@ -54,6 +54,7 @@
             <button class="btn-team" style="background:#009688; color:#fff;" onclick="window.openContactModal()">📞 연락처</button>
             <button class="btn-team" style="background:#607d8b; color:#fff;" onclick="window.openSiteModal()">🔗 사이트</button>
             <button class="btn-team" style="background:#ff9f43; color:#fff;" onclick="window.showDailyBriefing()">🔔 브리핑</button>
+            <button class="btn-team" style="background:#172b4d;color:#fff;" onclick="window.openBriefingPresentation()">⛶ 전체화면 브리핑</button>
             <button class="btn-team" style="background:#673ab7;" onclick="window.openReportModal()">📋 일보</button>
             <button class="btn-team" style="background:#795548;" onclick="window.openEquipModal()">🧰 장비</button>
             <button class="btn-team" style="background:#e91e63;" onclick="window.openExpenseModal()">💳 지출</button>
@@ -457,10 +458,6 @@
         </div>
     </div>
 </div>
-            <button onclick="document.getElementById('briefing-modal').style.display='none'" style="width:100%; margin-top:20px; padding:12px; background:#f4f5f7; border:1px solid #dfe1e6; border-radius:6px; font-weight:bold; font-size:0.95rem; cursor:pointer; color:#333;">닫기</button>
-        </div>
-    </div>
-    
     <div id="task-modal" class="modal" onclick="this.style.display='none'"><div class="modal-content" onclick="event.stopPropagation()"><div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #eee; padding-bottom:10px; margin-bottom:10px;"><h3 id="modal-title" style="margin:0; color:var(--primary-color);">상세 보기</h3><button onclick="document.getElementById('task-modal').style.display='none'" style="background:none; border:none; font-size:1.5rem; color:#999; cursor:pointer; line-height:1;">×</button></div><div id="modal-list" style="max-height: 50vh; overflow-y: auto;"></div><button onclick="document.getElementById('task-modal').style.display='none'" style="width:100%; margin-top:15px; padding:10px; background:#e0e0e0; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">닫기</button></div></div>
     
     <div id="edit-modal" class="modal" onclick="this.style.display='none'">
