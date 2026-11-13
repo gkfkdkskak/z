@@ -39,6 +39,7 @@ window.autoCloudBackup = function() {
         contacts: window.currentContacts,
         sites: window.currentSites,
         equipments: window.currentEquips,
+        holidays: window.currentHolidays,
         warehouse: window.currentWarehouseItems
     };
     const gasUrl = "https://script.google.com/macros/s/AKfycby-XSYg-1KKi9ofXkNMyDjGzUeYaN4gct6comMHGJU5ThsLwgVb31UpeF5gUa-NkPLPjA/exec"; 
@@ -49,6 +50,7 @@ window.autoCloudBackup = function() {
     }).then(res => console.log('자동 백업 완료')).catch(e => console.log('백업 에러'));
 };
 
+window.currentHolidays = [];
 window.currentTasks = []; 
 window.teamMembers = []; 
 window.currentEquips = []; 
@@ -1275,7 +1277,7 @@ window.renderCalendar = function() {
         const isToday = d === new Date().getDate() && m === new Date().getMonth() && y === new Date().getFullYear(); 
         const bgStyle = hasWorklog ? 'background: #ede7f6; border: 1px solid #d1c4e9;' : ''; 
         
-        html += `<div class="calendar-day-cell" style="${bgStyle}" onclick="window.showTaskModal('calendar-click', '${dateStr}', '')">
+        html += `<div class="calendar-day-cell" style="${bgStyle}" data-calendar-date="${dateStr}" onclick="window.openCalendarDay('${dateStr}')">
             <span style="${isToday ? 'background:var(--warning-color);color:white;border-radius:50%;width:18px;height:18px;line-height:18px;display:inline-block;' : ''}">${d}</span>
             ${badgeHtml}
         </div>`; 
@@ -1855,7 +1857,7 @@ window.showDailyBriefing = function() {
         const todayStr = window.getLocalDateString(today);
         const tomorrowStr = window.getLocalDateString(tomorrow); 
         
-        const tomorrowTasks = window.currentTasks.filter(function(t) { return t && t.status !== 'deleted' && ((t.startDate || window.getFallbackDate(t.createdAt)) === tomorrowStr || (t.dueDate || window.getFallbackDate(t.createdAt)) === tomorrowStr) && !(t.status || '').startsWith('mat-') && t.status !== 'worklog'; }); 
+        const tomorrowTasks = window.currentTasks.filter(function(t) { return t && t.status !== 'done' && t.status !== 'deleted' && (t.startDate || window.getFallbackDate(t.createdAt)) === tomorrowStr && !(t.status || '').startsWith('mat-') && t.status !== 'worklog'; }); 
         const matRequests = window.currentTasks.filter(function(t) { return t && t.status === 'mat-request'; }); 
         const matOrdereds = window.currentTasks.filter(function(t) { return t && t.status === 'mat-ordered'; }); 
         const inprogressTasks = window.currentTasks.filter(function(t) { return t && t.status === 'inprogress'; }); 
@@ -2663,6 +2665,7 @@ window.backupData = function() {
         contacts: window.currentContacts,
         sites: window.currentSites,
         equipments: window.currentEquips,
+        holidays: window.currentHolidays,
         warehouse: window.currentWarehouseItems
     };
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fullData));
@@ -2684,7 +2687,7 @@ window.restoreData = async function(event) {
             if(!confirm("⚠️ 경고: 현재 데이터 베이스에 복구 데이터를 덮어씌웁니다.\n진행하시겠습니까?")) return;
             
             alert("데이터를 복구 중입니다...");
-            const collections = ['tasks', 'team', 'expenses', 'notices', 'contacts', 'sites', 'equipments', 'otherCompanies', 'warehouse'];
+            const collections = ['tasks', 'team', 'expenses', 'notices', 'contacts', 'sites', 'equipments', 'otherCompanies', 'warehouse', 'holidays'];
             const promises = [];
             collections.forEach(col => {
                 if(data[col] && Array.isArray(data[col])) {
@@ -2924,6 +2927,10 @@ window.renderEquips = window.renderSimpleList('currentEquips', null, 'equip-list
 `);
 
 window.initFirebaseListeners = function() {
+    window.db.collection("holidays").onSnapshot(s => {
+        window.currentHolidays = s.docs.map(d => ({...d.data(), id:d.id}));
+        window.holidayLoadError = false; window.renderCalendar(); window.refreshBriefingExtras();
+    }, err => { window.holidayLoadError = true; window.refreshBriefingExtras(); console.error("휴일 연결 실패", err); });
     try {
         const oneYearAgo = Date.now() - (365 * 24 * 60 * 60 * 1000);
 
@@ -3050,6 +3057,7 @@ window.initFirebaseListeners = function() {
         window.db.collection("equipments").onSnapshot(function(s) {
             window.currentEquips = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); });
             window.currentEquips.sort(function(a, b){ return (b.createdAt || 0) - (a.createdAt || 0); });
+            window.refreshBriefingExtras();
             if(document.getElementById('equip-modal').style.display === 'block') window.renderEquips();
             window.updateUI();
         });
@@ -3551,4 +3559,35 @@ window.deleteGroup = function(collection, ...args) {
             else if (!event.shiftKey && (document.activeElement === last || !root.contains(document.activeElement))) { event.preventDefault();first?.focus(); }
         }
     });
+})();
+
+// 휴일 및 대여 현황 확장
+(() => {
+ const $ = id => document.getElementById(id);
+ const esc = value => String(value ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ let selectedDate = '', editingId = null;
+ const active = h => h.startDate && h.endDate && h.startDate <= selectedDate && h.endDate >= selectedDate;
+ const overlay = document.createElement('div'); overlay.id='holiday-modal'; overlay.className='modal'; overlay.setAttribute('role','dialog'); overlay.setAttribute('aria-modal','true'); overlay.setAttribute('aria-label','날짜별 일정과 휴일');
+ overlay.innerHTML=`<div class="modal-content holiday-content"><h2 id="holiday-heading"></h2><div class="holiday-actions"><button id="holiday-tasks">이 날짜 일정 보기</button><button id="holiday-close">닫기</button></div><h3>휴일 등록 / 수정</h3><form id="holiday-form"><label>휴일명<input id="holiday-name" maxlength="80" required placeholder="회사 휴무, 연차, 현장 휴무 등"></label><div class="holiday-dates"><label>시작일<input id="holiday-start" type="date" required></label><label>종료일<input id="holiday-end" type="date" required></label></div><p id="holiday-error" role="alert"></p><button id="holiday-save" type="submit">휴일 저장</button><button id="holiday-new" type="button">새 휴일 입력</button></form><h3>이 날짜의 휴일</h3><div id="holiday-day-list"></div></div>`;
+ document.body.append(overlay);
+ function reset() { editingId=null; $('holiday-name').value=''; $('holiday-start').value=selectedDate; $('holiday-end').value=selectedDate; $('holiday-save').textContent='휴일 저장'; $('holiday-error').textContent=''; }
+ function close() { overlay.style.display='none'; document.querySelector(`[data-calendar-date="${selectedDate}"]`)?.focus(); }
+ $('holiday-close').onclick=close; overlay.onclick=e=>{if(e.target===overlay)close();};
+ overlay.addEventListener('keydown',e=>{if(e.key==='Escape')close(); if(e.key==='Tab'){const els=[...overlay.querySelectorAll('button,input')].filter(x=>!x.disabled);const a=els[0],b=els[els.length-1];if(e.shiftKey&&document.activeElement===a){e.preventDefault();b.focus();}else if(!e.shiftKey&&document.activeElement===b){e.preventDefault();a.focus();}}});
+ $('holiday-new').onclick=reset;
+ $('holiday-tasks').onclick=()=>{close(); window.showTaskModal('calendar-click',selectedDate,'');};
+ window.openCalendarDay=date=>{selectedDate=date;reset();$('holiday-heading').textContent=date+' 일정 / 휴일';renderDay();overlay.style.display='block';$('holiday-name').focus();};
+ function renderDay(){const list=$('holiday-day-list');list.replaceChildren();if(window.holidayLoadError){list.textContent='휴일을 불러오지 못했습니다. Firebase holidays 읽기 권한을 확인하세요.';return;}const rows=window.currentHolidays.filter(active);if(!rows.length)list.textContent='등록된 휴일이 없습니다.';rows.forEach(h=>{const row=document.createElement('div');row.className='holiday-row';const text=document.createElement('span');text.textContent=`${h.name} · ${h.startDate} ~ ${h.endDate}`;row.append(text);const edit=document.createElement('button');edit.textContent='수정';edit.onclick=()=>{editingId=h.id;$('holiday-name').value=h.name;$('holiday-start').value=h.startDate;$('holiday-end').value=h.endDate;$('holiday-save').textContent='수정 저장';};const del=document.createElement('button');del.textContent='삭제';del.onclick=async()=>{if(!confirm('이 휴일을 삭제할까요?'))return;del.disabled=true;try{await window.db.collection('holidays').doc(h.id).delete();if(editingId===h.id)reset();}catch(e){$('holiday-error').textContent='삭제 실패: '+e.message;}finally{del.disabled=false;}};row.append(edit,del);list.append(row);});}
+ $('holiday-form').onsubmit=async e=>{e.preventDefault();const name=$('holiday-name').value.trim(),startDate=$('holiday-start').value,endDate=$('holiday-end').value;if(!name||!startDate||!endDate||startDate>endDate){$('holiday-error').textContent='휴일명과 올바른 시작·종료일을 입력하세요.';return;}$('holiday-save').disabled=true;try{const data={name,startDate,endDate,updatedAt:Date.now(),updatedBy:window.loggedInUser||''};if(editingId)await window.db.collection('holidays').doc(editingId).update(data);else await window.db.collection('holidays').add({...data,createdAt:Date.now()});reset();}catch(err){$('holiday-error').textContent='저장 실패: '+err.message;}finally{$('holiday-save').disabled=false;}};
+ const originalCalendar=window.renderCalendar;
+ window.renderCalendar=function(...args){originalCalendar.apply(this,args);document.querySelectorAll('[data-calendar-date]').forEach(cell=>{cell.tabIndex=0;cell.setAttribute('role','button');cell.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();window.openCalendarDay(cell.dataset.calendarDate);}};const holidays=window.currentHolidays.filter(h=>h.startDate<=cell.dataset.calendarDate&&h.endDate>=cell.dataset.calendarDate);if(holidays.length){cell.classList.add('is-holiday');const label=document.createElement('div');label.className='calendar-holiday';label.textContent=holidays.map(h=>h.name).join(' · ');cell.title=label.textContent;cell.append(label);}});};
+ function card(grid,id,title){if($(id))return;const section=document.createElement('section');section.className='briefing-section';section.innerHTML=`<div class="brief-section-title">${title}</div><div class="brief-list-container" id="${id}"></div>`;grid.append(section);}
+ function arrange(){const grid=document.querySelector('.briefing-grid');if(!grid)return;card(grid,'brief-holiday-list','📅 휴일');card(grid,'brief-equipment-list','🧰 장비 대여 현황');const columns=[['brief-unacked-list','brief-holiday-list','brief-equipment-list'],['brief-mat-request-list','brief-mat-ordered-list','brief-delivery-delayed-list'],['brief-today-start-list','brief-inprogress-list','brief-todo-list','brief-start-delayed-list']];if(!grid.querySelector('.briefing-column')){columns.forEach(ids=>{const col=document.createElement('div');col.className='briefing-column';ids.forEach(id=>{const section=$(id)?.closest('.briefing-section');if(section)col.append(section);});grid.append(col);});const request=$('brief-request-list')?.closest('.briefing-section');if(request){request.classList.add('briefing-request-footer');grid.after(request);}}
+ const toolbar=document.querySelector('.briefing-toolbar');if(!$('briefing-live-clock')){const info=document.createElement('div');info.className='briefing-live-info';info.innerHTML='<strong id="briefing-live-clock"></strong><span id="briefing-live-weather"></span>';toolbar.querySelector('.briefing-controls').before(info);}}
+ function tick(){if($('briefing-live-clock'))$('briefing-live-clock').textContent=new Date().toLocaleString('ko-KR',{dateStyle:'full',timeStyle:'medium'});if($('briefing-live-weather'))$('briefing-live-weather').textContent=$('weather-widget')?.textContent||'날씨 정보 없음';}
+ window.refreshBriefingExtras=function(){if(overlay.style.display==='block')renderDay();const hol=$('brief-holiday-list');if(hol){const today=window.getLocalDateString();const list=window.currentHolidays.filter(h=>h.endDate>=today).sort((a,b)=>a.startDate.localeCompare(b.startDate));hol.innerHTML=window.holidayLoadError?'휴일 연결 실패 · Firebase 권한을 확인하세요.':list.map(h=>`<div class="brief-item"><strong>${esc(h.name)}</strong><div class="brief-meta">${esc(h.startDate)} ~ ${esc(h.endDate)}${h.startDate<=today?' · 오늘 휴일':''}</div></div>`).join('')||'예정된 휴일이 없습니다.';}
+ const eq=$('brief-equipment-list');if(eq){const groups=new Map();(window.currentEquips||[]).forEach(e=>{if(!['대여중','반납완료'].includes(e.status))return;const who=e.borrower||'미지정';if(!groups.has(who))groups.set(who,{rent:0,returned:0});groups.get(who)[e.status==='대여중'?'rent':'returned']++;});eq.innerHTML=groups.size?`<table class="brief-equipment-table"><thead><tr><th>빌려간 사람</th><th>대여 중</th><th>반납 완료</th></tr></thead><tbody>${[...groups].map(([name,n])=>`<tr><td>${esc(name)}</td><td>${n.rent}</td><td>${n.returned}</td></tr>`).join('')}</tbody></table>`:'장비 대여 기록이 없습니다.';}tick();};
+ const show=window.showDailyBriefing;window.showDailyBriefing=function(...args){show.apply(this,args);arrange();window.refreshBriefingExtras();};
+ setInterval(()=>{if($('briefing-modal')?.style.display==='block')tick();},1000);
+ window.renderCalendar();
 })();
